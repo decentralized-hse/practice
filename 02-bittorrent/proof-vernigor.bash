@@ -1,3 +1,3 @@
 #!/bin/bash
 
-(sha256sum $1 | cut -d ' ' -f 1) > "$1.root"
+(sha256sum $1.peaks | cut -d ' ' -f 1) > "$1.root"
