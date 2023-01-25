@@ -24,6 +24,24 @@
 
 Результаты складывать в файлы с соответствующим расширением,
 например `datafile.hashtree`, `datafile.peaks`, `datafile.sign`.
+Исходные данные брать так же, из файлов. При вызове программы
+первый аргумент всегда - название исходного файла. Пример:
+
+````
+    $ python peaks-ivanov.py pikachu.mov
+    reading pikachu.mov.hashtree...
+    putting the peaks into pikachu.mov.peaks...
+    all done!
+    $ bash root-petrova.sh pikachu.mov
+    hashing pikachu.mov.peaks
+    all done!
+    $ clang++ proof-sidorov.cpp -lsodium -o proof-sidorov
+    $ ./proof-sidorov pikachu.mov 18
+    reading pikachu.mov.hashtree...
+    putting the proof into pikachu.mov.18.proof...
+    all done!
+````
+
 `verify` передаёт результат кодом возврата (0/не 0) и пишет на
 экран.
 
