@@ -11,7 +11,7 @@
  1. создать дерево хэшей для файла, по спеке, с bin раскладкой
     по RFC7574 (hashtree)
  2. положить пиковые хэши в отдельный файл (peaks)
-    Хэши сохраняем в hex, с переводом строки (65 байт на хэш,
+    Хэши сохраняем [в hex][x], с переводом строки (65 байт на хэш,
     можно читать как текстом, так и по смещению).
  3. посчитать хэш файла, алгоритм SHA256, на bash (root)
     Сохранить в файл (65 байт).
@@ -29,3 +29,4 @@
 [h]: https://libsodium.gitbook.io/doc/advanced/sha-2_hash_function
 [e]: https://libsodium.gitbook.io/doc/public-key_cryptography/public-key_signatures
 [b]: https://github.com/gritzko/binmap/blob/master/bin.h
+[x]: https://doc.libsodium.org/helpers
