@@ -32,6 +32,7 @@ vector<string> process(vector<string> hashes, int ind) {
 //input file - hashtree
 int main(int argc, char** argv) {
     if (argc != 3) {
+	cout << "Usage: path to file with a hashtree, chunk number" << endl;
         return 1;
     }
     string inName(argv[1]);
