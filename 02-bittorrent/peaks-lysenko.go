@@ -130,7 +130,10 @@ func writePeaks(filename string, peaks []string) error {
 	defer file.Close()
 
 	for _, peak := range peaks {
-		file.WriteString(peak + "\n")
+		_, err := file.WriteString(peak + "\n")
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
