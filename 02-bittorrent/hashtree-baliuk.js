@@ -6,10 +6,10 @@ var path = require('path');
 var crypto = require('crypto')
 
 const CHUNK_SIZE = 1024;
-const EMPTY_NODE_HASH = '0'.repeat(64);
+const EMPTY_NODE_HASH = '0'.repeat(64) + '\n';
 
 function calcHash(data) {
-    return crypto.createHash('sha256').update(data).digest('hex');
+    return crypto.createHash('sha256').update(data).digest('hex') + '\n';
 }
 
 function calcNodeHash(left, right) {
@@ -78,11 +78,7 @@ function buildHashtree(chunks) {
 
 // Writes hashtree to the output file.
 function writeHashes(hashes, outputFilename) {
-    let joined = hashes.join('\n');
-    if (joined.length > 0) {
-        joined += '\n';
-    }
-
+    let joined = hashes.join('');
     fs.writeFileSync(outputFilename, joined);
 }
 
