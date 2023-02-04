@@ -22,7 +22,7 @@ func chunkSlice(slice []byte, chunkSize int) []DataChunk {
 		end := i + chunkSize
 
 		if end > len(slice) {
-			end = len(slice)
+            panic("incomplete chunk");
 		}
 
 		chunks = append(chunks, slice[i:end])
@@ -53,6 +53,8 @@ func ReadAndChunkFile(name string) ([]DataChunk, error) {
 	return chunks, nil
 }
 
+var NL = []byte{'\n'}
+
 func calculateHashForChunk(chunk DataChunk) Hash {
 	h := sha256.New()
 	h.Write(chunk)
@@ -65,8 +67,8 @@ func calculateHashForNode(left, right Hash) Hash {
 	}
 
 	h := sha256.New()
-	h.Write(left)
-	h.Write(right)
+    two := fmt.Sprintf("%x\n%x\n", left, right)
+    h.Write([]byte(two))
 
 	return h.Sum(nil)
 }
