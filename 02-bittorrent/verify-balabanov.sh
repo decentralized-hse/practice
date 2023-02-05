@@ -2,6 +2,7 @@
 
 DATA_FILE_SIZE=$(wc -c < $1)
 CHUNKS_NUMBER=$(( $DATA_FILE_SIZE / 1024 )) 
+set -e
 
 compute_offset() {
 	if [[ $1 -eq 0 ]] 
@@ -20,7 +21,7 @@ compute_parent_hash() {
 }
 
 compute_leaf_hash() {
-	dd skip=$(( $1 * 1024 )) count=1024 status=none if=data bs=1 | sha256sum | cut -b -64	
+	dd skip=$(( $2 * 1024 )) count=1024 status=none if=$1 bs=1 | sha256sum | cut -b -64
 }
 
 decompose() {
@@ -60,10 +61,11 @@ find_subtree() {
 
 verify_uncle_hashes() {
 	CURR_OFFSET=$(( $2 * 2 ))
-	CURR_HASH=$(compute_leaf_hash $2)
+	CURR_HASH=$(compute_leaf_hash $1 $2)
 	CURR_POWER=2
 	CURR_LEVEL=0
-	SIZEOF_FILE=$(wc -c < $1.proof )
+    PROOF=$1.$2.proof
+	SIZEOF_FILE=$(wc -c < $PROOF)
 	
 	if [[ $(( $SIZEOF_FILE % 65 )) -ne 0 ]]
 	then
@@ -71,7 +73,7 @@ verify_uncle_hashes() {
 	fi	
 	for i in $(seq 0 $(( $SIZEOF_FILE / 65 - 1 )))
 	do
-		UNCLE_HASH=$(dd skip=$(( $i * 65 )) count=64 status=none if=$1.proof bs=1)
+		UNCLE_HASH=$(dd skip=$(( $i * 65 )) count=64 status=none if=$PROOF bs=1)
 		BIAS=$(compute_offset $CURR_LEVEL 0)
 		if [[ $(( ( ($CURR_OFFSET - $BIAS) / $CURR_POWER ) % 2 )) -eq 1 ]]
 		then
