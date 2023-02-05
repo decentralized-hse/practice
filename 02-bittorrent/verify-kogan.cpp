@@ -62,15 +62,16 @@ Hash calculate_hash_from_children(Hash left, Hash right) {
     crypto_hash_sha256_update(&state, (unsigned char*)&right_hex, Hash::HEX_LENGTH);
     Hash res;
     crypto_hash_sha256_final(&state, (unsigned char*)&res.hash);
+    std::cout << "hash(" << left << ", " << right << ") = " << res << "\n";
     return res;
 }
 
-int get_chunk_index(const std::string &chunk_fname) {
-    int chunk_index;
+int get_block_ndx(const std::string &chunk_fname) {
+    int block_ndx;
     std::stringstream ss;
     ss << chunk_fname;
-    ss >> chunk_index;
-    return chunk_index;
+    ss >> block_ndx;
+    return block_ndx;
 }
 
 Hash read_single_hash(const std::string &fname) {
@@ -82,7 +83,6 @@ Hash read_single_hash(const std::string &fname) {
 }
 
 std::vector<Hash> read_multiple_hashes(const std::string &fname) {
-    std::cout << "Reading " << fname << "\n";
     std::vector<Hash> res;
     // std::ifstream fin(fname);
     std::ifstream fin(fname);
@@ -90,6 +90,7 @@ std::vector<Hash> read_multiple_hashes(const std::string &fname) {
     while (fin >> cur_hash) {
         res.push_back(cur_hash);
     }
+    std::cout << "Read " << res.size()<<" hashes from "<< fname << "\n";
     return res;
 }
 
@@ -107,24 +108,24 @@ bool verify_peaks(const std::string &peaks_fname, Hash root_hash) {
     return calculate_root_hash(peaks_fname) == root_hash;
 }
 
-int calculate_local_chunk_index(const std::vector<Hash> &peaks, int chunk_index) {
+int calculate_local_block_ndx(const std::vector<Hash> &peaks, int block_ndx) {
     long long res = 0;
     for (int i = peaks.size() - 1; i >= 0; --i) {
         if (peaks[i] != Hash()) {
             res += 1 << i;
-            if (res >= chunk_index)
-                return chunk_index + (1 << i) - res;
+            if (res >= block_ndx)
+                return block_ndx + (1 << i) - res;
         }
     }
     return -1;
 }
 
-int calculate_chunk_peak_level(const std::vector<Hash> &peaks, int chunk_index) {
+int calculate_chunk_peak_level(const std::vector<Hash> &peaks, int block_ndx) {
     int cur_file_size = 0;
     for (int i = peaks.size() - 1; i >= 0; --i) {
         if (peaks[i] != Hash()) {
             cur_file_size += 1 << i;
-            if (cur_file_size >= chunk_index) {
+            if (cur_file_size >= block_ndx) {
                 return i;
             }
         }
@@ -133,18 +134,19 @@ int calculate_chunk_peak_level(const std::vector<Hash> &peaks, int chunk_index) 
 }
 
 Hash calculate_chunk_hash(const std::string &chunk_fname) {
-    std::cout << "Reading " << chunk_fname << "\n";
+    std::cout << "Reading a chunk from " << chunk_fname << "\n";
     const int SIZE = 1024;
     char chunk[SIZE];
     std::fstream fin(chunk_fname, std::ios_base::in);
     fin.read(chunk, SIZE);
     Hash res;
     crypto_hash_sha256((unsigned char*)&res.hash, (unsigned char*)chunk, SIZE);
+    std::cout << "De-facto chunk hash is "<<res<<"\n";
     return res;
 }
 
-Hash calculate_proof_hash(const std::vector<Hash> uncles, Hash chunk_hash, int local_chunk_index, int chunk_peak_level) {
-    int level_index = local_chunk_index;
+Hash calculate_proof_hash(const std::vector<Hash> uncles, Hash chunk_hash, int local_block_ndx, int chunk_peak_level) {
+    int level_index = local_block_ndx;
     Hash hash = chunk_hash;
     for (int level = 0; level < chunk_peak_level; ++level) {
         if (level_index & 1) {
@@ -152,48 +154,52 @@ Hash calculate_proof_hash(const std::vector<Hash> uncles, Hash chunk_hash, int l
         } else {
             hash = calculate_hash_from_children(hash, uncles[level]);
         }
+        std::cout << "at level " << level_index << ", (grand)parent hash is " << hash << "\n";
         level_index /= 2;
     }
     return hash;
 }
 
-bool verify_proof(const std::vector<Hash> peaks, const std::vector<Hash> uncles, Hash chunk_hash, int local_chunk_index, int chunk_peak_level) {
-    return calculate_proof_hash(uncles, chunk_hash, local_chunk_index, chunk_peak_level) == peaks[chunk_peak_level];
+bool verify_proof(const std::vector<Hash> peaks, const std::vector<Hash> uncles, Hash chunk_hash, int local_block_ndx, int chunk_peak_level) {
+    return calculate_proof_hash(uncles, chunk_hash, local_block_ndx, chunk_peak_level) == peaks[chunk_peak_level];
 }
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        std::cout << "Enter name of data and chunk files.\n";
+        std::cout << "Usage: ./verify-kogan data-file block-number\n";
         return -1;
     }
     if (sodium_init() < 0) {
         return -1;
     }
-    const std::string peaks_fname = (std::string)argv[1] + ".peaks";
-    const std::string root_fname = (std::string)argv[1] + ".root";
-    const std::string proof_fname = (std::string)argv[1] + ".proof";
-    const std::string chunk_fname = (std::string)argv[2] + ".chunk";
+    const std::string data_file = (std::string)argv[1];
+    const int block_ndx = std::stoi(argv[2]);
+    const std::string peaks_fname =  data_file+ ".peaks";
+    const std::string root_fname = data_file + ".root";
+    const std::string proof_fname = data_file + "." + (std::string)argv[2] + ".proof";
+    const std::string chunk_fname = data_file + "." + (std::string)argv[2] + ".chunk";
     const std::vector<Hash> peaks = read_multiple_hashes(peaks_fname);
     const Hash root_hash = read_single_hash(root_fname);
     if (!verify_peaks(peaks_fname, root_hash)) {
         std::cout << "Invalid peaks sequence\n";
         return -1;
     }
-    const int chunk_index = get_chunk_index(chunk_fname);
-    const int local_chunk_index = calculate_local_chunk_index(peaks, chunk_index);
-    if (local_chunk_index == -1) {
-        std::cout << local_chunk_index << '\n';
+    //const int block_ndx = block_ndx;
+    const int local_block_ndx = calculate_local_block_ndx(peaks, block_ndx);
+    if (local_block_ndx == -1) {
+        std::cout << local_block_ndx << '\n';
         std::cout << "Invalid chunk index\n";
         return -1;
     }
-    const int chunk_peak_level = calculate_chunk_peak_level(peaks, chunk_index);
+    std::cout << "verifying block #" << block_ndx << " (within its peak, block #" << local_block_ndx <<")\n";
+    const int chunk_peak_level = calculate_chunk_peak_level(peaks, block_ndx);
     const Hash chunk_hash = calculate_chunk_hash(chunk_fname);
     std::vector<Hash> uncles = read_multiple_hashes(proof_fname);
     if (uncles.size() != chunk_peak_level) {
         std::cout << "Invalid uncles amount: " << uncles.size() << " vs " << chunk_peak_level << '\n';
         return -1;
     }
-    if (verify_proof(peaks, uncles, chunk_hash, local_chunk_index, chunk_peak_level)) {
+    if (verify_proof(peaks, uncles, chunk_hash, local_block_ndx, chunk_peak_level)) {
         std::cout << "Success!\n";
         return 0;
     }
