@@ -35,17 +35,17 @@ func main() {
 	publ, priv, _ := ed25519.GenerateKey(nil)
 
 	// output keys
-	file, _ = os.Create(name_file + ".public_key")
-	file.WriteString(string(publ))
+    pubfile, _ := os.Create(name_file + ".public_key")
+    fmt.Fprintf(pubfile, "%x\n", publ);
 
-	file, _ = os.Create(name_file + ".private_key")
-	file.WriteString(string(priv))
+    secfile, _ := os.Create(name_file + ".private_key")
+    fmt.Fprintf(secfile, "%x\n", priv);
 
 	// sign
 	sign := ed25519.Sign(priv, hash[:])
 
 	// output sign
-	file, _ = os.Create(name_file + ".sign")
+    signfile, _ := os.Create(name_file + ".sign")
 	defer file.Close()
-	file.WriteString(string(sign))
+    fmt.Fprintf(signfile, "%x\n", sign);
 }
