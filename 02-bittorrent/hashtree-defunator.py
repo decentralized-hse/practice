@@ -58,4 +58,4 @@ if __name__ == "__main__":
     hash_tree = construct_hash_tree(leave_hashes)
 
     with open(f"{input_filename}.hashtree", "w") as f:
-        f.writelines("\n".join(hash_tree))
+        f.writelines("\n".join(hash_tree)+"\n")
