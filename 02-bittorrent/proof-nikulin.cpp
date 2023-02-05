@@ -19,12 +19,12 @@ vector<string> process(vector<string> hashes, int ind) {
     vector<string> res;
     int lvl = 0;
     while (maxpos < hashes.size()) {
-        res.push_back(hashes[position]);
         ++lvl;
-        int oddity = position / (1 << lvl);
-        int opposite = (oddity % 2 ? position - (1 << lvl) : position + (1 << lvl));
-        position = (position + opposite) / 2;
+        int oldPosition = position;
+        position = (position + (position ^ (1 << lvl))) / 2;
         maxpos = position + (1 << lvl) - 1;
+        if (maxpos < hashes.size())
+            res.push_back(hashes[oldPosition ^ (1 << lvl)]);
     }
     return res;
 }
@@ -32,6 +32,7 @@ vector<string> process(vector<string> hashes, int ind) {
 //input file - hashtree
 int main(int argc, char** argv) {
     if (argc != 3) {
+	cout << "Usage: path to file with a hashtree, chunk number" << endl;
         return 1;
     }
     string inName(argv[1]);
