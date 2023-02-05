@@ -48,7 +48,7 @@ def construct_hash_tree(leave_hashes):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str)
+    parser.add_argument("input", type=str)
     args = parser.parse_args()
 
     input_filename = args.input
