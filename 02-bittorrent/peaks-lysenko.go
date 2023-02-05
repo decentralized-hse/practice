@@ -140,11 +140,12 @@ func writePeaks(filename string, peaks []string) error {
 }
 
 func main() {
-	if len(os.Args) != 3 {
-		log.Fatal("Arguments: <path>.hashtree <path>.peaks")
+	if len(os.Args) != 2 {
+		log.Fatal("Arguments: <datafile>")
 	}
 
-	hashtreeFilename, peaksFilename := os.Args[1], os.Args[2]
+    hashtreeFilename := os.Args[1] + ".hashtree"
+    peaksFilename := os.Args[1] + ".peaks"
 
 	hashes, err := readFile(hashtreeFilename)
 	if err != nil {
