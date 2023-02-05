@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
         return 1;
     }
     string inName(argv[1]);
+    inName += ".hashtree";
     string inChunk(argv[2]);
     freopen(argv[1], "r", stdin);
     vector<string> hashes = readFile();
