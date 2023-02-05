@@ -20,7 +20,7 @@ function main() {
 
     signature = ed25519.Sign(file, keyPair);
 
-    fs.writeFileSync(signaturePath, signature.toString());
+    fs.writeFileSync(signaturePath, signature);
 }
 
-main()
+main();
