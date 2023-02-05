@@ -40,7 +40,7 @@ if __name__ == "__main__":
         for node_index in range(cur_level_nodes):
             hash_tree_index = 2 ** (level + 1) * node_index + 2 ** level - 1
             left_hash, right_hash = hash_tree[hash_tree_index - 2 ** (level - 1)], hash_tree[hash_tree_index + 2 ** (level - 1)]
-            hash_tree[hash_tree_index] = HASH(f"{left_hash}\n{right_hash}".encode("UTF-8"))
+            hash_tree[hash_tree_index] = HASH(f"{left_hash}\n{right_hash}\n".encode("UTF-8"))
 
     with open(f"{input_filename}.hashtree", "w") as f:
         f.writelines("\n".join(hash_tree))
