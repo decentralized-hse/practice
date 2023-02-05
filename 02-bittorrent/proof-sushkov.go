@@ -32,30 +32,26 @@ func getHashes(filepath string) []string {
 	return hashes
 }
 
-func getIndex(block, level int) int {
-	return (1<<level)*(2*block+1) - 1
+func getParentByLevel(current, level int) int {
+	shift := level + 2
+	return (current>>shift)<<shift + (1 << (shift - 1)) - 1
 }
 
-func getSiblingByParent(current, parent, childDist int) int {
-	if parent-childDist == current {
-		return parent + childDist
-	}
-	return parent - childDist
+func getSiblingByLevel(current, level int) int {
+	return current ^ (1 << (level + 1))
 }
 
 func getProof(hashes []string, blockNumber int) []string {
 	var res []string
 	current := 2 * blockNumber
-	level := 1
-	childDist := 1
+	level := 0
 	for ; ; level++ {
-		parent := getIndex(blockNumber, level)
-		sibling := getSiblingByParent(current, parent, childDist)
+		parent := getParentByLevel(current, level)
+		sibling := getSiblingByLevel(current, level)
 		if sibling >= len(hashes) {
 			break
 		}
 		res = append(res, hashes[sibling])
-		childDist <<= 1
 		current = parent
 	}
 	return res
@@ -76,7 +72,7 @@ func main() {
 	}
 	defer file.Close()
 	for _, line := range getProof(hashes, blockNumber) {
-		_, err = file.WriteString(line + "\n")
+		_, err = file.WriteString(line)
 		if err != nil {
 			log.Fatalf("error on writing result to file: %v", err)
 		}
