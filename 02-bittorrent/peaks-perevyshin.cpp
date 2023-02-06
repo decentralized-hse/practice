@@ -28,12 +28,12 @@ vector<string> getPeaks(const vector<string>& hashTree) {
 
     vector<string> peaks(maxBits, zero);
     size_t blockStart = 0;
-    for (long long i = maxBits - 1; i > 0; --i) {
-        size_t currentBlock = (1 << i) - 1;
+    for (long long i = maxBits - 1; i >= 0; --i) {
+        size_t currentBlock = (2 << i) - 1;
         if (blockStart + currentBlock <= hashTree.size()) {
             size_t halfBlock = currentBlock / 2;
-            peaks[i - 1] = hashTree[blockStart + halfBlock];
-            blockStart += currentBlock;
+            peaks[i] = hashTree[blockStart + halfBlock];
+            blockStart += currentBlock + 1;
         }
     }
 
