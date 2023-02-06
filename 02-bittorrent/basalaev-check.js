@@ -8,7 +8,7 @@ function main() {
     }
 
     const pubKeyPath = path.join(__dirname, `${process.argv[2]}.pub`);
-    const messagePath = path.join(__dirname, `${process.argv[2]}.txt`);
+    const messagePath = path.join(__dirname, `${process.argv[2]}.root`);
     const signPath = path.join(__dirname, `${process.argv[2]}.sign`);
 
     try {
