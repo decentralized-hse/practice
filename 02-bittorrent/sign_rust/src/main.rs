@@ -27,8 +27,13 @@ fn main() {
         .unwrap()
         .to_owned();
 
+    // encode results
+    let signature_hex = hex::encode(signature.to_bytes());
+    let public_key_hex = hex::encode(keypair.public.as_bytes());
+    let secret_key_hex = hex::encode(keypair.secret.as_bytes());
+
     // write results
-    fs::write(name.clone() + OUTPUT_EXTENSION, signature.to_bytes()).unwrap();
-    fs::write(name.clone() + PUB_KEY, keypair.public.as_bytes()).unwrap();
-    fs::write(name.clone() + SEC_KEY, keypair.secret.as_bytes()).unwrap();
+    fs::write(name.clone() + OUTPUT_EXTENSION, signature_hex).unwrap();
+    fs::write(name.clone() + PUB_KEY, public_key_hex).unwrap();
+    fs::write(name.clone() + SEC_KEY, secret_key_hex).unwrap();
 }
