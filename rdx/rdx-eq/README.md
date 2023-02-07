@@ -8,7 +8,7 @@ Prints "equivalent" / "not equivalent" to stderr.
 
 ##  Invariants
 
-### Self-quivalence
+### Self-equivalence
 
 ````
     rdx eq A A

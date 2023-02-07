@@ -1,4 +1,4 @@
-#   2025 command based practice
+#   2025 command practice
 
 >   What I can't create I don't understand // Richard Feynman
 
@@ -75,3 +75,12 @@ See data formats in `gat/` also all the `gat-*` command folders.
 Wallet balances are kept as an RDX LSM database.
 To contribute a new block, a proof-of-work is necessary.
 See data formats in `con/` also all the `con-*` command folders.
+
+### `redka` a Riak/Redis store
+
+`redka` is a key-value store; if we agree to call Redis
+a database then `redka` is also a database. Our main use case
+is counters; imagine you count usage statistics for your
+numerous distributed cloud clients in real time.
+The general architecture is described in `redka/`, particular
+commands are described in `redka-*` folders.
