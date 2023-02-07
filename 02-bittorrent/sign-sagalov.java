@@ -4,7 +4,7 @@
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.util.Base64;
+import java.util.HexFormat;
 
 public class Main {
     public static final String ENCRYPTION_ALGORITHM = "Ed25519";
@@ -28,11 +28,10 @@ public class Main {
             byte[] publicKeyBytes = pubPrivPair.getPublic().getEncoded();
             byte[] privateKeyBytes = privateKey.getEncoded();
 
-            // Write data to files in Base64.
-            Base64.Encoder encoder = Base64.getEncoder();
-            writeEncodedKeysToFiles(encoder, publicKeyBytes, "key.pub");
-            writeEncodedKeysToFiles(encoder, privateKeyBytes, "key.sec");
-            writeEncodedKeysToFiles(encoder, signedBytes, "data.sign");
+            // Write data to files in Hex.
+            writeEncodedKeysToFiles(publicKeyBytes, "key.pub");
+            writeEncodedKeysToFiles(privateKeyBytes, "key.sec");
+            writeEncodedKeysToFiles(signedBytes, "data.sign");
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -63,9 +62,9 @@ public class Main {
         return ed25519Signature.sign();
     }
 
-    private static void writeEncodedKeysToFiles(Base64.Encoder encoder, byte[] data, String path) throws IOException {
+    private static void writeEncodedKeysToFiles(byte[] data, String path) throws IOException {
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(path))) {
-            bufferedWriter.write(encoder.encodeToString(data));
+            bufferedWriter.write(HexFormat.of().formatHex(data));
         }
     }
 }
