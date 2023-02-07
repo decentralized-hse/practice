@@ -1,9 +1,8 @@
-#include <sodium.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 
-using namespace std;
+#include <sodium.h>
 
 int main(int argc, char* argv[]) {
     // initialize and read the file
@@ -28,11 +27,15 @@ int main(int argc, char* argv[]) {
     crypto_sign_ed25519_keypair(pk, sk);
 
     unsigned char sig[crypto_sign_ed25519_BYTES];
-    crypto_sign_ed25519_detached(sig, NULL, (const unsigned char *)(data.str().c_str()), data.str().size(), sk);
+    crypto_sign_ed25519_detached(sig, NULL,
+                                 (const unsigned char *)(data.str().c_str()),
+                                 data.str().size(), sk);
 
     // write them to files
 
-    if (crypto_sign_ed25519_verify_detached(sig, (const unsigned char *)(data.str().c_str()), data.str().size(), pk) != 0) {
+    if (crypto_sign_ed25519_verify_detached(sig,
+                                            (const unsigned char *)(data.str().c_str()), 
+                                            data.str().size(), pk) != 0) {
         std::cout << "Could not sign the file, quitting.\n";
         return 1;
     } else {
