@@ -13,8 +13,9 @@ fn main() {
     assert!(args.len() >= 2);
 
     // read file
-    let input_file_path = args[1].clone() + INPUT_EXTENSION;
-    let file = fs::read(input_file_path.clone()).unwrap();
+    let datafile = args[1].clone();
+    let rootfile = datafile.clone() + INPUT_EXTENSION;
+    let file = fs::read(rootfile.clone()).unwrap();
 
     // generate key pair and sign file
     let keypair = Keypair::generate(&mut OsRng);
@@ -26,7 +27,7 @@ fn main() {
     let secret_key_hex = hex::encode(keypair.secret.as_bytes());
 
     // write results
-    fs::write(input_file_path.clone() + OUTPUT_EXTENSION, signature_hex).unwrap();
-    fs::write(input_file_path.clone() + PUB_KEY, public_key_hex).unwrap();
-    fs::write(input_file_path.clone() + SEC_KEY, secret_key_hex).unwrap();
+    fs::write(datafile.clone() + OUTPUT_EXTENSION, signature_hex).unwrap();
+    fs::write(datafile.clone() + PUB_KEY, public_key_hex).unwrap();
+    fs::write(datafile.clone() + SEC_KEY, secret_key_hex).unwrap();
 }
