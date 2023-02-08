@@ -24,7 +24,8 @@ func readHexFile(filename string) ([]byte, error) {
 }
 
 func main() {
-	pubKeyFileName := os.Args[1]
+    fn := os.Args[1]
+	pubKeyFileName := fn + ".pub"
 
 	publicKeyB, err := readHexFile(pubKeyFileName)
 	if err != nil {
@@ -39,7 +40,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	messageFileName := os.Args[2]
+	messageFileName := fn + ".root"
 
 	message, err := ioutil.ReadFile(messageFileName)
 	if err != nil {
@@ -47,7 +48,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	sigFileName := os.Args[3]
+	sigFileName := fn + ".sign"
 
 	sig, err := readHexFile(sigFileName)
 	if err != nil {
