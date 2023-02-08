@@ -49,7 +49,7 @@ public class Main {
             node = nextNode(node, level);
             upperBound = nextUpperBound(node, level);
             if (upperBound < contents.size()) {
-                result.add(contents.get(oldNode));
+                result.add(contents.get(siblingIndex(oldNode, level)));
             }
         }
         return result;
