@@ -1,7 +1,7 @@
 ##  Задачи лекции 04 Форматы сериализации
 
 Задача: написать преобразование из "квадратного" C-формата в ваш
-и обратно, с побитной точностью (round-trip guarantee). Ваш:
+и обратно, *с побитной точностью* (round-trip guarantee). Ваш:
 
  1. protobuf (protobuf)
  2. JSON (json)
@@ -16,15 +16,21 @@
 
 ````c
     struct Student {
+        // имя может быть и короче 32 байт, тогда в хвосте 000
+        // имя - валидный UTF-8
         char    name[32];
+        // ASCII [\w]+
         char    login[16];
         char    group[8];
+        // 0/1, фактически bool
         uint8_t practice[8];
         struct {
+            // URL
             char    repo[63];
             uint8_t mark;
         } project;
-        float   mark; // 32 bit
+        // 32 bit IEEE 754 float
+        float   mark; 
     }
 ````
 
@@ -33,12 +39,17 @@
 данными в формате C struct, напр
 
 ````
-    $ ./protobuf-ivanov data/ivanov.bin
-    Reading binary student data from data/ivanov.bin...
+    $ sha256sum data/students.bin
+    0c016dc4ca1a8b24b34daa6c05472d16b401fd3c0c5417da18e9810b136704a6 students.bin
+    $ ./protobuf-ivanov data/students.bin
+    Reading binary student data from data/students.bin...
     3 students read...
-    written to data/ivanov.protobuf
-    $ ./protobuf-ivanov data/ivanov.protobuf
-    Reading protobuf student data from data/ivanov.protobuf...
+    written to data/students.protobuf
+    $ rm -f data/students.bin
+    $ ./protobuf-ivanov data/students.protobuf
+    Reading protobuf student data from data/students.protobuf...
     3 students read...
-    written to data/ivanov.bin
+    written to data/students.bin
+    $ sha256sum data/students.bin
+    0c016dc4ca1a8b24b34daa6c05472d16b401fd3c0c5417da18e9810b136704a6 students.bin
 ````
