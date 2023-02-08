@@ -113,7 +113,7 @@ int calculate_local_block_ndx(const std::vector<Hash> &peaks, int block_ndx) {
     for (int i = peaks.size() - 1; i >= 0; --i) {
         if (peaks[i] != Hash()) {
             res += 1 << i;
-            if (res >= block_ndx)
+            if (res > block_ndx)
                 return block_ndx + (1 << i) - res;
         }
     }
@@ -125,7 +125,7 @@ int calculate_chunk_peak_level(const std::vector<Hash> &peaks, int block_ndx) {
     for (int i = peaks.size() - 1; i >= 0; --i) {
         if (peaks[i] != Hash()) {
             cur_file_size += 1 << i;
-            if (cur_file_size >= block_ndx) {
+            if (cur_file_size > block_ndx) {
                 return i;
             }
         }
