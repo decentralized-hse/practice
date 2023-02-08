@@ -3,8 +3,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-
-// Need to change source file name to CheckNasonkov.java before running the code, because it is Java :)
 public class CheckNasonkov {
     public static byte[] getBytes(String filename, String file_ext) {
         // Absolute path to files needed (assuming that all files are located in the same directory)
