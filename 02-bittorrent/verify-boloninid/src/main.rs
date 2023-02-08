@@ -1,6 +1,7 @@
 use sodiumoxide;
 use std::fs::File;
 use std::io::{prelude::*, BufReader, Read};
+use std::io::{Seek, SeekFrom};
 use std::process::exit;
 use std::{env, vec};
 
@@ -37,13 +38,30 @@ fn process_branch(branch: &Hash) -> String {
     return hex_str;
 }
 
-fn check_branches(left: &Hash, right: &Hash) -> Vec<u8> {
+fn check_branches_chunk_l(left: &Hash, right: &Hash) -> Vec<u8> {
     let st_left = process_branch(left);
-    let st_right = process_branch(right);
+    let mut st_right = String::new();
+
+    for i in &right.hash {
+        st_right.push(*i as char);
+    }
 
     let combined = format!("{}\n{}\n", st_left, st_right);
 
-    println!("{}", combined);
+    let hashed = sodiumoxide::crypto::hash::sha256::hash(combined.as_bytes());
+
+    return hashed.0.to_vec();
+}
+
+fn check_branches_chunk_r(left: &Hash, right: &Hash) -> Vec<u8> {
+    let mut st_left = String::new();
+    let st_right = process_branch(right);
+
+    for i in &left.hash {
+        st_left.push(*i as char);
+    }
+
+    let combined = format!("{}\n{}\n", st_left, st_right);
 
     let hashed = sodiumoxide::crypto::hash::sha256::hash(combined.as_bytes());
 
@@ -182,22 +200,26 @@ impl Verifier {
     pub fn hashes_verify(&mut self) -> bool {
         self.get_chunk();
 
-        println!("{:?}", self.chunk.hash);
-
         for i in 0..self.peak_lvl {
             if self.local_block_idx % 2 == 0 {
-                println!("wah");
-                self.chunk.hash = check_branches(&self.chunk, &self.uncle_hashes[i as usize]);
+                self.chunk.hash =
+                    check_branches_chunk_l(&self.chunk, &self.uncle_hashes[i as usize]);
             } else {
-                self.chunk.hash = check_branches(&self.uncle_hashes[i as usize], &self.chunk);
+                self.chunk.hash =
+                    check_branches_chunk_r(&self.uncle_hashes[i as usize], &self.chunk);
             }
             self.local_block_idx /= 2;
-            println!(
-                "{:?}\n={:?}",
-                self.vec_peaks[(i + 1) as usize].hash,
-                self.chunk.hash
-            );
-            if self.vec_peaks[(i + 1) as usize].hash != self.chunk.hash {
+
+            let hexed = sodiumoxide::hex::encode(&self.chunk.hash);
+            let chars: Vec<char> = hexed.chars().collect();
+            let chunk_str: String = chars.into_iter().collect();
+
+            let mut peak_str = String::new();
+            for i in &self.vec_peaks[(i + 1) as usize].hash {
+                peak_str.push(*i as char);
+            }
+
+            if peak_str != chunk_str {
                 return false;
             }
         }
