@@ -13,19 +13,12 @@ fn main() {
     assert!(args.len() >= 2);
 
     // read file
-    let input_file_path = &args[1];
-    assert!(input_file_path.ends_with(INPUT_EXTENSION));
-    let file = fs::read(input_file_path).unwrap();
+    let input_file_path = args[1].clone() + INPUT_EXTENSION;
+    let file = fs::read(input_file_path.clone()).unwrap();
 
     // generate key pair and sign file
     let keypair = Keypair::generate(&mut OsRng);
     let signature = keypair.sign(&file);
-
-    // remove suffix
-    let name = input_file_path
-        .strip_suffix(INPUT_EXTENSION)
-        .unwrap()
-        .to_owned();
 
     // encode results
     let signature_hex = hex::encode(signature.to_bytes());
@@ -33,7 +26,7 @@ fn main() {
     let secret_key_hex = hex::encode(keypair.secret.as_bytes());
 
     // write results
-    fs::write(name.clone() + OUTPUT_EXTENSION, signature_hex).unwrap();
-    fs::write(name.clone() + PUB_KEY, public_key_hex).unwrap();
-    fs::write(name.clone() + SEC_KEY, secret_key_hex).unwrap();
+    fs::write(input_file_path.clone() + OUTPUT_EXTENSION, signature_hex).unwrap();
+    fs::write(input_file_path.clone() + PUB_KEY, public_key_hex).unwrap();
+    fs::write(input_file_path.clone() + SEC_KEY, secret_key_hex).unwrap();
 }
