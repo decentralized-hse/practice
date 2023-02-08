@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 ed25519-dalek = "1.0.1"
+hex = "0.4.3"
