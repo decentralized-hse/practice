@@ -96,11 +96,10 @@ std::vector<Hash> CalculateHashTree(std::vector<std::string>& chunks) {
     } 
 
     size_t tree_size = chunks.size() * 2 - 1;
-    std::vector<Hash> hash_tree(tree_size);
+    std::vector<Hash> hash_tree(tree_size, Hash(true));
 
     for (size_t i = 0; i < chunks.size(); ++i) {
         hash_tree[i * 2] = CalculateLeafHash(chunks[i]);
-        hash_tree[i * 2 + 1] = Hash(true);
     }
 
     for (size_t layer_mult = 2; layer_mult < tree_size; layer_mult *= 2) {
