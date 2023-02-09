@@ -14,7 +14,10 @@ fn main() {
     let hash = fs::read(hash_path).expect("Can't read from file");
 
     println!("[ Reading public key from {} ... ]", pub_key_path);
-    let public_key_bytes_hex = fs::read(pub_key_path).expect("Can't read from file");
+    let mut public_key_bytes_hex = fs::read(pub_key_path).expect("Can't read from file");
+    if public_key_bytes_hex.ends_with(b"\n") {
+        public_key_bytes_hex.pop();
+    }
     let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = match hex::decode(public_key_bytes_hex) {
         Ok(b) => b.as_slice().try_into().expect("The length doesn't match"),
         Err(e) => panic!("Can't decode hex file: {}", e),
@@ -22,7 +25,10 @@ fn main() {
     let public_key = PublicKey::from_bytes(&public_key_bytes).expect("Incorrect public key");
 
     println!("[ Reading signature from {} ... ]", sign_path);
-    let sign_bytes_hex = fs::read(sign_path).expect("Can't read from file");
+    let mut sign_bytes_hex = fs::read(sign_path).expect("Can't read from file");
+    if sign_bytes_hex.ends_with(b"\n") {
+        sign_bytes_hex.pop();
+    }
     let sign_bytes: [u8; SIGNATURE_LENGTH] = match hex::decode(sign_bytes_hex) {
         Ok(b) => b.as_slice().try_into().expect("The length doesn't match"),
         Err(e) => panic!("Can't decode hex file: {}", e),
