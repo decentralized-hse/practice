@@ -14,7 +14,7 @@ struct Student {
         uint8_t practice[8];
         struct {
             // URL
-            char    repo[63];
+            char    repo[59];
             uint8_t mark;
         } project;
         // 32 bit IEEE 754 float
@@ -33,7 +33,7 @@ int main(int argn, char** args) {
         },
         .mark = 8,
     };
-    int fd = open("ivanov.bin", O_CREAT|O_RDWR, S_IRWXU);
+    int fd = open("ivanov.bin", O_CREAT|O_RDWR|O_TRUNC, S_IRWXU);
     write(fd, &ivanov, sizeof(struct Student));
     close(fd);
     return 0;
