@@ -1,0 +1,10 @@
+[package]
+name = "sign-smorodinov"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = "0.7.0"
+rand_core = "0.6.4"
+ed25519-dalek = "1.0.1"
+hex = "0.4.3"
