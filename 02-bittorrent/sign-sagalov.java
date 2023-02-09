@@ -16,7 +16,7 @@ public class Main {
         }
 
         try {
-            byte[] msg = readFileContentsAsUtf8(args[0]);
+            byte[] msg = readFileContentsAsUtf8(args[0] + ".root");
 
             // Generate the public/private key pair using Ed25519.
             KeyPair pubPrivPair = getEd25519KeyPair();
@@ -29,9 +29,9 @@ public class Main {
             byte[] privateKeyBytes = privateKey.getEncoded();
 
             // Write data to files in Hex.
-            writeEncodedKeysToFiles(publicKeyBytes, "key.pub");
-            writeEncodedKeysToFiles(privateKeyBytes, "key.sec");
-            writeEncodedKeysToFiles(signedBytes, "data.sign");
+            writeEncodedKeysToFiles(publicKeyBytes,  args[0] + ".pub");
+            writeEncodedKeysToFiles(privateKeyBytes, args[0] + ".sec");
+            writeEncodedKeysToFiles(signedBytes, args[0] + ".sign");
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
