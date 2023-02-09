@@ -40,7 +40,9 @@ int main(int argc, char* argv[]) {
         return 1;
     } else {
         std::ofstream pub(std::string(argv[1]) + ".pub", std::ios::trunc);
-        pub << pk;
+        char hex[65];
+        sodium_bin2hex(hex, 66, pk, crypto_sign_ed25519_PUBLICKEYBYTES);
+        pub << std::hex << hex << std::endl;
         pub.close();
         if (!pub) {
             std::cout << "Error occured while creating the public key file, quitting.\n";
@@ -48,7 +50,9 @@ int main(int argc, char* argv[]) {
         }
 
         std::ofstream sign(std::string(argv[1]) + ".sign", std::ios::trunc);
-        sign << sig;
+        char hexs[129];
+        sodium_bin2hex(hexs, 130, sig, crypto_sign_ed25519_BYTES);
+        sign << std::hex << hexs << std::endl;
         sign.close();
         if (!sign) {
             std::cout << "Error occured while creating the sign file, quitting.\n";
