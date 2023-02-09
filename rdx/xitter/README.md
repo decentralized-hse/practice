@@ -3,7 +3,7 @@
 Xitter is a Twitter clone that is community-centric.
 There are two commands:
 
-  1. xitter-http, the HTTP server (Go?)
+  1. xitter-server, the HTTP server (Go?)
   2. xitter-client, the client-side app (Python? JavaScript?)
 
 Xitter can use rdx/brix through API bindings or through CLI.
