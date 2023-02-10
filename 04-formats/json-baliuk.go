@@ -12,17 +12,70 @@ import (
 )
 
 type Project struct {
-	Repo [59]byte `json:"repository"`
-	Mark uint8    `json:"mark"`
+	Repo [59]byte
+	Mark uint8
 }
 
 type Student struct {
-	Name     [32]byte `json:"name"`
-	Login    [16]byte `json:"login"`
-	Group    [8]byte  `json:"group"`
-	Practice [8]uint8 `json:"practice"`
-	Project  `json:"project"`
-	Mark     float32 `json:"mark"`
+	Name     [32]byte
+	Login    [16]byte
+	Group    [8]byte
+	Practice [8]uint8
+	Project
+	Mark float32
+}
+
+type projectJSONCompatible struct {
+	Repo string `json:"repository"`
+	Mark uint8  `json:"mark"`
+}
+
+type studentJSONCompatible struct {
+	Name                  string   `json:"name"`
+	Login                 string   `json:"login"`
+	Group                 string   `json:"group"`
+	Practice              [8]uint8 `json:"practice"`
+	projectJSONCompatible `json:"project"`
+	Mark                  float32 `json:"mark"`
+}
+
+func (s *Student) UnmarshalJSON(b []byte) error {
+	var comp studentJSONCompatible
+	err := json.Unmarshal(b, &comp)
+	if err != nil {
+		return err
+	}
+
+	*s = Student{
+		Practice: comp.Practice,
+		Project: Project{
+			Mark: comp.projectJSONCompatible.Mark,
+		},
+		Mark: comp.Mark,
+	}
+
+	copy(s.Name[:], comp.Name[:])
+	copy(s.Login[:], comp.Login[:])
+	copy(s.Group[:], comp.Group[:])
+	copy(s.Project.Repo[:], comp.projectJSONCompatible.Repo[:])
+
+	return nil
+}
+
+func (s Student) MarshalJSON() ([]byte, error) {
+	comp := studentJSONCompatible{
+		Name:     string(s.Name[:]),
+		Login:    string(s.Login[:]),
+		Group:    string(s.Group[:]),
+		Practice: s.Practice,
+		projectJSONCompatible: projectJSONCompatible{
+			Repo: string(s.Project.Repo[:]),
+			Mark: s.Project.Mark,
+		},
+		Mark: s.Mark,
+	}
+
+	return json.Marshal(comp)
 }
 
 func readBinary(filename string) ([]Student, error) {
@@ -89,7 +142,9 @@ func writeJSON(students []Student, filename string) error {
 	}
 	defer file.Close()
 
-	err = json.NewEncoder(file).Encode(&students)
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "\t")
+	err = encoder.Encode(&students)
 	if err != nil {
 		return fmt.Errorf("failed to write json: %w", err)
 	}
