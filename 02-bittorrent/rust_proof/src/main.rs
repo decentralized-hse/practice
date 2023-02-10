@@ -3,11 +3,11 @@ use std::fs::File;
 use std::io::{prelude::*, BufReader, BufWriter};
 use std::fs::OpenOptions;
 
-
-fn read_file(file_name: &str) -> Vec<String> {
-    let file = File::open(file_name);
+fn read_file(path: &str) -> Vec<String> {
+    let file_name = format!("{path}.hashtree");
+    let file = File::open(file_name.clone());
     if file.is_err() {
-        panic!("It is impossible to open file {file_name}");
+        panic!("It is impossible to open file {file_name}, reason: {:?}", file.err());
     }
     let reader = BufReader::new(file.unwrap());
     let mut ret = vec!();
@@ -52,10 +52,10 @@ fn write_to_file(file_name: &str, data: Vec<String>) {
 
 pub fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 4 {
+    if args.len() < 3 {
         panic!("Not enough args");
     }
     let t = read_file(&args[1]);
-    let data = process(t, args[3].parse::<usize>().unwrap());
-    write_to_file(&args[2], data);
+    let data = process(t, args[2].parse::<usize>().unwrap());
+    write_to_file(&format!("{}.{}.proof", &args[1], &args[2]), data);
 }
