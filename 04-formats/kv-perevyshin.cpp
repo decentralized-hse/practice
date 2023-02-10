@@ -1,11 +1,13 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include <bitset>
+#include <charconv>
 #include <string>
 #include <cstdio>
 #include <cstring>
 #include <regex>
+#include <string_view>
+#include <array>
 
 using namespace std;
 
@@ -37,6 +39,12 @@ void dumpString(ofstream& out, const string& str, const string& field, size_t id
     out << "[" << id << "]." << field << ": " << formattedStr<< "\n";
 }
 
+void dumpFloat(ofstream& out, float f, size_t id) {
+    array<char, 20> buf;
+    to_chars_result result = to_chars(buf.data(), buf.data() + buf.size(), f);
+    out << "[" << id << "].mark: " << string_view(buf.data(), result.ptr - buf.data()) << "\n";
+}
+
 void dumpStudentKV(ofstream& out, const Student& student, size_t id) {
     dumpString(out, student.name, "name", id);
     dumpString(out, student.login, "login", id);
@@ -44,7 +52,7 @@ void dumpStudentKV(ofstream& out, const Student& student, size_t id) {
     dumpString(out, student.project.repo, "project.repo", id);
     
     out << "[" << id << "].project.mark: " << static_cast<uint32_t>(student.project.mark) << "\n";
-    out << "[" << id << "].mark: " << *reinterpret_cast<const uint32_t*>(&student.mark) << "\n";
+    dumpFloat(out, student.mark, id);
     
     for (size_t j = 0; j < Student::practiceSize; ++j) {
         out << "[" << id << "].practice.[" << j << "]: " <<  static_cast<uint32_t>(student.practice[j]) << "\n"; 
@@ -91,8 +99,7 @@ bool loadStudentField(Student& student, const string& fieldName, const string& v
     } else if (fieldName == "project.mark") {
         student.project.mark = atoll(value.c_str());
     } else if (fieldName == "mark") {
-        auto bitValue = static_cast<uint32_t>(atoll(value.c_str()));
-        student.mark = *reinterpret_cast<float*>(&bitValue);
+        from_chars(value.data(), value.data() + value.size(), student.mark);
     } else if (fieldName.rfind("practice") == 0) {
         auto id = loadPracticeId(fieldName);
         student.practice[id] = atoi(value.c_str());
