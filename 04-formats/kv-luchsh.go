@@ -2,12 +2,14 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -67,24 +69,43 @@ func WriteBinary(sts []Student, path string) error {
 	return nil
 }
 
+func CToGoString(b []byte) string {
+    i := bytes.IndexByte(b, 0)
+    if i < 0 {
+        i = len(b)
+    }
+    return string(b[:i])
+}
+
 func WriteKeyValue(sts []Student, path string) (err error) {
-	var out []byte
+	var out string
 	for id, st := range sts {
-		out = append(out, []byte(fmt.Sprintf("[%v].name: %v\n", id, st.Name))...)
-		out = append(out, []byte(fmt.Sprintf("[%v].login: %v\n", id, st.Login))...)
-		out = append(out, []byte(fmt.Sprintf("[%v].group: %v\n", id, st.Group))...)
+		out += fmt.Sprintf("[%v].name: %s\n", id, CToGoString(st.Name[:]))
+		out += fmt.Sprintf("[%v].login: %s\n", id, CToGoString(st.Login[:]))
+		out += fmt.Sprintf("[%v].group: %s\n", id, CToGoString(st.Group[:]))
 		for i, p := range st.Practice {
-			out = append(out, []byte(fmt.Sprintf("[%v].practice.[%v]: %v\n", id, i, p))...)
+			out += fmt.Sprintf("[%v].practice.[%v]: %v\n", id, i, p)
 		}
-		out = append(out, []byte(fmt.Sprintf("[%v].project.repo: %v\n", id, st.Project.Repo))...)
-		out = append(out, []byte(fmt.Sprintf("[%v].project.mark: %v\n", id, st.Project.Mark))...)
-		out = append(out, []byte(fmt.Sprintf("[%v].mark: %.5f\n", id, st.Mark))...)
+		out += fmt.Sprintf("[%v].project.repo: %s\n", id, CToGoString(st.Project.Repo[:]))
+		out += fmt.Sprintf("[%v].project.mark: %v\n", id, st.Project.Mark)
+		out += fmt.Sprintf("[%v].mark: %.5f\n", id, st.Mark)
 	}
 
-	if err := os.WriteFile(path, out, 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(out), 0o644); err != nil {
 		return err
 	}
 	return nil
+}
+
+func SortedKeys(m map[int]Student) ([]int) {
+	keys := make([]int, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+	sort.Ints(keys)
+	return keys
 }
 
 func ReadKeyValue(path string) (sts []Student, err error) {
@@ -109,13 +130,13 @@ func ReadKeyValue(path string) (sts []Student, err error) {
 		}
 		st := d[id]
 		if field == "name" {
-			copy(st.Name[:], []byte(value))
+			copy(st.Name[:], value)
 		} else if field == "login" {
-			copy(st.Login[:], []byte(value))
+			copy(st.Login[:], value)
 		} else if field == "group" {
-			copy(st.Group[:], []byte(value))
+			copy(st.Group[:], value)
 		} else if field == "project.repo" {
-			copy(st.Project.Repo[:], []byte(value))
+			copy(st.Project.Repo[:], value)
 		} else if field == "project.mark" {
 			if mark, err := strconv.ParseUint(value, 10, 8); err != nil {
 				return nil, err
@@ -141,8 +162,8 @@ func ReadKeyValue(path string) (sts []Student, err error) {
 	}
 
 	res := make([]Student, len(d))
-	for k, v := range d {
-		res[k] = v
+	for k := range SortedKeys(d) {
+		res[k] = d[k]
 	}
 
 	return res, nil
