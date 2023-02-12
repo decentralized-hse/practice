@@ -24,7 +24,7 @@ type student struct {
 }
 
 func main() {
-	path := "students.protobuf"
+	path := os.Args[1]
 	if strings.Split(path, ".")[1] == "bin" {
 		file, _ := os.Open(path)
 		defer file.Close()
@@ -59,13 +59,12 @@ func main() {
 			// считывем следующего студента
 			err = binary.Read(file, binary.LittleEndian, &st)
 		}
-
 		ioutil.WriteFile(strings.Split(path, ".")[0]+".protobuf", alldata, 0644)
 	} else {
 		in, _ := ioutil.ReadFile(path)
 		const size_one_student = 142
 
-		file, _ := os.Create(strings.Split(path, ".")[0] + ".bin1")
+		file, _ := os.Create(strings.Split(path, ".")[0] + ".bin")
 		defer file.Close()
 
 		var s = &Student{}
