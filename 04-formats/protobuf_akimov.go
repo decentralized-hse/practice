@@ -10,7 +10,7 @@ import (
 )
 
 type project struct {
-	Repo [63]byte
+	Repo [59]byte
 	Mark uint8
 }
 
@@ -24,7 +24,7 @@ type student struct {
 }
 
 func main() {
-	path := os.Args[1]
+	path := "students.protobuf"
 	if strings.Split(path, ".")[1] == "bin" {
 		file, _ := os.Open(path)
 		defer file.Close()
@@ -32,6 +32,7 @@ func main() {
 		var st student
 		var alldata []byte
 		err := binary.Read(file, binary.LittleEndian, &st)
+
 		for err == nil {
 			fmt.Println(string(st.Name[:]), string(st.Login[:]), string(st.Group[:]), st.Practice, st.Mark)
 			fmt.Println(string(st.project.Repo[:]), st.project.Mark)
@@ -58,21 +59,19 @@ func main() {
 			// считывем следующего студента
 			err = binary.Read(file, binary.LittleEndian, &st)
 		}
-		ioutil.WriteFile(strings.Split(path, ".")[0]+".protobuf", alldata, 0)
+
+		ioutil.WriteFile(strings.Split(path, ".")[0]+".protobuf", alldata, 0644)
 	} else {
 		in, _ := ioutil.ReadFile(path)
-		const size_one_student = 146
+		const size_one_student = 142
 
-		file, _ := os.Create(strings.Split(path, ".")[0] + ".bin")
+		file, _ := os.Create(strings.Split(path, ".")[0] + ".bin1")
 		defer file.Close()
 
 		var s = &Student{}
 		err := proto.Unmarshal(in[:size_one_student], s)
 
 		for err == nil {
-			fmt.Println(string(s.Name[:]), string(s.Login[:]), string(s.Group[:]), s.Practice, s.Mark)
-			fmt.Println(string(s.Project.Repo[:]), s.Project.Mark)
-
 			// конвертируем в необзодимые нам типы
 			var name [32]byte
 			copy(name[:], s.Name)
@@ -80,7 +79,7 @@ func main() {
 			copy(login[:], s.Login)
 			var group [8]byte
 			copy(group[:], s.Group)
-			var pr_repo [63]byte
+			var pr_repo [59]byte
 			copy(pr_repo[:], s.Project.Repo)
 			var pract [8]uint8
 			copy(pract[:], s.Practice)
