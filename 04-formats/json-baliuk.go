@@ -62,14 +62,27 @@ func (s *Student) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func byteSliceToString(b []byte) string {
+	var zeroSuffixStart = len(b)
+	for zeroSuffixStart > 0 && b[zeroSuffixStart-1] == 0 {
+		zeroSuffixStart--
+	}
+
+	if zeroSuffixStart == 0 {
+		return ""
+	}
+
+	return string(b[:zeroSuffixStart])
+}
+
 func (s Student) MarshalJSON() ([]byte, error) {
 	comp := studentJSONCompatible{
-		Name:     string(s.Name[:]),
-		Login:    string(s.Login[:]),
-		Group:    string(s.Group[:]),
+		Name:     byteSliceToString(s.Name[:]),
+		Login:    byteSliceToString(s.Login[:]),
+		Group:    byteSliceToString(s.Group[:]),
 		Practice: s.Practice,
 		projectJSONCompatible: projectJSONCompatible{
-			Repo: string(s.Project.Repo[:]),
+			Repo: byteSliceToString(s.Project.Repo[:]),
 			Mark: s.Project.Mark,
 		},
 		Mark: s.Mark,
