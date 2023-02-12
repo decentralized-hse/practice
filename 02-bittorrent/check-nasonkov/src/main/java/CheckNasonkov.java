@@ -2,11 +2,12 @@ import com.goterl.lazysodium.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HexFormat;
 
 public class CheckNasonkov {
     public static byte[] getBytes(String filename, String file_ext) {
         // Absolute path to files needed (assuming that all files are located in the same directory)
-        File file_obj = new File("C:\\Децентрализованные системы\\HW1\\build\\libs\\" + filename + "." + file_ext);
+        File file_obj = new File("C:\\Users\\DNS\\ds-practice-nnv-nick\\02-bittorrent\\check-nasonkov\\build\\libs\\" + filename + "." + file_ext);
         if (!file_obj.exists() || file_obj.isDirectory()) {
             System.out.println(file_obj.exists());
             System.out.println("Invalid ." + file_ext + " file provided!");
@@ -14,7 +15,13 @@ public class CheckNasonkov {
         }
 
         try {
-            byte[] result = Files.readAllBytes(file_obj.toPath());
+            byte[] result;
+            if (file_ext != "root") {
+                HexFormat hex = HexFormat.of();
+                result = hex.parseHex(Files.readString(file_obj.toPath()));
+            } else {
+                result = Files.readAllBytes(file_obj.toPath());
+            }
             return result;
         } catch(IOException e) {
             System.out.println("IOException while reading bytes from file occured!");
