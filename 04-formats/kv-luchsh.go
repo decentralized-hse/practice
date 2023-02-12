@@ -15,7 +15,7 @@ import (
 )
 
 type Project struct {
-	Repo [63]byte
+	Repo [59]byte
 	Mark uint8
 }
 
