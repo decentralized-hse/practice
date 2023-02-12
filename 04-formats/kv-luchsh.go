@@ -14,17 +14,13 @@ import (
 	"strings"
 )
 
-type Project struct {
-	Repo [63]byte
-	Mark uint8
-}
-
 type Student struct {
 	Name     [32]byte
 	Login    [16]byte
 	Group    [8]byte
 	Practice [8]uint8
-	Project
+	ProjectRepo [59]byte
+	ProjectMark uint8
 	Mark float32
 }
 
@@ -86,8 +82,8 @@ func WriteKeyValue(sts []Student, path string) (err error) {
 		for i, p := range st.Practice {
 			out += fmt.Sprintf("[%v].practice.[%v]: %v\n", id, i, p)
 		}
-		out += fmt.Sprintf("[%v].project.repo: %s\n", id, CToGoString(st.Project.Repo[:]))
-		out += fmt.Sprintf("[%v].project.mark: %v\n", id, st.Project.Mark)
+		out += fmt.Sprintf("[%v].project.repo: %s\n", id, CToGoString(st.ProjectRepo[:]))
+		out += fmt.Sprintf("[%v].project.mark: %v\n", id, st.ProjectMark)
 		out += fmt.Sprintf("[%v].mark: %.5f\n", id, st.Mark)
 	}
 
@@ -136,12 +132,12 @@ func ReadKeyValue(path string) (sts []Student, err error) {
 		} else if field == "group" {
 			copy(st.Group[:], value)
 		} else if field == "project.repo" {
-			copy(st.Project.Repo[:], value)
+			copy(st.ProjectRepo[:], value)
 		} else if field == "project.mark" {
 			if mark, err := strconv.ParseUint(value, 10, 8); err != nil {
 				return nil, err
 			} else {
-				st.Project.Mark = uint8(mark)
+				st.ProjectMark = uint8(mark)
 			}
 		} else if field == "mark" {
 			if mark, err := strconv.ParseFloat(value, 32); err != nil {
