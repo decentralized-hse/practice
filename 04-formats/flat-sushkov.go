@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -29,11 +30,11 @@ const defaultRootTableOffset = 12
 
 var defaultVTable = [3]uint16{
 	6, // size of vtable
-	4, // size of object
+	8, // size of object
 	4, // offset to only field data
 }
 
-func readFlat(file *os.File) Student {
+func readFlat(file *os.File) []Student {
 	buf, err := io.ReadAll(file)
 	if err != nil {
 		log.Fatalf("error on read file: %v", err)
@@ -42,15 +43,23 @@ func readFlat(file *os.File) Student {
 	vtableOffset := rootOffset - int32(binary.LittleEndian.Uint32(buf[rootOffset:rootOffset+4]))
 	fieldsOffset := vtableOffset + 4
 	firstFieldDataOffset := rootOffset + int32(binary.LittleEndian.Uint16(buf[fieldsOffset:fieldsOffset+2]))
-	var student Student
-	err = binary.Read(bytes.NewReader(buf[firstFieldDataOffset:firstFieldDataOffset+structSize]), binary.LittleEndian, &student)
-	if err != nil {
-		log.Fatalf("error on read to struct: %v", err)
+	vectorOffset := firstFieldDataOffset + int32(binary.LittleEndian.Uint32(buf[firstFieldDataOffset:firstFieldDataOffset+4]))
+	vectorSize := int(binary.LittleEndian.Uint32(buf[vectorOffset : vectorOffset+4]))
+	elemOffset := vectorOffset + 4
+	var students []Student
+	for i := 0; i < vectorSize; i++ {
+		var student Student
+		err = binary.Read(bytes.NewReader(buf[elemOffset:elemOffset+structSize]), binary.LittleEndian, &student)
+		if err != nil {
+			log.Fatalf("error on read to struct: %v", err)
+		}
+		students = append(students, student)
+		elemOffset += structSize
 	}
-	return student
+	return students
 }
 
-func writeFlat(file *os.File, student Student) {
+func writeFlat(file *os.File, students []Student) {
 	buf := bytes.NewBuffer(make([]byte, 0, flatBufferMetadataSize+structSize))
 	var metadata []byte
 	// offset to root table
@@ -63,30 +72,44 @@ func writeFlat(file *os.File, student Student) {
 	}
 	// offset to vtable
 	metadata = binary.LittleEndian.AppendUint32(metadata, uint32(2*len(defaultVTable)))
+	// offset to vector
+	metadata = binary.LittleEndian.AppendUint32(metadata, uint32(4))
+	// size of vector
+	metadata = binary.LittleEndian.AppendUint32(metadata, uint32(len(students)))
 	buf.Write(metadata)
-	err := binary.Write(buf, binary.LittleEndian, &student)
-	if err != nil {
-		log.Fatalf("error on write struct to temporary buffer: %v", err)
+	for _, student := range students {
+		err := binary.Write(buf, binary.LittleEndian, &student)
+		if err != nil {
+			log.Fatalf("error on write struct to temporary buffer: %v", err)
+		}
 	}
-	_, err = file.Write(buf.Bytes())
+	_, err := file.Write(buf.Bytes())
 	if err != nil {
 		log.Fatalf("error on write flat to file: %v", err)
 	}
 }
 
-func readBin(file *os.File) Student {
-	var student Student
-	err := binary.Read(file, binary.LittleEndian, &student)
-	if err != nil {
-		log.Fatalf("error on read file to struct: %v", err)
+func readBin(file *os.File) []Student {
+	var students []Student
+	for {
+		var student Student
+		err := binary.Read(file, binary.LittleEndian, &student)
+		if errors.Is(err, io.EOF) {
+			return students
+		}
+		if err != nil {
+			log.Fatalf("error on read file to struct: %v", err)
+		}
+		students = append(students, student)
 	}
-	return student
 }
 
-func writeBin(file *os.File, student Student) {
-	err := binary.Write(file, binary.LittleEndian, &student)
-	if err != nil {
-		log.Fatalf("error on write struct to file: %v", err)
+func writeBin(file *os.File, students []Student) {
+	for _, student := range students {
+		err := binary.Write(file, binary.LittleEndian, &student)
+		if err != nil {
+			log.Fatalf("error on write struct to file: %v", err)
+		}
 	}
 }
 
