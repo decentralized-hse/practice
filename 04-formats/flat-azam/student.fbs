@@ -1,0 +1,21 @@
+namespace ds;
+
+table Proj {
+	repo : string;
+	mark : ubyte;
+}
+
+table Student {
+	name : string;
+	login : string;
+	group : string;
+	practice : [ubyte];
+	project : Proj;
+	mark : float;
+}
+
+table Students {
+	kings : [Student];
+}
+
+root_type Students;
