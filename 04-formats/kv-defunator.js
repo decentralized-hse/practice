@@ -124,3 +124,4 @@ if (inputPath.includes('bin')) {
     outputPath = inputPath.replace('kv', 'bin')
     jsonToBin(kvToJson(inputPath), outputPath)
 }
+
