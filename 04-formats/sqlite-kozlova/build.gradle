@@ -1,0 +1,35 @@
+plugins {
+    id 'java'
+}
+
+group 'hse.kozlova'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'
+    // https://mvnrepository.com/artifact/com.j256.ormlite/ormlite-core
+    implementation group: 'com.j256.ormlite', name: 'ormlite-core', version: '5.0'
+
+    // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
+    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.16.1'
+
+    // https://mvnrepository.com/artifact/com.j256.ormlite/ormlite-jdbc
+    implementation group: 'com.j256.ormlite', name: 'ormlite-jdbc', version: '5.0'
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "hse.kozlova.Main"
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
