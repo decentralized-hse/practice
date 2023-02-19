@@ -1,6 +1,6 @@
 use arrayvec::ArrayVec;
 use serde::{Deserialize, Serialize};
-use serde_json::Result;
+use serde_json::to_string_pretty;
 use std::fs::write;
 use std::fs::File;
 use std::io::{BufReader, Read};
@@ -65,12 +65,20 @@ struct Student {
 impl Student {
     pub fn from_u8(init: StudentU8) -> Self {
         Student {
-            name: String::from_utf8_lossy(&init.name).to_string(),
-            login: String::from_utf8_lossy(&init.login).to_string(),
-            group: String::from_utf8_lossy(&init.group).to_string(),
+            name: String::from_utf8_lossy(&init.name)
+                .trim_end_matches('\0')
+                .to_string(),
+            login: String::from_utf8_lossy(&init.login)
+                .trim_end_matches('\0')
+                .to_string(),
+            group: String::from_utf8_lossy(&init.group)
+                .trim_end_matches('\0')
+                .to_string(),
             practice: init.practice,
             project: Mark {
-                repo: String::from_utf8_lossy(&init.project.repo).to_string(),
+                repo: String::from_utf8_lossy(&init.project.repo)
+                    .trim_end_matches('\0')
+                    .to_string(),
                 mark: init.project.mark,
             },
             mark: init.mark,
@@ -78,8 +86,8 @@ impl Student {
     }
 }
 
-fn bin_to_json(filename: &String) {
-    let inp = File::options().read(true).open(filename).unwrap();
+fn bin_to_json(filename: &mut String) {
+    let inp = File::options().read(true).open(&filename).unwrap();
 
     let mut reader = BufReader::new(inp);
 
@@ -123,13 +131,13 @@ fn bin_to_json(filename: &String) {
         result.push(Student::from_u8(s));
     }
 
-    let result = serde_json::json!(result).to_string();
-
-    write(format!("{}.json", filename), result);
+    let result = to_string_pretty(&result).unwrap();
+    filename.truncate(filename.len() - 3);
+    write(format!("{}json", filename), result);
 }
 
-fn json_to_bin(filename: &String) {
-    let inp = File::options().read(true).open(filename).unwrap();
+fn json_to_bin(filename: &mut String) {
+    let inp = File::options().read(true).open(&filename).unwrap();
 
     let mut reader = BufReader::new(inp);
 
@@ -147,27 +155,31 @@ fn json_to_bin(filename: &String) {
     let mut c_structs = Vec::<u8>::new();
     for s in students {
         c_structs.extend_from_slice(s.name.as_bytes());
+        c_structs.extend_from_slice(&vec![0u8; 32 - c_structs.len()]);
         c_structs.extend_from_slice(s.login.as_bytes());
+        c_structs.extend_from_slice(&vec![0u8; 48 - c_structs.len()]);
         c_structs.extend_from_slice(s.group.as_bytes());
+        c_structs.extend_from_slice(&vec![0u8; 56 - c_structs.len()]);
         c_structs.extend_from_slice(&s.practice);
         c_structs.extend_from_slice(s.project.repo.as_bytes());
+        c_structs.extend_from_slice(&vec![0u8; 123 - c_structs.len()]);
         c_structs.push(s.project.mark);
         c_structs.extend_from_slice(&s.mark.to_le_bytes());
     }
-
-    write(format!("{}.bin", filename), c_structs);
+    filename.truncate(filename.len() - 4);
+    write(format!("{}bin", filename), c_structs);
 }
 
 fn main() {
-    let argv: Vec<String> = env::args().collect();
+    let mut argv: Vec<String> = env::args().collect();
 
     if argv.len() < 2 {
         panic!("Cannot find path to file");
     }
 
     if argv[1].ends_with(".json") {
-        json_to_bin(&argv[1]);
+        json_to_bin(&mut argv[1]);
     } else {
-        bin_to_json(&argv[1])
+        bin_to_json(&mut argv[1])
     }
 }
