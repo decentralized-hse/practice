@@ -42,6 +42,7 @@ fun readBin(source: String) {
     val sourceFile = File(source)
     if (!sourceFile.exists()) {
         println("Please enter an existing file.")
+        return
     }
     val data: ByteArray = sourceFile.readBytes()
     println("Creating Protobuf Structure.")
@@ -89,6 +90,7 @@ fun writeBin(source: String) {
     val sourcePath = Path(source)
     if (!sourcePath.exists()) {
         println("Please enter an existing file.")
+        return
     }
     val studentsStruct: Struct.Students = sourcePath.inputStream().use {
         Struct.Students.newBuilder().mergeFrom(it).build()
