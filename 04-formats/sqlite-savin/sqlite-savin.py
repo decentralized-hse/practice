@@ -1,4 +1,3 @@
-from pathlib import Path
 import sqlite3
 import struct
 import sys
@@ -91,7 +90,9 @@ if __name__ == '__main__':
     print('Start')
     filename = sys.argv[1]
     if filename.endswith('.bin'):
+        print('Creating .db file')
         BinToSqlite(filename)
     else:
+        print('Creating .bin file')
         SqliteToBin(filename)
     print('End')
