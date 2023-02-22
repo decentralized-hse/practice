@@ -29,18 +29,20 @@ class Formats {
     static void b2p(string path) {
         var persons = new List<Person>();
         using (var reader = new BinaryReader(File.OpenRead(path + ".bin"))) {
-            var person = new Person();
-            person.Name = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(32), 0, 32);
-            person.Login = System.Text.Encoding.ASCII.GetString(reader.ReadBytes(16), 0, 16);
-            person.Group = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(8), 0, 8);
-            person.Practice = reader.ReadBytes(8);
+            while (reader.BaseStream.Position != reader.BaseStream.Length) {
+                var person = new Person();
+                person.Name = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(32), 0, 32);
+                person.Login = System.Text.Encoding.ASCII.GetString(reader.ReadBytes(16), 0, 16);
+                person.Group = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(8), 0, 8);
+                person.Practice = reader.ReadBytes(8);
 
-            person.PrRepo = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(59), 0, 59);
-            person.PrMark = reader.ReadByte();
+                person.PrRepo = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(59), 0, 59);
+                person.PrMark = reader.ReadByte();
 
-            person.Mark = reader.ReadSingle();
+                person.Mark = reader.ReadSingle();
 
-            persons.Add(person);
+                persons.Add(person);
+            }
         }
         
         using (var file = File.Create(path + ".protobuf")) {
