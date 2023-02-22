@@ -106,6 +106,7 @@ fun writeBin(source: String) {
 fun main(args: Array<String>) {
     if (args.size != 1) {
         println("Please pass 1 argument - the path to the file.")
+        return
     }
     val path: String = args[0]
     when (path.split(".").last()) {
