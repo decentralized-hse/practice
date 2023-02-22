@@ -1,0 +1,156 @@
+#include <fstream>
+#include <iostream>
+#include <sqlite3.h>
+#include <string>
+#include <string.h>
+#include <vector>
+#include <stdlib.h>
+
+using namespace std;
+
+struct Project
+{
+    char repo[59];
+    uint8_t mark;
+
+    Project(std::string str, uint8_t m)
+    {
+        memcpy(repo, str.c_str(), str.size());
+        mark = m;
+    }
+
+    Project() {}
+};
+
+struct Student
+{
+    char name[32];
+    char login[16];
+    char group[8];
+    uint8_t practice[8];
+    Project project;
+    float mark;
+
+    Student() {}
+
+    Student(char n[32], char l[16], char g[8], const vector<uint8_t> &p, Project pr, float m)
+    {
+        memcpy(name, n, 32);
+        memcpy(login, l, 16);
+        memcpy(group, g, 8);
+        for (int i = 0; i < 8; ++i)
+            practice[i] = p[i];
+        project = pr;
+        mark = m;
+    }
+};
+
+int main(int argc, char *argv[])
+{
+
+    string type = argv[1];
+    type = type.substr(type.size() - 3, 3);
+    if (type == "bin")
+    {
+        std::cout << "Reading from binary file\n";
+        ifstream file(argv[1], ios::in | ios::binary);
+
+        if (!file.is_open())
+        {
+            cerr << "Failed to open file\n";
+            return 1;
+        }
+
+        Student record;
+        file.read((char *)&record, sizeof(Student));
+        if (file.gcount() != sizeof(Student))
+        {
+            cerr << "Failed to read record\n";
+            return 1;
+        }
+
+        file.close();
+
+        sqlite3 *db;
+        int rc = sqlite3_open("gvasalia.db", &db);
+        rc = sqlite3_exec(db, "DROP TABLE IF EXISTS students; ", NULL, NULL, NULL);
+        rc = sqlite3_exec(db, "CREATE TABLE students (name TEXT, login TEXT, group1 TEXT, practice TEXT, repo TEXT, mark_project INTEGER, mark FLOAT); ", NULL, NULL, NULL);
+        std::string query = "INSERT INTO students (name, login, group1, practice, repo, mark_project, mark) VALUES ('";
+        std::string practice_string = "";
+        for (int i = 0; i < 8; ++i)
+        {
+            practice_string += std::to_string(record.practice[i]);
+            if (i != 7)
+            {
+                practice_string += ",";
+            }
+        }
+
+        // sorry :(
+        query += record.name;
+        query += "', '";
+        query += record.login;
+        query += "', '";
+        query += record.group;
+        query += "', '";
+        query += practice_string;
+        query += "', '";
+        query += record.project.repo;
+        query += "', '";
+        query += to_string(record.project.mark);
+        query += "', '";
+        query += to_string(record.mark);
+        query += "');";
+        // sorry again :(
+
+        rc = sqlite3_exec(db, query.c_str(), NULL, NULL, NULL);
+        std::cout << "Records created successfully\n";
+        sqlite3_close(db);
+    }
+    else if (type == ".db")
+    {
+        std::cout << "Reading from sqlite db\n";
+        sqlite3 *db;
+        int rc = sqlite3_open("gvasalia.db", &db);
+        Student result;
+        char get[] = "SELECT name, login, group1, practice, repo, mark_project, mark FROM students LIMIT 1;";
+        sqlite3_stmt *stmt;
+        sqlite3_prepare_v2(db, get, -1, &stmt, NULL);
+        if (sqlite3_step(stmt) != SQLITE_ROW)
+        {
+            std::cout << "NOOO\n";
+        };
+        std::string name = std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0)));
+        std::string login = std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1)));
+        std::string group1 = std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2)));
+        std::string practice = std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3)));
+        std::string repo = std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4)));
+        uint8_t mark_project = sqlite3_column_int(stmt, 5);
+        float mark = sqlite3_column_double(stmt, 6);
+        sqlite3_close(db);
+        FILE *out = fopen("students1.bin", "w");
+
+        Student student;
+        memcpy(student.name, name.c_str(), name.size());
+        memcpy(student.login, login.c_str(), login.size());
+        memcpy(student.project.repo, repo.c_str(), repo.size());
+        memcpy(student.group, group1.c_str(), group1.size());
+        for (int i = 0; i < 8; ++i)
+        {
+            int num = practice[2 * i];
+            student.practice[i] = num - 48;
+        }
+        std::cout << '\n';
+        student.project.mark = mark_project;
+        student.mark = mark;
+
+        fwrite(&student, sizeof(Student), 1, out);
+
+        std::cout << "Written to students1.bin\n";
+    }
+    else
+    {
+        cerr << "File should be either .bin of .db\n";
+    }
+    std::cout << "The end\n";
+}
