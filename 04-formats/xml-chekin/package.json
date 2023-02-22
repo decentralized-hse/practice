@@ -1,0 +1,10 @@
+{
+  "name": "xml-chekin",
+  "version": "1.0.0",
+  "main": "",
+  "author": "Alucardik",
+  "license": "",
+  "dependencies": {
+    "xml2js": "^0.4.23"
+  }
+}
