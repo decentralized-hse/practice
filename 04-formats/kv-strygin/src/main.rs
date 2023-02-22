@@ -154,38 +154,4 @@ fn main() -> io::Result<()> {
     }
 
     Ok(())
-
-
-
-
-    /*
-    let s = Student {
-        name: str_as_array("Иван Иванов"),
-        login: str_as_array("ivanov"),
-        group: str_as_array("ИА-345"),
-        practice: [1, 1, 0, 0, 0, 0, 0, 0],
-        project: Project {
-            repo: str_as_array("github.com/decentralized-hse/practice/tree/main/04-formats"),
-            mark: 9,
-        },
-        mark: 8.0,
-    };
-
-    println!("{:?}", s);
-    println!("{}", std::str::from_utf8(&s.name).unwrap());
-
-    {
-        let mut f = File::create("./output.bin").unwrap();
-        bincode::serialize_into(&mut f, &s).unwrap();
-    }
-    {
-        let mut buffer = [0; 128];
-        let mut f = File::open("./output.bin").unwrap();
-        f.read_exact(&mut buffer)?;
-
-        let deserialized: Student = bincode::deserialize(&buffer).unwrap();
-        println!("deserialized = {:?}", deserialized);
-    }
-    Ok(())
-    */
 }
