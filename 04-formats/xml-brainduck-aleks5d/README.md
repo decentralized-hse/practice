@@ -1,5 +1,5 @@
 # Как использовать
-Для начала нужно скопилировать brainduck:
+Для начала нужно скомпилировать brainduck:
 ```
 gcc brainduckc.c -o brainduckc
 ```
