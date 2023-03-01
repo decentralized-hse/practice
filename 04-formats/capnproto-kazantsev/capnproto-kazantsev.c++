@@ -1,3 +1,4 @@
+#include "capnp/serialize.h"
 #include "kj/io.h"
 #include "student.capnp.h"
 #include <capnp/message.h>
@@ -49,12 +50,13 @@ void dumpCapnproto(int fd, Student& bin_student) {
     
     student.setMark(bin_student.mark);
     
-    ::capnp::writePackedMessageToFd(fd, message);
+    std::cout << "Write.." << std::endl;
+    ::capnp::writeMessageToFd(fd, message);
 }
 
 std::pair<bool, Student> readCapnProto(int fd) {
     try {
-        ::capnp::PackedFdMessageReader message(fd);
+        ::capnp::StreamFdMessageReader message(fd);
 
         capn_student::Student::Reader capn_student = message.getRoot<capn_student::Student>();
         Student student;
@@ -80,6 +82,7 @@ std::pair<bool, Student> readCapnProto(int fd) {
 }
 
 void dumpStudent(std::ofstream& out, Student& student) {
+    std::cout << "Write.." << std::endl;
     out.write((char*)&student, sizeof(student));
 }
 
