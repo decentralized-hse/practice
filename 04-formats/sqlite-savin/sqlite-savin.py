@@ -69,18 +69,18 @@ def SqliteToBin(filename):
 
     with open('students.bin', 'wb') as f:
         for student in students:
-            name = student[1].encode()
+            name = student[1].encode('utf-8')
             if len(name) < 32:
                 name += b'\x00' * (32 - len(name))
 
-            login = student[2].encode()
-            group = student[3].encode()
+            login = student[2].encode('utf-8')
+            group = student[3].encode('utf-8')
             tmp = student[4].split(',')
             practice = []
             for i in tmp:
                 practice.append(int(i))
             practice = bytes(practice)
-            project_repo = student[5].encode()
+            project_repo = student[5].encode('utf-8')
             record = struct.pack(fmt, name, login, group, practice, project_repo, student[6], student[7])
             f.write(record)
         
