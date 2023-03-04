@@ -9,19 +9,19 @@ def BinToSqlite(filename):
     with open(filename, 'rb') as f:
         bin_data = f.read()
 
-    data = []
     for i in range(0, len(bin_data), struct_size):
+        data = []
         student = struct.unpack(fmt, bin_data[i:i+struct_size])
-        name = student[0].decode().strip('\x00')
+        name = student[0].decode('utf8').strip('\x00')
         name += '\x00' * (32 - len(name))
-        login = student[1].decode().strip('\x00')
-        group = student[2].decode().strip('\x00')
+        login = student[1].decode('utf-8').strip('\x00')
+        group = student[2].decode('utf-8').strip('\x00')
         practice = ''
         for i in student[3]:
             practice += str(i)
             practice += ','
         practice = practice[0:-1]
-        repo = student[4].decode().strip('\x00')
+        repo = student[4].decode('utf-8').strip('\x00')
         mark = student[5]
         mark_float = student[6]
         project = {
