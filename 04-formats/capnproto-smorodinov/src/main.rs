@@ -64,7 +64,7 @@ fn bin_to_capnproto(input: &[u8]) -> Vec<u8> {
     let mut students_root = students_message.init_root::<students_capnp::students::Builder>();
     let mut students_builder = students_root.reborrow().init_students(count as u32);
 
-    for (i, input_offset) in (0..count).step_by(TOTAL_LEN).enumerate() {
+    for (i, input_offset) in (0..count * TOTAL_LEN).step_by(TOTAL_LEN).enumerate() {
         let bytes = &input[input_offset..input_offset + TOTAL_LEN];
         let mut offset = 0;
 
