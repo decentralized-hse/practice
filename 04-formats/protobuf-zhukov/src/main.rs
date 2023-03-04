@@ -11,14 +11,15 @@ const EXT_BIN: &str = ".bin";
 const EXT_PROTO: &str = ".protobuf";
 
 fn read_students_from_protobuf_file(f: &mut impl io::Read) -> Students {
+    println!("[*] Reading protobuf student data...");
     let mut b = BytesMut::new().writer();
     io::copy(f, &mut b).expect("[x] Can't read proto file");
     Students::decode(b.into_inner()).expect("[x] Can't decode proto file")
 }
 
 fn read_students_from_bin_file(f: &mut impl io::Read) -> Students {
-    let mut students = Students::default();
     println!("[*] Reading binary student data...");
+    let mut students = Students::default();
     while let Ok(student) = read_student_from_bin_file(&mut *f) {
         students.student.push(student);
     }
@@ -73,7 +74,7 @@ fn write_students_to_bin_file(students: Students, f: &mut impl io::Write) {
             None => Project::default(),
         };
         f.write_all(project.repo.as_bytes()).unwrap();
-        f.write_all(&project.mark.to_le_bytes()).unwrap();
+        f.write_all(&project.mark.to_le_bytes()[0..1]).unwrap();
         f.write_all(&s.mark.to_le_bytes()).unwrap();
     }
 }
