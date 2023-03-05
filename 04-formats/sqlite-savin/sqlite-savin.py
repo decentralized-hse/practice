@@ -36,7 +36,7 @@ def BinToSqlite(filename):
             'project': project,
             'mark': mark_float
         })
-        conn = sqlite3.connect('students.db')
+        conn = sqlite3.connect(filename[:-3] + 'db')
         cursor = conn.cursor()
         cursor.execute('CREATE TABLE IF NOT EXISTS students ('
                     'id INTEGER PRIMARY KEY AUTOINCREMENT, '
@@ -57,17 +57,16 @@ def BinToSqlite(filename):
         conn.commit()
         conn.close()
 
+
 def SqliteToBin(filename):
-
-
     conn = sqlite3.connect(filename)
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM students')
     students = cursor.fetchall()
 
     fmt = '32s16s8s8s59sBf'
-
-    with open('students.bin', 'wb') as f:
+    name = filename[:-2] + 'bin'
+    with open(name, 'wb') as f:
         for student in students:
             name = student[1].encode('utf-8')
             if len(name) < 32:
@@ -78,7 +77,11 @@ def SqliteToBin(filename):
             tmp = student[4].split(',')
             practice = []
             for i in tmp:
-                practice.append(int(i))
+                x = ord(i)
+                if x == 48 or x == 49:
+                    practice.append(int(i))
+                else:
+                    practice.append(x)
             practice = bytes(practice)
             project_repo = student[5].encode('utf-8')
             record = struct.pack(fmt, name, login, group, practice, project_repo, student[6], student[7])
@@ -90,9 +93,9 @@ if __name__ == '__main__':
     print('Start')
     filename = sys.argv[1]
     if filename.endswith('.bin'):
-        print('Creating .db file')
+        print('Creating ' + filename[:-3] + 'db file')
         BinToSqlite(filename)
     else:
-        print('Creating .bin file')
+        print('Creating ' + filename[:-2] + 'bin file')
         SqliteToBin(filename)
     print('End')
