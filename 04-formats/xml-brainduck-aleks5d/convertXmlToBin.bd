@@ -1,0 +1,1802 @@
+// plus any number
+plus1:
+    +
+
+plus2:
+    plus1|+
+
+plus3:
+    plus2|+
+
+plus4:
+    plus3|+
+
+plus5:
+    plus4|+
+
+plus6:
+    plus5|+
+
+plus7:
+    plus6|+
+
+plus8:
+    plus7|+
+
+plus9:
+    plus8|+
+
+plus10:
+    plus9|+
+
+plus11:
+    plus10|+
+
+plus12:
+    plus11|+
+
+plus13:
+    plus12|+
+
+plus14:
+    plus13|+
+
+plus15:
+    plus14|+
+
+plus16:
+    plus15|+
+
+plus17:
+    plus16|+
+
+plus18:
+    plus17|+
+
+plus19:
+    plus18|+
+
+plus20:
+    plus19|+
+
+plus21:
+    plus20|+
+
+plus22:
+    plus21|+
+
+plus23:
+    plus22|+
+
+plus24:
+    plus23|+
+
+plus25:
+    plus24|+
+
+plus26:
+    plus25|+
+
+plus27:
+    plus26|+
+
+plus28:
+    plus27|+
+
+plus29:
+    plus28|+
+
+plus30:
+    plus29|+
+
+plus31:
+    plus30|+
+
+plus32:
+    plus31|+
+
+plus33:
+    plus32|+
+
+plus34:
+    plus33|+
+
+plus35:
+    plus34|+
+
+plus36:
+    plus35|+
+
+plus37:
+    plus36|+
+
+plus38:
+    plus37|+
+
+plus39:
+    plus38|+
+
+plus40:
+    plus39|+
+
+plus41:
+    plus40|+
+
+plus42:
+    plus41|+
+
+plus43:
+    plus42|+
+
+plus44:
+    plus43|+
+
+plus45:
+    plus44|+
+
+plus46:
+    plus45|+
+
+plus47:
+    plus46|+
+
+plus48:
+    plus47|+
+
+plus49:
+    plus48|+
+
+plus50:
+    plus49|+
+
+plus51:
+    plus50|+
+
+plus52:
+    plus51|+
+
+plus53:
+    plus52|+
+
+plus54:
+    plus53|+
+
+plus55:
+    plus54|+
+
+plus56:
+    plus55|+
+
+plus57:
+    plus56|+
+
+plus58:
+    plus57|+
+
+plus59:
+    plus58|+
+
+plus60:
+    plus59|+
+
+plus61:
+    plus60|+
+
+plus62:
+    plus61|+
+
+plus63:
+    plus62|+
+
+plus64:
+    plus63|+
+
+plus65:
+    plus64|+
+
+plus66:
+    plus65|+
+
+plus67:
+    plus66|+
+
+plus68:
+    plus67|+
+
+plus69:
+    plus68|+
+
+plus70:
+    plus69|+
+
+plus71:
+    plus70|+
+
+plus72:
+    plus71|+
+
+plus73:
+    plus72|+
+
+plus74:
+    plus73|+
+
+plus75:
+    plus74|+
+
+plus76:
+    plus75|+
+
+plus77:
+    plus76|+
+
+plus78:
+    plus77|+
+
+plus79:
+    plus78|+
+
+plus80:
+    plus79|+
+
+plus81:
+    plus80|+
+
+plus82:
+    plus81|+
+
+plus83:
+    plus82|+
+
+plus84:
+    plus83|+
+
+plus85:
+    plus84|+
+
+plus86:
+    plus85|+
+
+plus87:
+    plus86|+
+
+plus88:
+    plus87|+
+
+plus89:
+    plus88|+
+
+plus90:
+    plus89|+
+
+plus91:
+    plus90|+
+
+plus92:
+    plus91|+
+
+plus93:
+    plus92|+
+
+plus94:
+    plus93|+
+
+plus95:
+    plus94|+
+
+plus96:
+    plus95|+
+
+plus97:
+    plus96|+
+
+plus98:
+    plus97|+
+
+plus99:
+    plus98|+
+
+plus100:
+    plus99|+
+
+plus101:
+    plus100|+
+
+plus102:
+    plus101|+
+
+plus103:
+    plus102|+
+
+plus104:
+    plus103|+
+
+plus105:
+    plus104|+
+
+plus106:
+    plus105|+
+
+plus107:
+    plus106|+
+
+plus108:
+    plus107|+
+
+plus109:
+    plus108|+
+
+plus110:
+    plus109|+
+
+plus111:
+    plus110|+
+
+plus112:
+    plus111|+
+
+plus113:
+    plus112|+
+
+plus114:
+    plus113|+
+
+plus115:
+    plus114|+
+
+plus116:
+    plus115|+
+
+plus117:
+    plus116|+
+
+plus118:
+    plus117|+
+
+plus119:
+    plus118|+
+
+plus120:
+    plus119|+
+
+plus121:
+    plus120|+
+
+plus122:
+    plus121|+
+
+plus123:
+    plus122|+
+
+plus124:
+    plus123|+
+
+plus125:
+    plus124|+
+
+plus126:
+    plus125|+
+
+plus127:
+    plus126|+
+
+plus128:
+    plus127|+
+
+plus129:
+    plus128|+
+
+plus130:
+    plus129|+
+
+plus131:
+    plus130|+
+
+plus132:
+    plus131|+
+
+plus133:
+    plus132|+
+
+plus134:
+    plus133|+
+
+plus135:
+    plus134|+
+
+plus136:
+    plus135|+
+
+plus137:
+    plus136|+
+
+plus138:
+    plus137|+
+
+plus139:
+    plus138|+
+
+plus140:
+    plus139|+
+
+plus141:
+    plus140|+
+
+plus142:
+    plus141|+
+
+plus143:
+    plus142|+
+
+plus144:
+    plus143|+
+
+plus145:
+    plus144|+
+
+plus146:
+    plus145|+
+
+plus147:
+    plus146|+
+
+plus148:
+    plus147|+
+
+plus149:
+    plus148|+
+
+plus150:
+    plus149|+
+
+plus151:
+    plus150|+
+
+plus152:
+    plus151|+
+
+plus153:
+    plus152|+
+
+plus154:
+    plus153|+
+
+plus155:
+    plus154|+
+
+plus156:
+    plus155|+
+
+plus157:
+    plus156|+
+
+plus158:
+    plus157|+
+
+plus159:
+    plus158|+
+
+plus160:
+    plus159|+
+
+plus161:
+    plus160|+
+
+plus162:
+    plus161|+
+
+plus163:
+    plus162|+
+
+plus164:
+    plus163|+
+
+plus165:
+    plus164|+
+
+plus166:
+    plus165|+
+
+plus167:
+    plus166|+
+
+plus168:
+    plus167|+
+
+plus169:
+    plus168|+
+
+plus170:
+    plus169|+
+
+plus171:
+    plus170|+
+
+plus172:
+    plus171|+
+
+plus173:
+    plus172|+
+
+plus174:
+    plus173|+
+
+plus175:
+    plus174|+
+
+plus176:
+    plus175|+
+
+plus177:
+    plus176|+
+
+plus178:
+    plus177|+
+
+plus179:
+    plus178|+
+
+plus180:
+    plus179|+
+
+plus181:
+    plus180|+
+
+plus182:
+    plus181|+
+
+plus183:
+    plus182|+
+
+plus184:
+    plus183|+
+
+plus185:
+    plus184|+
+
+plus186:
+    plus185|+
+
+plus187:
+    plus186|+
+
+plus188:
+    plus187|+
+
+plus189:
+    plus188|+
+
+plus190:
+    plus189|+
+
+plus191:
+    plus190|+
+
+plus192:
+    plus191|+
+
+plus193:
+    plus192|+
+
+plus194:
+    plus193|+
+
+plus195:
+    plus194|+
+
+plus196:
+    plus195|+
+
+plus197:
+    plus196|+
+
+plus198:
+    plus197|+
+
+plus199:
+    plus198|+
+
+plus200:
+    plus199|+
+
+plus201:
+    plus200|+
+
+plus202:
+    plus201|+
+
+plus203:
+    plus202|+
+
+plus204:
+    plus203|+
+
+plus205:
+    plus204|+
+
+plus206:
+    plus205|+
+
+plus207:
+    plus206|+
+
+plus208:
+    plus207|+
+
+plus209:
+    plus208|+
+
+plus210:
+    plus209|+
+
+plus211:
+    plus210|+
+
+plus212:
+    plus211|+
+
+plus213:
+    plus212|+
+
+plus214:
+    plus213|+
+
+plus215:
+    plus214|+
+
+plus216:
+    plus215|+
+
+plus217:
+    plus216|+
+
+plus218:
+    plus217|+
+
+plus219:
+    plus218|+
+
+plus220:
+    plus219|+
+
+plus221:
+    plus220|+
+
+plus222:
+    plus221|+
+
+plus223:
+    plus222|+
+
+plus224:
+    plus223|+
+
+plus225:
+    plus224|+
+
+plus226:
+    plus225|+
+
+plus227:
+    plus226|+
+
+plus228:
+    plus227|+
+
+plus229:
+    plus228|+
+
+plus230:
+    plus229|+
+
+plus231:
+    plus230|+
+
+plus232:
+    plus231|+
+
+plus233:
+    plus232|+
+
+plus234:
+    plus233|+
+
+plus235:
+    plus234|+
+
+plus236:
+    plus235|+
+
+plus237:
+    plus236|+
+
+plus238:
+    plus237|+
+
+plus239:
+    plus238|+
+
+plus240:
+    plus239|+
+
+plus241:
+    plus240|+
+
+plus242:
+    plus241|+
+
+plus243:
+    plus242|+
+
+plus244:
+    plus243|+
+
+plus245:
+    plus244|+
+
+plus246:
+    plus245|+
+
+plus247:
+    plus246|+
+
+plus248:
+    plus247|+
+
+plus249:
+    plus248|+
+
+plus250:
+    plus249|+
+
+plus251:
+    plus250|+
+
+plus252:
+    plus251|+
+
+plus253:
+    plus252|+
+
+plus254:
+    plus253|+
+
+plus255:
+    plus254|+
+
+// minus any number
+minus1:
+    -
+
+minus2:
+    minus1|-
+
+minus3:
+    minus2|-
+
+minus4:
+    minus3|-
+
+minus5:
+    minus4|-
+
+minus6:
+    minus5|-
+
+minus7:
+    minus6|-
+
+minus8:
+    minus7|-
+
+minus9:
+    minus8|-
+
+minus10:
+    minus9|-
+
+minus11:
+    minus10|-
+
+minus12:
+    minus11|-
+
+minus13:
+    minus12|-
+
+minus14:
+    minus13|-
+
+minus15:
+    minus14|-
+
+minus16:
+    minus15|-
+
+minus17:
+    minus16|-
+
+minus18:
+    minus17|-
+
+minus19:
+    minus18|-
+
+minus20:
+    minus19|-
+
+minus21:
+    minus20|-
+
+minus22:
+    minus21|-
+
+minus23:
+    minus22|-
+
+minus24:
+    minus23|-
+
+minus25:
+    minus24|-
+
+minus26:
+    minus25|-
+
+minus27:
+    minus26|-
+
+minus28:
+    minus27|-
+
+minus29:
+    minus28|-
+
+minus30:
+    minus29|-
+
+minus31:
+    minus30|-
+
+minus32:
+    minus31|-
+
+minus33:
+    minus32|-
+
+minus34:
+    minus33|-
+
+minus35:
+    minus34|-
+
+minus36:
+    minus35|-
+
+minus37:
+    minus36|-
+
+minus38:
+    minus37|-
+
+minus39:
+    minus38|-
+
+minus40:
+    minus39|-
+
+minus41:
+    minus40|-
+
+minus42:
+    minus41|-
+
+minus43:
+    minus42|-
+
+minus44:
+    minus43|-
+
+minus45:
+    minus44|-
+
+minus46:
+    minus45|-
+
+minus47:
+    minus46|-
+
+minus48:
+    minus47|-
+
+minus49:
+    minus48|-
+
+minus50:
+    minus49|-
+
+minus51:
+    minus50|-
+
+minus52:
+    minus51|-
+
+minus53:
+    minus52|-
+
+minus54:
+    minus53|-
+
+minus55:
+    minus54|-
+
+minus56:
+    minus55|-
+
+minus57:
+    minus56|-
+
+minus58:
+    minus57|-
+
+minus59:
+    minus58|-
+
+minus60:
+    minus59|-
+
+minus61:
+    minus60|-
+
+minus62:
+    minus61|-
+
+minus63:
+    minus62|-
+
+minus64:
+    minus63|-
+
+minus65:
+    minus64|-
+
+minus66:
+    minus65|-
+
+minus67:
+    minus66|-
+
+minus68:
+    minus67|-
+
+minus69:
+    minus68|-
+
+minus70:
+    minus69|-
+
+minus71:
+    minus70|-
+
+minus72:
+    minus71|-
+
+minus73:
+    minus72|-
+
+minus74:
+    minus73|-
+
+minus75:
+    minus74|-
+
+minus76:
+    minus75|-
+
+minus77:
+    minus76|-
+
+minus78:
+    minus77|-
+
+minus79:
+    minus78|-
+
+minus80:
+    minus79|-
+
+minus81:
+    minus80|-
+
+minus82:
+    minus81|-
+
+minus83:
+    minus82|-
+
+minus84:
+    minus83|-
+
+minus85:
+    minus84|-
+
+minus86:
+    minus85|-
+
+minus87:
+    minus86|-
+
+minus88:
+    minus87|-
+
+minus89:
+    minus88|-
+
+minus90:
+    minus89|-
+
+minus91:
+    minus90|-
+
+minus92:
+    minus91|-
+
+minus93:
+    minus92|-
+
+minus94:
+    minus93|-
+
+minus95:
+    minus94|-
+
+minus96:
+    minus95|-
+
+minus97:
+    minus96|-
+
+minus98:
+    minus97|-
+
+minus99:
+    minus98|-
+
+minus100:
+    minus99|-
+
+minus101:
+    minus100|-
+
+minus102:
+    minus101|-
+
+minus103:
+    minus102|-
+
+minus104:
+    minus103|-
+
+minus105:
+    minus104|-
+
+minus106:
+    minus105|-
+
+minus107:
+    minus106|-
+
+minus108:
+    minus107|-
+
+minus109:
+    minus108|-
+
+minus110:
+    minus109|-
+
+minus111:
+    minus110|-
+
+minus112:
+    minus111|-
+
+minus113:
+    minus112|-
+
+minus114:
+    minus113|-
+
+minus115:
+    minus114|-
+
+minus116:
+    minus115|-
+
+minus117:
+    minus116|-
+
+minus118:
+    minus117|-
+
+minus119:
+    minus118|-
+
+minus120:
+    minus119|-
+
+minus121:
+    minus120|-
+
+minus122:
+    minus121|-
+
+minus123:
+    minus122|-
+
+minus124:
+    minus123|-
+
+minus125:
+    minus124|-
+
+minus126:
+    minus125|-
+
+minus127:
+    minus126|-
+
+minus128:
+    minus127|-
+
+minus129:
+    minus128|-
+
+minus130:
+    minus129|-
+
+minus131:
+    minus130|-
+
+minus132:
+    minus131|-
+
+minus133:
+    minus132|-
+
+minus134:
+    minus133|-
+
+minus135:
+    minus134|-
+
+minus136:
+    minus135|-
+
+minus137:
+    minus136|-
+
+minus138:
+    minus137|-
+
+minus139:
+    minus138|-
+
+minus140:
+    minus139|-
+
+minus141:
+    minus140|-
+
+minus142:
+    minus141|-
+
+minus143:
+    minus142|-
+
+minus144:
+    minus143|-
+
+minus145:
+    minus144|-
+
+minus146:
+    minus145|-
+
+minus147:
+    minus146|-
+
+minus148:
+    minus147|-
+
+minus149:
+    minus148|-
+
+minus150:
+    minus149|-
+
+minus151:
+    minus150|-
+
+minus152:
+    minus151|-
+
+minus153:
+    minus152|-
+
+minus154:
+    minus153|-
+
+minus155:
+    minus154|-
+
+minus156:
+    minus155|-
+
+minus157:
+    minus156|-
+
+minus158:
+    minus157|-
+
+minus159:
+    minus158|-
+
+minus160:
+    minus159|-
+
+minus161:
+    minus160|-
+
+minus162:
+    minus161|-
+
+minus163:
+    minus162|-
+
+minus164:
+    minus163|-
+
+minus165:
+    minus164|-
+
+minus166:
+    minus165|-
+
+minus167:
+    minus166|-
+
+minus168:
+    minus167|-
+
+minus169:
+    minus168|-
+
+minus170:
+    minus169|-
+
+minus171:
+    minus170|-
+
+minus172:
+    minus171|-
+
+minus173:
+    minus172|-
+
+minus174:
+    minus173|-
+
+minus175:
+    minus174|-
+
+minus176:
+    minus175|-
+
+minus177:
+    minus176|-
+
+minus178:
+    minus177|-
+
+minus179:
+    minus178|-
+
+minus180:
+    minus179|-
+
+minus181:
+    minus180|-
+
+minus182:
+    minus181|-
+
+minus183:
+    minus182|-
+
+minus184:
+    minus183|-
+
+minus185:
+    minus184|-
+
+minus186:
+    minus185|-
+
+minus187:
+    minus186|-
+
+minus188:
+    minus187|-
+
+minus189:
+    minus188|-
+
+minus190:
+    minus189|-
+
+minus191:
+    minus190|-
+
+minus192:
+    minus191|-
+
+minus193:
+    minus192|-
+
+minus194:
+    minus193|-
+
+minus195:
+    minus194|-
+
+minus196:
+    minus195|-
+
+minus197:
+    minus196|-
+
+minus198:
+    minus197|-
+
+minus199:
+    minus198|-
+
+minus200:
+    minus199|-
+
+minus201:
+    minus200|-
+
+minus202:
+    minus201|-
+
+minus203:
+    minus202|-
+
+minus204:
+    minus203|-
+
+minus205:
+    minus204|-
+
+minus206:
+    minus205|-
+
+minus207:
+    minus206|-
+
+minus208:
+    minus207|-
+
+minus209:
+    minus208|-
+
+minus210:
+    minus209|-
+
+minus211:
+    minus210|-
+
+minus212:
+    minus211|-
+
+minus213:
+    minus212|-
+
+minus214:
+    minus213|-
+
+minus215:
+    minus214|-
+
+minus216:
+    minus215|-
+
+minus217:
+    minus216|-
+
+minus218:
+    minus217|-
+
+minus219:
+    minus218|-
+
+minus220:
+    minus219|-
+
+minus221:
+    minus220|-
+
+minus222:
+    minus221|-
+
+minus223:
+    minus222|-
+
+minus224:
+    minus223|-
+
+minus225:
+    minus224|-
+
+minus226:
+    minus225|-
+
+minus227:
+    minus226|-
+
+minus228:
+    minus227|-
+
+minus229:
+    minus228|-
+
+minus230:
+    minus229|-
+
+minus231:
+    minus230|-
+
+minus232:
+    minus231|-
+
+minus233:
+    minus232|-
+
+minus234:
+    minus233|-
+
+minus235:
+    minus234|-
+
+minus236:
+    minus235|-
+
+minus237:
+    minus236|-
+
+minus238:
+    minus237|-
+
+minus239:
+    minus238|-
+
+minus240:
+    minus239|-
+
+minus241:
+    minus240|-
+
+minus242:
+    minus241|-
+
+minus243:
+    minus242|-
+
+minus244:
+    minus243|-
+
+minus245:
+    minus244|-
+
+minus246:
+    minus245|-
+
+minus247:
+    minus246|-
+
+minus248:
+    minus247|-
+
+minus249:
+    minus248|-
+
+minus250:
+    minus249|-
+
+minus251:
+    minus250|-
+
+minus252:
+    minus251|-
+
+minus253:
+    minus252|-
+
+minus254:
+    minus253|-
+
+minus255:
+    minus254|-
+
+// movement
+move1L:
+    [-<+>]
+
+move2L:
+    [-<<+>>]
+
+move3L:
+    [-<<<+>>>]
+
+move1R:
+    [->+<]
+
+move2R:
+    [->>+<<]
+
+move3R:
+    [->>>+<<<]
+
+// swap arr[pos], arr[pos + 1]
+// arr[pos + 2] must be 0
+swapNext:
+    move2R|>move1L|>move1L|<<
+
+// copy arr[pos] to arr[pos + 1]
+// arr[pos + 1] and arr[pos + 2] must be 0
+copyR:
+    [->+>+<<]
+    >>move2L|<<
+
+// copy arr[pos] to arr[pos - 1]
+// arr[pos + 1] must be 0
+copyL:
+    [->+<<+>]
+    >move1L|<
+
+// clear arr[pos]
+clear:
+    [-]
+
+// div byte by 10
+// arr[pos] /= 10, arr[pos + 1] and arr[pos + 2] must be 0
+div10:
+    [
+        >plus9|
+        [
+            -<{-}>
+        ]
+        <{->>+<<}
+    ]
+    >>move2L|<<
+
+// multiply byte by 10 with overflow
+// arr[pos] *= 10, arr[pos + 1] must be 0
+multiply10:
+    [
+        ->plus10|<
+    ]
+    >move1L|<
+
+// get mod byte by 10
+// arr[pos] %= 10, arr[pos + 1] arr[pos + 2] must be 0
+mod10:
+    [
+        >plus9|
+        [
+            -<{->>+<<}>
+        ]
+        <{->>clear|<<}
+    ]
+    >>move2L|<<
+
+readTag:
+    ,minus62|
+    [,minus62|]
+
+parseAmp:
+    ,
+    minus108| // &lt;
+    {
+        plus108|
+        minus103| // &gt;
+        {
+            plus103|
+            minus113| // &quot;
+            {
+                plus113|
+                ,
+                minus109|
+                {
+                    plus109|
+                    ,,clear|
+                    plus39|
+                    .
+                    clear|
+                    minus109|
+                }
+                plus109|
+                {
+                    ,,clear|
+                    plus38|
+                    .
+                }
+                clear|
+                minus113|
+            }
+            plus113| // &quot;
+            {
+                ,,,clear|
+                plus34|
+                .
+            }
+            clear|
+            minus103|
+        }
+        plus103| // &gt;
+        {
+            ,,clear|
+            plus62|
+            .
+        }
+        clear|
+        minus108|
+    }
+    plus108|
+    { // &lt;
+        ,,clear|
+        plus60|
+        .
+    }
+    clear|
+
+parseChar:
+    minus38|
+    {
+        plus38|
+        .
+        clear|
+        minus38|
+    }
+    plus38|
+    {
+        parseAmp|
+    }
+    clear|
+
+readName:
+    readTag|
+    plus32| // 32 bytes must be written
+    [
+        ->,
+        minus60|
+        {
+            plus60|
+            parseChar|
+            clear|
+            minus60|
+        }
+        plus60|
+        {
+            clear|.
+            <
+            [->.<]
+        }
+        <
+    ]
+    readTag|
+
+readLogin:
+    readTag|
+    plus16| // 16 bytes must be written
+    [
+        ->,
+        minus60|
+        {
+            plus60|
+            parseChar|
+            clear|
+            minus60|
+        }
+        plus60|
+        {
+            clear|.
+            <
+            [->.<]
+        }
+        <
+    ]
+    readTag|
+
+readGroup:
+    readTag|
+    plus8| // 8 bytes must be written
+    [
+        ->,
+        minus60|
+        {
+            plus60|
+            parseChar|
+            clear|
+            minus60|
+        }
+        plus60|
+        {
+            clear|.
+            <
+            [->.<]
+        }
+        <
+    ]
+    readTag|
+
+readPractice:
+    readTag|
+    plus8|
+    [
+        ->,minus48|.<
+    ]
+    readTag|
+
+readRepo:
+    readTag|
+    plus59| // 59 bytes must be written
+    [
+        ->,
+        minus60|
+        {
+            plus60|
+            parseChar|
+            clear|
+            minus60|
+        }
+        plus60|
+        {
+            clear|.
+            <
+            [->.<]
+        }
+        <
+    ]
+    readTag|
+
+read3DigitsInt:
+    plus3| // 3-digits int
+    [
+        ->
+        multiply10|
+        >,minus48|
+        [-<+>]
+        <<
+    ]
+    >.clear|<
+
+readMark:
+    readTag|
+    read3DigitsInt|
+    readTag|
+
+readFloatMark:
+    readTag|
+    plus4| // 4 3-digit integers
+    [
+        ->read3DigitsInt|
+        <
+    ]
+    readTag|
+
+main:
+    readTag|
+    readName|readLogin|readGroup|readPractice|readRepo|readMark|readFloatMark|
