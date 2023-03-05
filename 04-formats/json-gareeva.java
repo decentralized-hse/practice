@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -85,6 +86,7 @@ public class Main {
             FileChannel fc = new FileInputStream(filePath.toFile()).getChannel();
             int fcSize = (int) fc.size();
             ByteBuffer buffer = ByteBuffer.allocate(fcSize);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
             fc.read(buffer);
             buffer.flip();
             fc.close();
@@ -122,6 +124,7 @@ public class Main {
     private static void writeBinFile(Path filePath, List<Student> students) {
         try {
             ByteBuffer buffer = ByteBuffer.allocate(students.size() * 128);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
             for (Student st : students) {
                 putStringBytes(buffer, st.name, 32);
                 putStringBytes(buffer, st.login, 16);
