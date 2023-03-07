@@ -66,11 +66,11 @@ impl Student {
             "insert into student (name, login, student_group, practice, project_repo, project_mark, mark)
                   values (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![
-                Vec::from(self.name),
-                Vec::from(self.login),
-                Vec::from(self.group),
+                String::from_utf8(self.name.to_vec()).unwrap(),
+                String::from_utf8(self.login.to_vec()).unwrap(),
+                String::from_utf8(self.group.to_vec()).unwrap(),
                 Vec::from(self.practice),
-                Vec::from(self.project.repo),
+                String::from_utf8(self.project.repo.to_vec()).unwrap(),
                 self.project.mark,
                 self.mark,
             ],
@@ -84,12 +84,12 @@ fn load_students_from_db(conn: &rusqlite::Connection) -> rusqlite::Result<Vec<St
     let mut stmt = conn.prepare("select name, login, student_group, practice, project_repo, project_mark, mark from student")?;
     let student_iter = stmt.query_map([], |row| {
         Ok(Student {
-            name: row.get::<usize, Vec<u8>>(0)?.as_slice().try_into().unwrap(),
-            login: row.get::<usize, Vec<u8>>(1)?.as_slice().try_into().unwrap(),
-            group: row.get::<usize, Vec<u8>>(2)?.as_slice().try_into().unwrap(),
+            name: row.get::<usize, String>(0)?.as_bytes().try_into().unwrap(),
+            login: row.get::<usize, String>(1)?.as_bytes().try_into().unwrap(),
+            group: row.get::<usize, String>(2)?.as_bytes().try_into().unwrap(),
             practice: row.get::<usize, Vec<u8>>(3)?.as_slice().try_into().unwrap(),
             project: Project {
-                repo: row.get::<usize, Vec<u8>>(4)?.as_slice().try_into().unwrap(),
+                repo: row.get::<usize, String>(4)?.as_bytes().try_into().unwrap(),
                 mark: row.get(5)?,
             },
             mark: row.get(6)?,
@@ -120,11 +120,11 @@ fn main() {
         let conn = rusqlite::Connection::open(db_filename.clone()).unwrap();
         conn.execute(
             "create table if not exists student (
-                 name blob not null,
-                 login blob not null,
-                 student_group blob not null,
+                 name text not null,
+                 login text not null,
+                 student_group text not null,
                  practice blob not null,
-                 project_repo blob not null,
+                 project_repo text not null,
                  project_mark integer not null,
                  mark real not null
          )",
