@@ -1,0 +1,21 @@
+namespace schema;
+
+table Project {
+  repo:string;
+  mark:uint8;
+}
+
+table Student {
+  name:string;
+  login:string;
+  group:string;
+  practice:[uint8];
+  project:Project;
+  mark:float32;
+}
+
+table Root {
+  students:[Student];
+}
+
+root_type Root;
