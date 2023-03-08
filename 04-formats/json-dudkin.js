@@ -41,7 +41,7 @@ function trimNullBytes(str) {
 }
 
 function getStringField(buf, fieldName) {
-    return trimNullBytes(getBinaryField(buf, fieldName).toString());
+    return trimNullBytes(getBinaryField(buf, fieldName).toString()).replace(/\0+$/, '');;
 }
 
 function writeStringField(buf, fieldName, value) {
