@@ -12,41 +12,45 @@ import (
 	"strings"
 )
 
-type Project struct {
+type ProjectC struct {
 	Repo [59]byte
 	Mark uint8
 }
 
-type Student struct {
+type StudentC struct {
 	Name     [32]byte
 	Login    [16]byte
 	Group    [8]byte
 	Practice [8]uint8
-	Project
-	Mark float32
+	Project  ProjectC
+	Mark     float32
+}
+
+type StudentsXML struct {
+	Students []StudentXML `xml:"student"`
 }
 
 type projectXML struct {
-	Repo string `xml:"project>repo"`
-	Mark uint8  `xml:"project>mark"`
+	Repo string `xml:"repo"`
+	Mark uint8  `xml:"mark"`
 }
 
 type StudentXML struct {
-	Name       string  `xml:"name"`
-	Login      string  `xml:"login"`
-	Group      string  `xml:"group"`
-	Practice   []int32 `xml:"practice"`
-	projectXML `xml:"project"`
-	Mark       float32 `xml:"mark"`
+	Name     string     `xml:"name"`
+	Login    string     `xml:"login"`
+	Group    string     `xml:"group"`
+	Practice []int32    `xml:"practice"`
+	Project  projectXML `xml:"project"`
+	Mark     float32    `xml:"mark"`
 }
 
-func goStruct2xmlStruct(student Student) StudentXML {
+func goStruct2xmlStruct(student StudentC) StudentXML {
 	xmlStudent := StudentXML{
 		Name:     strings.TrimRight(string(student.Name[:]), "\x00"),
 		Login:    strings.TrimRight(string(student.Login[:]), "\x00"),
 		Group:    strings.TrimRight(string(student.Group[:]), "\x00"),
 		Practice: make([]int32, 8),
-		projectXML: projectXML{
+		Project: projectXML{
 			Repo: strings.TrimRight(string(student.Project.Repo[:]), "\x00"),
 			Mark: student.Project.Mark,
 		},
@@ -58,24 +62,24 @@ func goStruct2xmlStruct(student Student) StudentXML {
 	return xmlStudent
 }
 
-func xmlStruct2goStruct(xmlStudent StudentXML) Student {
-	var student Student
+func xmlStruct2goStruct(xmlStudent StudentXML) StudentC {
+	var student StudentC
 
 	copy(student.Name[:], xmlStudent.Name)
 	copy(student.Login[:], xmlStudent.Login)
 	copy(student.Group[:], xmlStudent.Group)
-	copy(student.Project.Repo[:], xmlStudent.projectXML.Repo)
+	copy(student.Project.Repo[:], xmlStudent.Project.Repo)
 	for i, practice := range xmlStudent.Practice {
 		student.Practice[i] = uint8(practice)
 	}
-	student.Project.Mark = xmlStudent.projectXML.Mark
+	student.Project.Mark = xmlStudent.Project.Mark
 	student.Mark = xmlStudent.Mark
 
 	return student
 }
 
-func readBinaryFile(filepath string) ([]Student, error) {
-	var students []Student
+func readBinaryFile(filepath string) ([]StudentC, error) {
+	var students []StudentC
 
 	f, err := os.Open(filepath)
 	if err != nil {
@@ -84,7 +88,7 @@ func readBinaryFile(filepath string) ([]Student, error) {
 	defer f.Close()
 
 	for {
-		var student Student
+		var student StudentC
 
 		if err := binary.Read(f, binary.LittleEndian, &student); err != nil {
 			if err == io.EOF {
@@ -97,7 +101,7 @@ func readBinaryFile(filepath string) ([]Student, error) {
 	}
 }
 
-func readXMLFile(filepath string) ([]Student, error) {
+func readXMLFile(filepath string) ([]StudentC, error) {
 	xmlFile, err := os.Open(filepath)
 	if err != nil {
 		return nil, fmt.Errorf("Could not open file: %v", err)
@@ -109,21 +113,21 @@ func readXMLFile(filepath string) ([]Student, error) {
 		return nil, fmt.Errorf("Could not read file contents: %v", err)
 	}
 
-	var studentsXML []StudentXML
+	var studentsXML StudentsXML
 	err = xml.Unmarshal(byteValue, &studentsXML)
 	if err != nil {
 		return nil, fmt.Errorf("Could not unmarshall XML: %v", err)
 	}
 
-	var students []Student
-	for _, studentXML := range studentsXML {
+	var students []StudentC
+	for _, studentXML := range studentsXML.Students {
 		students = append(students, xmlStruct2goStruct(studentXML))
 	}
 
 	return students, nil
 }
 
-func writeBinaryFile(filepath string, students []Student) error {
+func writeBinaryFile(filepath string, students []StudentC) error {
 	f, err := os.Create(filepath)
 	if err != nil {
 		return err
@@ -139,7 +143,7 @@ func writeBinaryFile(filepath string, students []Student) error {
 	return nil
 }
 
-func writeXMLFile(filepath string, students []Student) error {
+func writeXMLFile(filepath string, students []StudentC) error {
 	file, err := os.Create(filepath)
 	if err != nil {
 		return err
@@ -149,12 +153,12 @@ func writeXMLFile(filepath string, students []Student) error {
 	var studentsXML []StudentXML
 	for _, student := range students {
 		studentsXML = append(studentsXML, goStruct2xmlStruct(student))
-		log.Print(studentsXML[len(studentsXML)-1])
 	}
+	result := StudentsXML{Students: studentsXML}
 
 	encoder := xml.NewEncoder(file)
 	encoder.Indent("", "\t")
-	if err := encoder.Encode(studentsXML); err != nil {
+	if err := encoder.Encode(result); err != nil {
 		return err
 	}
 
@@ -177,8 +181,8 @@ func main() {
 		log.Panic("Exactly one file should be an .xml file")
 	}
 
-	var read func(filename string) ([]Student, error)
-	var write func(filename string, students []Student) error
+	var read func(filename string) ([]StudentC, error)
+	var write func(filename string, students []StudentC) error
 
 	if inputExtension == ".xml" {
 		read = readXMLFile
