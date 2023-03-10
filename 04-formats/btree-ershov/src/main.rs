@@ -118,8 +118,9 @@ fn main() {
 
         let db_filename = prefix + ".sqlite";
         let conn = rusqlite::Connection::open(db_filename.clone()).unwrap();
+        conn.execute("drop table if exists student", []).unwrap();
         conn.execute(
-            "create table if not exists student (
+            "create table student (
                  name text not null,
                  login text not null,
                  student_group text not null,
