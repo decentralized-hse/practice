@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+message Project {
+    string repo = 1;
+    uint32 mark = 2;
+}
+
+message Student {
+    string name = 1;
+    string login = 2;
+    string group = 3;
+    uint32 practice = 4;
+    Project project = 5;
+    float mark = 6;
+}
