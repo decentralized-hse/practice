@@ -21,7 +21,7 @@ var fs = require('fs')
 const STUDENT_SIZE = 128
 
 function cStructsToJson(path) {
-    var fileData = Buffer.from(fs.readFileSync(path, 'UTF-8'), 'UTF-8')
+    var fileData = Buffer.from(fs.readFileSync(path, 'binary'), 'binary')
     if (fileData.length % STUDENT_SIZE != 0) {
         throw new Error('File size (' + fileData.length + ') is invalid (should be divided by ' + STUDENT_SIZE + ')')
     }
