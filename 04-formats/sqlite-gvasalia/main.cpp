@@ -49,8 +49,7 @@ int main(int argc, char *argv[])
 {
 
     string type = argv[1];
-    type = type.substr(type.size() - 3, 3);
-    if (type == "bin")
+    if (type.substr(type.size() - 3, 3) == "bin")
     {
         std::cout << "Reading from binary file\n";
         ifstream file(argv[1], ios::in | ios::binary);
@@ -63,7 +62,8 @@ int main(int argc, char *argv[])
 
         Student record;
         sqlite3 *db;
-        int rc = sqlite3_open("gvasalia.db", &db);
+        std::string file_name = type.substr(0, type.size() - 4) + ".sqlite";
+        int rc = sqlite3_open(file_name.c_str(), &db);
         rc = sqlite3_exec(db, "DROP TABLE IF EXISTS students; ", NULL, NULL, NULL);
         rc = sqlite3_exec(db, "CREATE TABLE students (name TEXT, login TEXT, group1 TEXT, practice TEXT, repo TEXT, mark_project INTEGER, mark FLOAT); ", NULL, NULL, NULL);
         while (file.read((char *)&record, sizeof(Student)))
@@ -103,22 +103,23 @@ int main(int argc, char *argv[])
             // sorry again :(
 
             rc = sqlite3_exec(db, query.c_str(), NULL, NULL, NULL);
-            std::cout << "Record created successfully\n";
+            std::cout << "Record created successfully in " << file_name << '\n';
         }
 
         file.close();
         sqlite3_close(db);
     }
-    else if (type == ".db")
+    else if (type.substr(type.size() - 7, 7) == ".sqlite")
     {
         std::cout << "Reading from sqlite db\n";
         sqlite3 *db;
-        int rc = sqlite3_open("gvasalia.db", &db);
+        int rc = sqlite3_open(argv[1], &db);
         Student result;
         char get[] = "SELECT name, login, group1, practice, repo, mark_project, mark FROM students;";
         sqlite3_stmt *stmt;
         sqlite3_prepare_v2(db, get, -1, &stmt, NULL);
-        FILE *out = fopen("students1.bin", "w");
+        std::string file_name = type.substr(0, type.size() - 7) + ".bin";
+        FILE *out = fopen(file_name.c_str(), "w");
         while (sqlite3_step(stmt) == SQLITE_ROW)
         {
             std::string name = std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0)));
@@ -130,10 +131,10 @@ int main(int argc, char *argv[])
             float mark = sqlite3_column_double(stmt, 6);
 
             Student student;
-            memcpy(student.name, name.c_str(), name.size());
-            memcpy(student.login, login.c_str(), login.size());
-            memcpy(student.project.repo, repo.c_str(), repo.size());
-            memcpy(student.group, group1.c_str(), group1.size());
+            memcpy(student.name, name.c_str(), 32);
+            memcpy(student.login, login.c_str(), 16);
+            memcpy(student.project.repo, repo.c_str(), 59);
+            memcpy(student.group, group1.c_str(), 8);
             for (int i = 0; i < 8; ++i)
             {
                 int num = practice[2 * i];
@@ -143,7 +144,7 @@ int main(int argc, char *argv[])
             student.mark = mark;
 
             fwrite(&student, sizeof(Student), 1, out);
-            std::cout << "Record is written to students1.bin\n";
+            std::cout << "Record is written to " << file_name << '\n';
         };
         sqlite3_close(db);
         fclose(out);
