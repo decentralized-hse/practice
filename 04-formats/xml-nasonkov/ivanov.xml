@@ -1,0 +1,13 @@
+<students>
+    <student>
+        <name>Иван Иванов</name>
+        <login>ivanov</login>
+        <group>ИА-345</group>
+        <practice>11000000</practice>
+        <project>
+            <repo>github.com/decentralized-hse/practice/tree/main/04-formats</repo>
+            <mark>9</mark>
+        </project>
+        <mark>8</mark>
+    </student>
+</students>
