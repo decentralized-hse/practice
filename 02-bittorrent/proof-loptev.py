@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 def read_hashes(filepath):
-    with open(filepath, "r") as f:
+    with open(f"{filepath}.hashtree", "r") as f:
         hashes = []
         for line in f:
             hashes.extend(line.strip().split())
@@ -40,7 +40,7 @@ assert is_right(0b01110, 0b0) == True
 
 def prove(hashes, package_number):
     node = package_number * 2
-    proof = [hashes[node]]
+    proof = []
     mask = 0
     while is_right(node, mask) or right_subtree_bound(sibling(node, mask), mask) < len(hashes):
         proof.append(hashes[sibling(node, mask)])
@@ -61,4 +61,5 @@ if __name__ == "__main__":
     hashes = read_hashes(args.filepath)
     proof = prove(hashes, args.package_number)
     with open(f"{args.filepath}.{args.package_number}.proof", "w") as fout:
-        print(*proof, sep=' ', file=fout)
+        if proof:
+            print(*proof, sep=' ', file=fout)
