@@ -1,0 +1,11 @@
+[package]
+name = "kv-strygin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bincode = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde-big-array = "0.5"
+iowrap = "0.2.1"
+text_io = "0.1.12"
