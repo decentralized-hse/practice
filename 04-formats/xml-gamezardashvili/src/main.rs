@@ -1,10 +1,9 @@
-use std::io::{Read, Error};
+use std::io::{self, Read, Error};
 use std::fs::write;
 use std::fs::File;
 use std::mem;
 use std::slice;
 use serde::{Serialize, Deserialize};
-use serde_xml_rs::{from_str, to_string};
 
 
 #[repr(C, packed)]
@@ -62,6 +61,7 @@ fn to_c_string(s: &String, bytes: & mut [u8]) {
     }
 }
 
+
 #[derive(Debug, Serialize, Deserialize, Default)]
 struct Student {
     name: String,
@@ -73,7 +73,15 @@ struct Student {
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
-struct Practice(Vec<u8>);
+struct Students {
+    pub student: Vec<Student>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct Root {
+    pub students: Students,
+}
+
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 struct Project {
@@ -122,26 +130,45 @@ fn main() -> Result<(), Error> {
     if filename.ends_with(".xml") {
         println!("Detected xml file");
         let studxml = std::fs::read_to_string(filename.clone())?;
-        let stud : Student = from_str(&studxml).unwrap();
-        let studc = Student::to_c(&stud);
-        let studbin : Vec<u8> = to_bin(&studc);
+        let studs : Root = quick_xml::de::from_str(&studxml).unwrap();
+        let mut result : Vec<u8> = vec![];
+        for stud in studs.students.student {
+            let studc = Student::to_c(&stud);
+            let studbin : Vec<u8> = to_bin(&studc);
+            result.extend(studbin);
+        }
         filename.truncate(filename.len() - 3);
         let outfile = format!("{}bin", filename);
-        write(outfile, studbin);
+        write(outfile, result)?;
     } else {
         println!("Detected binary file");
         let mut file = File::open(filename.clone())?;
-        let mut cstud: CStudent = unsafe { mem::zeroed() };
-        let cstud_size = mem::size_of::<CStudent>();
-        unsafe {
-            let cstud_slice = slice::from_raw_parts_mut(&mut cstud as *mut _ as *mut u8, cstud_size);
-            file.read_exact(cstud_slice).unwrap();
+        let mut result =  Root { students: Students {
+            student: vec![],
+        }};
+        loop {
+            let mut cstud: CStudent = unsafe { mem::zeroed() };
+            let cstud_size = mem::size_of::<CStudent>();
+            unsafe {
+                let cstud_slice = slice::from_raw_parts_mut(&mut cstud as *mut _ as *mut u8, cstud_size);
+                match  file.read_exact(cstud_slice) {
+                    Ok(_) => {},
+                    Err(ref err) if err.kind() == io::ErrorKind::UnexpectedEof => {
+                        // End of file reached
+                        break;
+                    },
+                    Err(err) => {
+                        panic!("Failed reading file: {}", err);
+                    },
+                }
+            }
+            let stud = Student::from_c(&cstud);
+            result.students.student.push(stud);
         }
-        let stud = Student::from_c(&cstud);
-        let studxml = to_string(&stud).unwrap();
+        let studxml = quick_xml::se::to_string(&(result)).unwrap();
         filename.truncate(filename.len() - 3);
         let outfile = format!("{}xml", filename);
-        write(outfile, studxml);
+        write(outfile, studxml)?;
     }
     Ok(())
 }
