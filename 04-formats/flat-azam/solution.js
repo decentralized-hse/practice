@@ -14,7 +14,8 @@ function parseBin(path) {
 		var practice = Array.from(new TextEncoder().encode(fileData.slice(56, 64)));
 		var repo = fileData.slice(64, 123).toString();
 		var markk = new TextEncoder().encode(fileData.slice(123, 124))[0];
-		var mark = new Float32Array(Buffer.from(fileData.slice(124, 128)).buffer)[0];
+		// var mark = new Float32Array(Buffer.from(fileData.slice(124, 128)).buffer)[0];
+		var mark = fileData.slice(124, 128).readFloatLE(0);
 		res.push({
 			'name' : name,
 			'login' : login,
