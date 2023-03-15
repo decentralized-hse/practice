@@ -33,20 +33,8 @@ int main(int argn, char** args) {
         },
         .mark = 8,
     };
-    struct Student petrov = {
-        .name = "петр петров",
-        .login = "petrov",
-        .group = "\"AB-45\"",
-        .practice = {1, 1, 0, 0, 0, 0, 0, 0},
-        .project = {
-            .repo = "github.com/decentralized-hse/practice/tree/main/04-formats",
-            .mark = 9,
-        },
-        .mark = 8.3,
-    };
-    int fd = open("ivanov.bin", O_CREAT|O_RDWR|O_TRUNC);
+    int fd = open("ivanov.bin", O_CREAT|O_RDWR|O_TRUNC, S_IRWXU);
     write(fd, &ivanov, sizeof(struct Student));
-    write(fd, &petrov, sizeof(struct Student));
     close(fd);
     return 0;
 }

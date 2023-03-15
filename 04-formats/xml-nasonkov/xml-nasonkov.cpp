@@ -57,11 +57,11 @@ void fromBinToXML(char* filename) {
         char login[17];
         std::memcpy(login, student.login, 16);
         login[16] = '\0';
-        /*size_t ind = 16;
+        size_t ind = 16;
         while (!std::isalpha(login[ind]) && !std::isdigit(login[ind]) && login[ind] != '_') {
             login[ind] = 0;
             --ind;
-        }*/
+        }
         cur_student_login->SetText(login);
         cur_student->InsertEndChild(cur_student_login);
 
@@ -69,11 +69,11 @@ void fromBinToXML(char* filename) {
         char group[9];
         std::memcpy(group, student.group, 8);
         group[8] = '\0';
-        /*ind = 8;
+        ind = 8;
         while (!std::isalpha(group[ind]) && !std::isdigit(group[ind]) && group[ind] != '_') {
             group[ind] = '\0';
             --ind;
-        }*/
+        }
         cur_student_group->SetText(group);
         cur_student->InsertEndChild(cur_student_group);
 
