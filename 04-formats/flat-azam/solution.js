@@ -8,14 +8,13 @@ function parseBin(path) {
 	var fileData = Buffer.from(fs.readFileSync(path, "utf8"), "utf8");
 	var res = []
 	for (var i = 0; i < fileData.length; i += 128) {
-		var name = fileData.slice(0, 32).toString();
-		var login = fileData.slice(32, 48).toString();
-		var group = fileData.slice(48, 56).toString();
-		var practice = Array.from(new TextEncoder().encode(fileData.slice(56, 64)));
-		var repo = fileData.slice(64, 123).toString();
-		var markk = new TextEncoder().encode(fileData.slice(123, 124))[0];
-		// var mark = new Float32Array(Buffer.from(fileData.slice(124, 128)).buffer)[0];
-		var mark = fileData.slice(124, 128).readFloatLE(0);
+		var name = fileData.slice(i + 0, i + 32).toString();
+		var login = fileData.slice(i + 32, i + 48).toString();
+		var group = fileData.slice(i + 48, i + 56).toString();
+		var practice = Array.from(new TextEncoder().encode(fileData.slice(i + 56, i + 64)));
+		var repo = fileData.slice(i + 64, i + 123).toString();
+		var markk = new TextEncoder().encode(fileData.slice(i + 123, i + 124))[0];
+		var mark = fileData.slice(i + 124, i + 128).readFloatLE(0);
 		res.push({
 			'name' : name,
 			'login' : login,
@@ -27,15 +26,16 @@ function parseBin(path) {
 			},
 			'mark' : mark
 		});
+		
 	}
 	return res;
 }
 
 function getFlat(binStudent) {
 	studs = []
+	var builder = new flatbuffers.Builder(1024);
 	for (var i = 0; i < N; i++) {
 		var stud = binStudent[i]
-		var builder = new flatbuffers.Builder(1024);
 
 		var name = builder.createString(stud.name);
 		var login = builder.createString(stud.login);
@@ -116,7 +116,6 @@ if (process.argv[2].split('.').pop() == 'bin') {
 	var buf = new flatbuffers.ByteBuffer(bytes);
 	var students = ds.Students.getRootAsStudents(buf);
 	var N = students.kingsLength();
-	var binStudent = parseBin(process.argv[2]);
 	console.log(`${N} student${N > 1 ? 's' : ''} read...`);
 	var fileName = process.argv[2].split('.');
 	fileName.pop();
