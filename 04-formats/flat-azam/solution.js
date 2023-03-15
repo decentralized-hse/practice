@@ -5,9 +5,11 @@ var Buffer = require('buffer/').Buffer
 
 
 function parseBin(path) {
-	var fileData = Buffer.from(fs.readFileSync(path, "utf8"), "utf8");
-	var res = []
-	for (var i = 0; i < fileData.length; i += 128) {
+	var data = fs.readFileSync(path, "utf8");
+	var fileData = Buffer.from(data, "utf8");
+	var N = Buffer.byteLength(data, 'utf8');
+	var res = [];
+	for (var i = 0; i < N; i += 128) {
 		var name = fileData.slice(i + 0, i + 32).toString();
 		var login = fileData.slice(i + 32, i + 48).toString();
 		var group = fileData.slice(i + 48, i + 56).toString();
