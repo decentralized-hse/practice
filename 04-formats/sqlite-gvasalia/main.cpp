@@ -131,7 +131,8 @@ int main(int argc, char *argv[])
             float mark = sqlite3_column_double(stmt, 6);
 
             Student student;
-            memcpy(student.name, name.c_str(), 32);
+	    memset(&student, 0, sizeof(Student));
+            memcpy(student.name, name.c_str(), name.size());
             memcpy(student.login, login.c_str(), 16);
             memcpy(student.project.repo, repo.c_str(), 59);
             memcpy(student.group, group1.c_str(), 8);
