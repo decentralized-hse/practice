@@ -154,17 +154,19 @@ fn json_to_bin(filename: &mut String) {
 
     let mut c_structs = Vec::<u8>::new();
     for s in students {
-        c_structs.extend_from_slice(s.name.as_bytes());
-        c_structs.extend_from_slice(&vec![0u8; 32 - c_structs.len()]);
-        c_structs.extend_from_slice(s.login.as_bytes());
-        c_structs.extend_from_slice(&vec![0u8; 48 - c_structs.len()]);
-        c_structs.extend_from_slice(s.group.as_bytes());
-        c_structs.extend_from_slice(&vec![0u8; 56 - c_structs.len()]);
-        c_structs.extend_from_slice(&s.practice);
-        c_structs.extend_from_slice(s.project.repo.as_bytes());
-        c_structs.extend_from_slice(&vec![0u8; 123 - c_structs.len()]);
-        c_structs.push(s.project.mark);
-        c_structs.extend_from_slice(&s.mark.to_le_bytes());
+        let mut cur_struct = Vec::<u8>::new();
+        cur_struct.extend_from_slice(s.name.as_bytes());
+        cur_struct.extend_from_slice(&vec![0u8; 32 - cur_struct.len()]);
+        cur_struct.extend_from_slice(s.login.as_bytes());
+        cur_struct.extend_from_slice(&vec![0u8; 48 - cur_struct.len()]);
+        cur_struct.extend_from_slice(s.group.as_bytes());
+        cur_struct.extend_from_slice(&vec![0u8; 56 - cur_struct.len()]);
+        cur_struct.extend_from_slice(&s.practice);
+        cur_struct.extend_from_slice(s.project.repo.as_bytes());
+        cur_struct.extend_from_slice(&vec![0u8; 123 - cur_struct.len()]);
+        cur_struct.push(s.project.mark);
+        cur_struct.extend_from_slice(&s.mark.to_le_bytes());
+        c_structs.extend(cur_struct.iter());
     }
     filename.truncate(filename.len() - 4);
     write(format!("{}bin", filename), c_structs);
