@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Иван Иванов",
+    "login": "ivanov",
+    "group": "ИА-345",
+    "practice": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "project": {
+      "repo": "github.com/decentralized-hse/practice/tree/main/04-formats",
+      "mark": 9
+    },
+    "mark": 8.0
+  }
+]
