@@ -55,15 +55,15 @@ type Student struct {
 func (s *Student) insertIntoTable(db *sql.DB, id int) error {
 	const INSERT_INTO_TABLE_SQL = `
 		insert into Students values (
-			%d, %q, %q, %q, %d, %d, %d, %d, %d, %d, %d, %d, %q, %d, %d
+			%d, '%s', '%s', '%s', %d, %d, %d, %d, %d, %d, %d, %d, '%s', %d, %d
 		);
 	`
 	query := fmt.Sprintf(
 		INSERT_INTO_TABLE_SQL,
 		id,
-		string(bytes.Trim(s.Name[:], "\x00")),
-		string(bytes.Trim(s.Login[:], "\x00")),
-		string(bytes.Trim(s.Group[:], "\x00")),
+		strings.ReplaceAll(string(bytes.Trim(s.Name[:], "\x00")), "'", "''"),
+		strings.ReplaceAll(string(bytes.Trim(s.Login[:], "\x00")), "'", "''"),
+		strings.ReplaceAll(string(bytes.Trim(s.Group[:], "\x00")), "'", "''"),
 		s.Practice[0],
 		s.Practice[1],
 		s.Practice[2],
@@ -72,7 +72,7 @@ func (s *Student) insertIntoTable(db *sql.DB, id int) error {
 		s.Practice[5],
 		s.Practice[6],
 		s.Practice[7],
-		string(bytes.Trim(s.Project.Repo[:], "\x00")),
+		strings.ReplaceAll(string(bytes.Trim(s.Project.Repo[:], "\x00")), "'", "''"),
 		s.Project.Mark,
 		math.Float32bits(s.Mark),
 	)
