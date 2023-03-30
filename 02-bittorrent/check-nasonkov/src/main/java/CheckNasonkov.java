@@ -7,7 +7,7 @@ import java.util.HexFormat;
 public class CheckNasonkov {
     public static byte[] getBytes(String filename, String file_ext) {
         // Absolute path to files needed (assuming that all files are located in the same directory)
-        File file_obj = new File("C:\\Users\\DNS\\ds-practice-nnv-nick\\02-bittorrent\\check-nasonkov\\build\\libs\\" + filename + "." + file_ext);
+        File file_obj = new File(filename + "." + file_ext);
         if (!file_obj.exists() || file_obj.isDirectory()) {
             System.out.println(file_obj.exists());
             System.out.println("Invalid ." + file_ext + " file provided!");
@@ -18,7 +18,8 @@ public class CheckNasonkov {
             byte[] result;
             if (file_ext != "root") {
                 HexFormat hex = HexFormat.of();
-                result = hex.parseHex(Files.readString(file_obj.toPath()));
+                String hex_bytes_str = Files.readString(file_obj.toPath());
+                result = hex.parseHex(hex_bytes_str.substring(0, hex_bytes_str.length() - 1));
             } else {
                 result = Files.readAllBytes(file_obj.toPath());
             }
@@ -33,7 +34,7 @@ public class CheckNasonkov {
 
     public static void main(String[] args) {
         // Absolute path to libsodium.dll needed
-        SodiumJava sodium = new SodiumJava("C:\\Users\\DNS\\libsodium\\x64\\Release\\v143\\dynamic\\libsodium.dll");
+        SodiumJava sodium = new SodiumJava("/usr/lib/x86_64-linux-gnu/libsodium.so.23.3.0");
         LazySodiumJava lazySodium = new LazySodiumJava(sodium);
 
         if (args.length == 0) {
