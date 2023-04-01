@@ -1,0 +1,21 @@
+namespace flatbuffers.schema;
+
+struct Project {
+  repo:[ubyte:59];
+  mark:uint8;
+}
+
+struct Student {
+  name:[ubyte:32];
+  login:[ubyte:16];
+  group:[ubyte:8];
+  practice:[uint8:8];
+  project:Project;
+  mark:float32;
+}
+
+table StudentList {
+  students:[Student];
+}
+
+root_type StudentList;
