@@ -16,6 +16,15 @@ fn str_as_array<const SIZE: usize>(s: &str) -> [u8; SIZE] {
     array
 }
 
+fn ind_trailing_zeros<const SIZE: usize>(s: [u8; SIZE]) -> usize {
+    for i in 0..SIZE {
+        if s[i] == 0 {
+            return i;
+        }
+    }
+    SIZE
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 struct Project {
     #[serde(with = "BigArray")]
@@ -47,13 +56,18 @@ fn from_bin_to_kv(filepath: &str) -> io::Result<()> {
         let _ = f.read_exact(&mut buffer)?;
         let deserialized: Student = bincode::deserialize(&buffer).unwrap();
 
-        writeln!(f_new, "[{}].name = {}", students, from_utf8(&deserialized.name).unwrap())?;
-        writeln!(f_new, "[{}].login = {}", students, from_utf8(&deserialized.login).unwrap())?;
-        writeln!(f_new, "[{}].group = {}", students, from_utf8(&deserialized.group).unwrap())?;
-        writeln!(f_new, "[{}].practice = {:?}", students, deserialized.practice)?;
-        writeln!(f_new, "[{}].project.repo = {}", students, from_utf8(&deserialized.project.repo).unwrap())?;
-        writeln!(f_new, "[{}].project.mark = {}", students, deserialized.project.mark)?;
-        writeln!(f_new, "[{}].mark = {}", students, deserialized.mark)?;
+        let name = from_utf8(&deserialized.name[0..ind_trailing_zeros::<32>(deserialized.name)]).unwrap();
+        let login = from_utf8(&deserialized.login[0..ind_trailing_zeros::<16>(deserialized.login)]).unwrap();
+        let group = from_utf8(&deserialized.group[0..ind_trailing_zeros::<8>(deserialized.group)]).unwrap();
+        let repo = from_utf8(&deserialized.project.repo[0..ind_trailing_zeros::<59>(deserialized.project.repo)]).unwrap();
+
+        writeln!(&mut f_new, "[{}].name = \"{}\"", students, name)?;
+        writeln!(&mut f_new, "[{}].login = \"{}\"", students, login)?;
+        writeln!(&mut f_new, "[{}].group = \"{}\"", students, group)?;
+        writeln!(&mut f_new, "[{}].practice = {:?}", students, deserialized.practice)?;
+        writeln!(&mut f_new, "[{}].project.repo = \"{}\"", students, repo)?;
+        writeln!(&mut f_new, "[{}].project.mark = {}", students, deserialized.project.mark)?;
+        writeln!(&mut f_new, "[{}].mark = {}", students, deserialized.mark)?;
 
         students += 1;   
     }
@@ -81,17 +95,17 @@ fn from_kv_to_bin(filepath: &str) -> io::Result<()> {
         if num_bytes == 0 {
             break;
         }
-        scan!(name_string.bytes() => "[{}].name = {}", student_id, name);
+        scan!(name_string.bytes() => "[{}].name = \"{}\"", student_id, name);
 
         let mut login_string = String::new();
         let mut login = String::new();
         let _ = f.read_line(&mut login_string)?;
-        scan!(login_string.bytes() => "[{}].login = {}", student_id, login);
+        scan!(login_string.bytes() => "[{}].login = \"{}\"", student_id, login);
 
         let mut group_string = String::new();
         let mut group = String::new();
         let _ = f.read_line(&mut group_string)?;
-        scan!(group_string.bytes() => "[{}].group = {}", student_id, group);
+        scan!(group_string.bytes() => "[{}].group = \"{}\"", student_id, group);
 
         let mut practice_string = String::new();
         let mut practice = String::new();
@@ -106,7 +120,7 @@ fn from_kv_to_bin(filepath: &str) -> io::Result<()> {
         let mut project_repo_string = String::new();
         let mut project_repo = String::new();
         let _ = f.read_line(&mut project_repo_string)?;
-        scan!(project_repo_string.bytes() => "[{}].project.repo = {}", student_id, project_repo);
+        scan!(project_repo_string.bytes() => "[{}].project.repo = \"{}\"", student_id, project_repo);
 
         let mut project_mark_string = String::new();
         let mut project_mark = String::new();
@@ -129,7 +143,7 @@ fn from_kv_to_bin(filepath: &str) -> io::Result<()> {
             },
             mark: mark.parse().unwrap(),
         };
-        
+
         bincode::serialize_into(&mut f_new, &s).unwrap();
 
         students += 1
