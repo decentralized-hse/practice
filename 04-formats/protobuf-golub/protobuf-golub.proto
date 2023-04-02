@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package format04;
+
+message Student {
+    string name = 1;
+
+    string login = 2;
+    string group = 3;
+    
+    uint32 practice = 4;
+    
+    string project_repo = 5;
+    uint32 project_mark = 6;
+
+    float mark = 7;
+}
+
+message Students {
+    repeated Student student = 1;
+}
