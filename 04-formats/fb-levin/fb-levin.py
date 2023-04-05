@@ -7,7 +7,7 @@ from io import FileIO
 
 student_format = '<32s16s8s8B59sBf'
 
-def flat_to_bin(input_file, output_file):
+def flat_to_bin(input_file: FileIO, output_file: FileIO):
     buf = input_file.read()
     buf = bytearray(buf)
     root = Root.Root.GetRootAsRoot(buf, 0)
@@ -34,6 +34,7 @@ def flat_to_bin(input_file, output_file):
             mark
         )
         output_file.write(student_data)
+        print("Successfully transformed!")
 
 
 def bin_to_flat(input_file: FileIO, output_file: FileIO):
@@ -86,7 +87,7 @@ def bin_to_flat(input_file: FileIO, output_file: FileIO):
     builder.Finish(root)
     buf = builder.Output()
     output_file.write(buf)
-    print(f"Transformed {len(students)}")
+    print("Successfully transformed!")
 
 
 def btos(s):
