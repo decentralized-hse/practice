@@ -33,7 +33,7 @@ public class Main {
             byte[] encodedPublicKey = publicKey.getEncoded();
             byte[] rawPublicKey = Arrays.copyOfRange(encodedPublicKey, encodedPublicKey.length - 32, encodedPublicKey.length);
             byte[] encodedPrivateKey = privateKey.getEncoded();
-            byte[] rawPrivateKey = Arrays.copyOfRange(encodedPrivateKey, encodedPrivateKey.length - 64, encodedPrivateKey.length - 32);
+            byte[] rawPrivateKey = Arrays.copyOfRange(encodedPrivateKey, encodedPrivateKey.length - 67, encodedPrivateKey.length - 35);
 
             Files.write(Paths.get(args[0] + ".pub"), Hex.encode(rawPublicKey));
             Files.write(Paths.get(args[0] + ".sec"), Hex.encode(rawPrivateKey));
