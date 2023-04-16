@@ -13,15 +13,15 @@ def main(file_name: str) -> None:
     print(f"[Info] файл {file_name}.root успешно прочитан.")
 
     private_key, public_key = ed25519.create_keypair()
-    file_pub = open(f"test.pub", "wb")
+    file_pub = open(f"{file_name}.pub", "wb")
     file_pub.write(public_key.to_ascii(encoding='hex'))
 
-    file_priv = open(f"test.sec", "wb")
+    file_priv = open(f"{file_name}.sec", "wb")
     file_priv.write(private_key.to_ascii(encoding='hex'))
     print(f"[Info] Ключи успешно записаны в файлы test.pub, test.sec")
 
     sign = private_key.sign(data, encoding='hex')
-    file_sign = open(f"test.sign", "w")
+    file_sign = open(f"{file_name}.sign", "w")
     file_sign.write(sign.hex())
     print(f"[Info] Подпись успешно записана в файл test.sign")
     try:
