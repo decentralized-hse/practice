@@ -61,11 +61,11 @@ fn from_bin_to_kv(filepath: &str) -> io::Result<()> {
         let group = from_utf8(&deserialized.group[0..ind_trailing_zeros::<8>(deserialized.group)]).unwrap();
         let repo = from_utf8(&deserialized.project.repo[0..ind_trailing_zeros::<59>(deserialized.project.repo)]).unwrap();
 
-        writeln!(&mut f_new, "[{}].name = \"{}\"", students, name)?;
-        writeln!(&mut f_new, "[{}].login = \"{}\"", students, login)?;
-        writeln!(&mut f_new, "[{}].group = \"{}\"", students, group)?;
+        writeln!(&mut f_new, "[{}].name = {}", students, serde_json::to_string(name)?)?;
+        writeln!(&mut f_new, "[{}].login = {}", students, serde_json::to_string(login)?)?;
+        writeln!(&mut f_new, "[{}].group = {}", students, serde_json::to_string(group)?)?;
         writeln!(&mut f_new, "[{}].practice = {:?}", students, deserialized.practice)?;
-        writeln!(&mut f_new, "[{}].project.repo = \"{}\"", students, repo)?;
+        writeln!(&mut f_new, "[{}].project.repo = {}", students, serde_json::to_string(repo)?)?;
         writeln!(&mut f_new, "[{}].project.mark = {}", students, deserialized.project.mark)?;
         writeln!(&mut f_new, "[{}].mark = {}", students, deserialized.mark)?;
 
@@ -90,22 +90,22 @@ fn from_kv_to_bin(filepath: &str) -> io::Result<()> {
         let mut student_id: i32;
 
         let mut name_string = String::new();
-        let mut name = String::new();
         let num_bytes = f.read_line(&mut name_string)?;
         if num_bytes == 0 {
             break;
         }
-        scan!(name_string.bytes() => "[{}].name = \"{}\"", student_id, name);
+        let mut name = name_string[1 + students.to_string().len() + 2 + 4 + 3..].to_owned();
+        name = serde_json::from_str(&name)?;
 
         let mut login_string = String::new();
-        let mut login = String::new();
         let _ = f.read_line(&mut login_string)?;
-        scan!(login_string.bytes() => "[{}].login = \"{}\"", student_id, login);
+        let mut login = login_string[1 + students.to_string().len() + 2 + 5 + 3..].to_owned();
+        login = serde_json::from_str(&login)?;
 
         let mut group_string = String::new();
-        let mut group = String::new();
         let _ = f.read_line(&mut group_string)?;
-        scan!(group_string.bytes() => "[{}].group = \"{}\"", student_id, group);
+        let mut group = group_string[1 + students.to_string().len() + 2 + 5 + 3..].to_owned();
+        group = serde_json::from_str(&group)?;
 
         let mut practice_string = String::new();
         let mut practice = String::new();
@@ -118,9 +118,9 @@ fn from_kv_to_bin(filepath: &str) -> io::Result<()> {
         let practice: [u8; 8] = practice.try_into().unwrap();
 
         let mut project_repo_string = String::new();
-        let mut project_repo = String::new();
         let _ = f.read_line(&mut project_repo_string)?;
-        scan!(project_repo_string.bytes() => "[{}].project.repo = \"{}\"", student_id, project_repo);
+        let mut project_repo = project_repo_string[1 + students.to_string().len() + 2 + 12 + 3..].to_owned();
+        project_repo = serde_json::from_str(&project_repo)?;
 
         let mut project_mark_string = String::new();
         let mut project_mark = String::new();
