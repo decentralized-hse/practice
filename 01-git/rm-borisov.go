@@ -162,5 +162,5 @@ func main() {
 	verifyArgsLength(args)
 	verifyObjectPathChars(args[1])
 	objectNames := getObjectsNames(args[1])
-	fmt.Print(removeObjectFromTreeRecursively(args[2], objectNames))
+	fmt.Printf("%s\n", removeObjectFromTreeRecursively(args[2], objectNames))
 }
