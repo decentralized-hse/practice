@@ -122,7 +122,7 @@ func removeObjectFromTreeRecursively(treeSha256Hash string, objectsNamesPath []s
 }
 
 func getObjectsNames(objectPath string) []string {
-	return strings.Split(string(objectPath), "/")
+	return strings.Split(objectPath, "/")
 }
 
 func verifyArgsLength(args []string) {
