@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 )
 
@@ -50,7 +49,7 @@ func isStringSha256Hash(str string) bool {
 	return len(str) == 64 && isStringHex(str)
 }
 
-func readSortedTreeLines(treeSha256Hash string) []string {
+func readTreeLines(treeSha256Hash string) []string {
 	if !isStringSha256Hash(treeSha256Hash) {
 		fmt.Fprintf(os.Stderr, "Error: %s isn't a SHA256 hash.\n", treeSha256Hash)
 		os.Exit(1)
@@ -64,20 +63,15 @@ func readSortedTreeLines(treeSha256Hash string) []string {
 	return strings.Split(string(treeByteContent), "\n")
 }
 
-func getObjectIndexInTree(sortedTreeLines []string, objectName string) int {
-	objectIndex := sort.SearchStrings(sortedTreeLines, objectName)
-	if objectIndex == len(sortedTreeLines) {
-		fmt.Fprintf(os.Stderr, "Error: can't find the %s object.\n", objectName)
-		os.Exit(1)
+func getObjectIndexInTree(treeLines []string, objectName string) int {
+	for index, treeLine := range treeLines {
+		treeLineObjectName, _ := splitTreeLine(treeLine)
+		if len(treeLineObjectName) == len(objectName)+1 ||
+			objectName == treeLineObjectName[:len(treeLineObjectName)-1] {
+			return index
+		}
 	}
-
-	treeLineName, _ := splitTreeLine(sortedTreeLines[objectIndex])
-	if len(treeLineName) != len(objectName)+1 ||
-		objectName != treeLineName[:len(treeLineName)-1] {
-		fmt.Fprintf(os.Stderr, "Error: can't find the %s object.\n", objectName)
-		os.Exit(1)
-	}
-	return objectIndex
+	return -1
 }
 
 func getHexEncodedSha256Hash(bytesToHash []byte) string {
@@ -85,21 +79,21 @@ func getHexEncodedSha256Hash(bytesToHash []byte) string {
 	return hex.EncodeToString(sha256HashBytes[:])
 }
 
-func createTree(sortedTreeLines []string) string {
-	newTreeByteContent := []byte(strings.Join(sortedTreeLines, "\n"))
+func createTree(treeLines []string) string {
+	newTreeByteContent := []byte(strings.Join(treeLines, "\n"))
 	newTreeSha256Hash := getHexEncodedSha256Hash(newTreeByteContent)
 	err := os.WriteFile(newTreeSha256Hash, newTreeByteContent, 0644)
 	exitIfError(err)
 	return newTreeSha256Hash
 }
 
-func removeObjectFromTreeLinesByIndexRecursively(sortedTreeLines []string, objectLineIndex int, nextObjectsNamesPath []string) []string {
-	treeLineName, treeLineHash := splitTreeLine(sortedTreeLines[objectLineIndex])
+func removeObjectFromTreeLinesByIndexRecursively(treeLines []string, objectLineIndex int, nextObjectsNamesPath []string) []string {
+	treeLineName, treeLineHash := splitTreeLine(treeLines[objectLineIndex])
 	switch lastObjectNameChar := treeLineName[len(treeLineName)-1]; lastObjectNameChar {
 	case '/':
 		if len(nextObjectsNamesPath) > 0 {
 			newSubtreeSha256Hash := removeObjectFromTreeRecursively(treeLineHash, nextObjectsNamesPath)
-			sortedTreeLines[objectLineIndex] = createTreeLine(treeLineName, newSubtreeSha256Hash)
+			treeLines[objectLineIndex] = createTreeLine(treeLineName, newSubtreeSha256Hash)
 		}
 	case ':':
 		if len(nextObjectsNamesPath) > 0 {
@@ -111,16 +105,20 @@ func removeObjectFromTreeLinesByIndexRecursively(sortedTreeLines []string, objec
 		os.Exit(1)
 	}
 	if len(nextObjectsNamesPath) == 0 {
-		sortedTreeLines = removeFromSliceByIndex(sortedTreeLines, objectLineIndex)
+		treeLines = removeFromSliceByIndex(treeLines, objectLineIndex)
 	}
-	return sortedTreeLines
+	return treeLines
 }
 
 func removeObjectFromTreeRecursively(treeSha256Hash string, objectsNamesPath []string) string {
-	sortedTreeLines := readSortedTreeLines(treeSha256Hash)
-	objectLineIndex := getObjectIndexInTree(sortedTreeLines, objectsNamesPath[0])
+	treeLines := readTreeLines(treeSha256Hash)
+	objectLineIndex := getObjectIndexInTree(treeLines, objectsNamesPath[0])
+	if objectLineIndex == -1 {
+		fmt.Fprintf(os.Stderr, "Error: can't find the %s object.\n", objectsNamesPath[0])
+		os.Exit(1)
+	}
 	return createTree(removeObjectFromTreeLinesByIndexRecursively(
-		sortedTreeLines, objectLineIndex, objectsNamesPath[1:]))
+		treeLines, objectLineIndex, objectsNamesPath[1:]))
 }
 
 func getObjectsNames(objectPath string) []string {
