@@ -122,14 +122,7 @@ func removeObjectFromTreeRecursively(treeSha256Hash string, objectsNamesPath []s
 }
 
 func getObjectsNames(objectPath string) []string {
-	objectNames := strings.Split(string(objectPath), "/")
-	for _, objectName := range objectNames {
-		if objectName == "" {
-			fmt.Fprintf(os.Stderr, "Error: some of the object names is an empty string.\n")
-			os.Exit(1)
-		}
-	}
-	return objectNames
+	return strings.Split(string(objectPath), "/")
 }
 
 func verifyArgsLength(args []string) {
@@ -155,10 +148,20 @@ func verifyObjectPathChars(objectPath string) {
 	}
 }
 
+func verifyObjectsNamesAreNonempty(objectsNames []string) {
+	for _, objectName := range objectsNames {
+		if objectName == "" {
+			fmt.Fprintf(os.Stderr, "Error: some of the object names is an empty string.\n")
+			os.Exit(1)
+		}
+	}
+}
+
 func main() {
 	args := os.Args
 	verifyArgsLength(args)
 	verifyObjectPathChars(args[1])
-	objectNames := getObjectsNames(args[1])
-	fmt.Printf("%s\n", removeObjectFromTreeRecursively(args[2], objectNames))
+	objectsNames := getObjectsNames(args[1])
+	verifyObjectsNamesAreNonempty(objectsNames)
+	fmt.Printf("%s\n", removeObjectFromTreeRecursively(args[2], objectsNames))
 }
