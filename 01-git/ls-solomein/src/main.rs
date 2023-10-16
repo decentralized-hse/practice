@@ -18,7 +18,7 @@ fn find_target_dir_meta_file<'a>(path: &Vec<&str>, root_blob: &'a str) -> Result
         current_blob = current_blobb
     }
 
-    Err(io::Error::new(io::ErrorKind::NotFound, "Line not found in the file"))
+    return Ok(current_blob.to_owned());
 }
 
 fn resolve_directory_blob_by_name(current_blob: &str, name: &str) -> Result<String, io::Error> {
@@ -46,22 +46,21 @@ fn print_directory_tree_rec(start_blob: &str, depth: usize) -> Result<(), Error>
         if line.contains("/\t") {
             let view: Vec<&str> = line.split("/\t").collect();
             print_directory_tree_rec(view[1], depth + 1).expect("");
-        }
-        else {
-            let blob_name : Vec<&str> = line.split(":\t").collect();
+        } else {
+            let blob_name: Vec<&str> = line.split(":\t").collect();
             let blob = File::open(blob_name[1])?;
             let blob_reader = BufReader::new(blob);
-            let l : Vec<String> = blob_reader.lines().collect::<Result<_, _>>()?;
+            let l: Vec<String> = blob_reader.lines().collect::<Result<_, _>>()?;
             if digest(l.join("\n")) != blob_name[1] {
-                return Err(io::Error::new(io::ErrorKind::NotFound, "Несовпадение хеша, файловая система повреждена"))
+                return Err(io::Error::new(io::ErrorKind::NotFound, "Несовпадение хеша, файловая система повреждена"));
             }
         }
     }
     let blob = File::open(start_blob)?;
     let blob_reader = BufReader::new(blob);
-    let l : Vec<String> = blob_reader.lines().collect::<Result<_, _>>()?;
+    let l: Vec<String> = blob_reader.lines().collect::<Result<_, _>>()?;
     if digest(l.join("\n")) != start_blob {
-        return Err(io::Error::new(io::ErrorKind::NotFound, "Несовпадение хеша, файловая система повреждена"))
+        return Err(io::Error::new(io::ErrorKind::NotFound, "Несовпадение хеша, файловая система повреждена"));
     }
     return Ok(());
 }
@@ -82,9 +81,13 @@ fn main() {
     let target_dir_path = &args[1];
     let root_hash = &args[2];
 
+    if target_dir_path == "." {
+        let recursive_result = print_directory_tree_rec(&root_hash, 0)
+            .expect("unexpected error");
+        return;
+    }
     let path_to_dir: Vec<&str> = target_dir_path.split('/').collect();
-
     let target_dir_hash = find_target_dir_meta_file(&path_to_dir, root_hash);
-
-    let recursive_result = print_directory_tree_rec(&target_dir_hash.expect("unexpected error"), 0).expect("unexpected error");
+    let recursive_result = print_directory_tree_rec(&target_dir_hash.expect("unexpected error"), 0)
+        .expect("unexpected error");
 }
