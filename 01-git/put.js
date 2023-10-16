@@ -24,10 +24,6 @@ process.stdin.on("readable", () => {
 });
 
 process.stdin.on("end", () => {
-
-    if(inputFile.length===0){
-        throw new Error("В поток ввода не переданы данные");
-    }
     const [dirToChange, lineToUpdateIndex] = dirDown(hash)
     const lastHash = updateDir(dirToChange, lineToUpdateIndex, inputFile)
 
@@ -59,7 +55,9 @@ function dirDown(startHash) {
     let dirToChange = [];
     let lineToUpdateIndex = [];
 
-    parsedPath.dir.split(pathModule.sep).forEach(name => {
+    parsedPath.dir.split(pathModule.sep)
+        .filter(e => e)
+        .forEach(name => {
         const items = readFile(currentHash)
         const dirOrFileArray = parseFile(items)
         const [hash, index] = findDirOrFile(name, dirOrFileArray, true)
