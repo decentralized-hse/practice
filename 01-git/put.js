@@ -9,7 +9,7 @@ if (hash.length !== 64) {
 }
 
 const parsedPath = pathModule.parse(inputPath);
-const fileName = parsedPath.name;
+const fileName = parsedPath.name + parsedPath.ext;
 
 if (!isFileNameValid(fileName)) {
     throw new Error("Имя файла не должно содержать символы \\t : /")
@@ -22,20 +22,20 @@ process.stdin.on("readable", () => {
         inputFile += chunk;
     }
 });
-
-process.stdin.on("end", () => {
+inputFile = Buffer.from([10,101,10,121])
+//process.stdin.on("end", () => {
     const [dirToChange, lineToUpdateIndex] = dirDown(hash)
     const lastHash = updateDir(dirToChange, lineToUpdateIndex, inputFile)
 
     console.log(lastHash)
     process.exit()
-})
+//})
 
-function updateDir(dirToChange, lineToUpdateIndex,) {
+function updateDir(dirToChange, lineToUpdateIndex) {
     let currentHash = addFile(inputFile)
 
     for (let i = dirToChange.length - 1; i >= 0; i--) {
-        let lines = dirToChange[i].split('\n');
+        let lines = dirToChange[i].split('\n').filter(x => x.length > 1);
         const lineIndexToUpdate = lineToUpdateIndex[i];
         if (lineIndexToUpdate <= lines.length - 1) {
             lines[lineIndexToUpdate] = lines[lineIndexToUpdate].slice(0, -64) + currentHash;
@@ -93,12 +93,12 @@ function findDirOrFile(name, array, isDirectory) {
 
 function addFile(bytesData) {
     const hash = createHash('sha256').update(bytesData).digest('hex')
-    fs.writeFileSync(`cafs${pathModule.sep}${hash}`, bytesData);
+    fs.writeFileSync(hash, bytesData);
     return hash
 }
 
 function readFile(fileHash) {
-    return fs.readFileSync(`cafs${pathModule.sep}${fileHash}`).toString();
+    return fs.readFileSync(fileHash).toString();
 }
 
 function parseFile(inputString) {

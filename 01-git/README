@@ -1,7 +1,5 @@
 HI! It's README FILE
 
-Все файлы CAFS хранятся в директории cafs
-
 npm install
 
 node put.js subdir\subdir1\README aca9acfb3009acd50a0101016ab69b1f41ed60db64027c4283e5bea8b21d0f2f < README
