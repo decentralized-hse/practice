@@ -26,15 +26,15 @@ type Student struct {
 }
 
 type projectJSONCompatible struct {
-	Repo string `json:"repository"`
-	Mark uint8  `json:"mark"`
+	Repo [59]uint8 `json:"repository"`
+	Mark uint8     `json:"mark"`
 }
 
 type studentJSONCompatible struct {
-	Name                  string   `json:"name"`
-	Login                 string   `json:"login"`
-	Group                 string   `json:"group"`
-	Practice              [8]uint8 `json:"practice"`
+	Name                  string    `json:"name"`
+	Login                 [16]uint8 `json:"login"`
+	Group                 [8]uint8  `json:"group"`
+	Practice              [8]uint8  `json:"practice"`
 	projectJSONCompatible `json:"project"`
 	Mark                  float32 `json:"mark"`
 }
@@ -78,11 +78,11 @@ func byteSliceToString(b []byte) string {
 func (s Student) MarshalJSON() ([]byte, error) {
 	comp := studentJSONCompatible{
 		Name:     byteSliceToString(s.Name[:]),
-		Login:    byteSliceToString(s.Login[:]),
-		Group:    byteSliceToString(s.Group[:]),
+		Login:    s.Login,
+		Group:    s.Group,
 		Practice: s.Practice,
 		projectJSONCompatible: projectJSONCompatible{
-			Repo: byteSliceToString(s.Project.Repo[:]),
+			Repo: s.Project.Repo,
 			Mark: s.Project.Mark,
 		},
 		Mark: s.Mark,
