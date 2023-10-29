@@ -9,18 +9,17 @@ import (
 	"log"
 	"os"
 	"path"
-	"strings"
 )
 
 type ProjectC struct {
-	Repo [59]byte
+	Repo [59]uint8
 	Mark uint8
 }
 
 type StudentC struct {
-	Name     [32]byte
-	Login    [16]byte
-	Group    [8]byte
+	Name     [32]uint8
+	Login    [16]uint8
+	Group    [8]uint8
 	Practice [8]uint8
 	Project  ProjectC
 	Mark     float32
@@ -31,14 +30,14 @@ type StudentsXML struct {
 }
 
 type projectXML struct {
-	Repo string `xml:"repo"`
-	Mark uint8  `xml:"mark"`
+	Repo []int32 `xml:"repo"`
+	Mark uint8   `xml:"mark"`
 }
 
 type StudentXML struct {
-	Name     string     `xml:"name"`
-	Login    string     `xml:"login"`
-	Group    string     `xml:"group"`
+	Name     []int32    `xml:"name"`
+	Login    []int32    `xml:"login"`
+	Group    []int32    `xml:"group"`
 	Practice []int32    `xml:"practice"`
 	Project  projectXML `xml:"project"`
 	Mark     float32    `xml:"mark"`
@@ -46,29 +45,42 @@ type StudentXML struct {
 
 func goStruct2xmlStruct(student StudentC) StudentXML {
 	xmlStudent := StudentXML{
-		Name:     strings.TrimRight(string(student.Name[:]), "\x00"),
-		Login:    strings.TrimRight(string(student.Login[:]), "\x00"),
-		Group:    strings.TrimRight(string(student.Group[:]), "\x00"),
-		Practice: make([]int32, 8),
+		Name:  toInt32(student.Name[:])[:],
+		Login: toInt32(student.Login[:])[:],
+		Group: toInt32(student.Group[:])[:],
 		Project: projectXML{
-			Repo: strings.TrimRight(string(student.Project.Repo[:]), "\x00"),
+			Repo: toInt32(student.Project.Repo[:])[:],
 			Mark: student.Project.Mark,
 		},
-		Mark: student.Mark,
-	}
-	for i, practice := range student.Practice {
-		xmlStudent.Practice[i] = int32(practice)
+		Mark:     student.Mark,
+		Practice: toInt32(student.Practice[:])[:],
 	}
 	return xmlStudent
+}
+
+func toInt32(uint []uint8) []int32 {
+	var res []int32
+	for _, u := range uint {
+		res = append(res, int32(u))
+	}
+	return res
+}
+
+func toUInt(ints []int32) []uint8 {
+	var res []uint8
+	for _, u := range ints {
+		res = append(res, uint8(u))
+	}
+	return res
 }
 
 func xmlStruct2goStruct(xmlStudent StudentXML) StudentC {
 	var student StudentC
 
-	copy(student.Name[:], xmlStudent.Name)
-	copy(student.Login[:], xmlStudent.Login)
-	copy(student.Group[:], xmlStudent.Group)
-	copy(student.Project.Repo[:], xmlStudent.Project.Repo)
+	copy(student.Name[:], toUInt(xmlStudent.Name[:]))
+	copy(student.Login[:], toUInt(xmlStudent.Login[:]))
+	copy(student.Group[:], toUInt(xmlStudent.Group[:]))
+	copy(student.Project.Repo[:], toUInt(xmlStudent.Project.Repo[:]))
 	for i, practice := range xmlStudent.Practice {
 		student.Practice[i] = uint8(practice)
 	}
