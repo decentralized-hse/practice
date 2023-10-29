@@ -1,54 +1,85 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const makePath = require('path');
-const crypto = require('crypto');
 
-class Args {
-    constructor(path, hash) {
-        this.path = path;
-        this.hash = hash;
+function isValidChar(c) {
+    return !(c <= ' ' || c === '\t' || c === ':')
+}
+
+function readTree(fileHash) {
+    return fs.readFileSync(fileHash).toString();
+}
+
+function getObjectIndex(lines, targetName) {
+    for (let i = 0; i < lines.length; i++) {
+        let name = lines[i].split('\t')[0]
+        name = name.slice(0, name.length - 1)
+        if (name === targetName) {
+            return i
+        }
+    }
+    return -1
+}
+
+function readObjectFromTreeByIndex(pathObjectsNames, index, tree) {
+    let dataSplit = tree[index].split('\t')
+    let name = dataSplit[0]
+    let hash = dataSplit[1]
+    switch (name[name.length - 1]) {
+        case '/':
+            if (pathObjectsNames.length > 0) {
+                let newHash = readObjectFromTree(pathObjectsNames, hash)
+                tree[index] = newHash
+            }
+            break
+        case ':':
+            if (pathObjectsNames.length > 0) {
+                throw new Error('Такого файла нет')
+            }
+            break
+    }
+    if (pathObjectsNames.length === 0) {
+        return fs.readFileSync(hash).toString();
     }
 }
 
-const validateArgs = (rowArgs) => {
-    if (rowArgs.length !== 4) {
-        throw new Error('Должно быть 3 аргумента');
+function readObjectFromTree(pathObjectsNames, parentHash) {
+    let treeLines = readTree(parentHash).split('\n')
+    let objectTreeIndex = getObjectIndex(treeLines, pathObjectsNames[0])
+
+    if (objectTreeIndex === -1) {
+        throw new Error('Файла нет в дереве')
     }
 
-    if (rowArgs[3].length !== 64) {
-        throw new Error('Третьим аргументом должен передаваться хэш кодировки sha256');
-    }
-
-    const path = rowArgs[2].trim();
-    const pathArray = path === '' ? [] : path.split('/');
-    const hash = rowArgs[3];
-
-    return new Args(pathArray, hash);
+    return readObjectFromTreeByIndex(
+        pathObjectsNames.slice(1, pathObjectsNames.length),
+        objectTreeIndex, treeLines
+    )
 }
 
-const findAndPrintFile = async(args) => {
-    let hash = args.hash;
-    const file = await fs.promises.readFile(makePath.join(...args.path));
-    const fileValidHash = crypto.createHash('sha256').update(file).digest('hex');
-
-    if (hash !== fileValidHash) {
-        throw new Error(`Целостность файла была нарушена`);
+const main = () => {
+    if (process.argv.length !== 4) {
+        throw new Error('Должно быть ровно 3 аргумента')
     }
 
-    const lines = file.toString().split('\n');
-    lines.forEach((line) => console.log(line));
-}
+    const [, , path, hash] = process.argv;
 
-const main = async() => {
-    const args = process.argv;
-    try {
-        const validArgs = validateArgs(args);
-        await findAndPrintFile(validArgs);
-    } catch (err) {
-        console.error(err.message);
-        process.exit(1);
+    if (hash.length !== 64) {
+        throw new Error('Невалидный SHA-256 хэш')
     }
+
+
+    if (path.split('').some(c => !isValidChar(c))) {
+        throw new Error('Недопустимые символы')
+    }
+
+    const pathObjectsNames = path.split('/')
+
+    if (pathObjectsNames.some(name => name === '')) {
+        throw new Error('Имя какого-то из объектов пути является пустым')
+    }
+
+    console.log(readObjectFromTree(pathObjectsNames, hash));
 }
 
-main();
+main()
