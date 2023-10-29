@@ -1,18 +1,28 @@
 use std::env;
 use std::fs;
-use std::path::Path;
+use std::io;
 
-fn get(path: &str, root_hash: &str) -> Option<String> {
-    let root_path = Path::new(root_hash);
+fn get(path: &str, root_hash: &str) -> io::Result<String> {
+    let parts: Vec<&str> = path.split('/').collect();
 
-    let target_path = root_path.join(path);
+    let mut current_hash = root_hash.to_string();
 
-    if !target_path.exists() {
-        return None;
+    for part in parts {
+        let content = fs::read_to_string(&current_hash)?;
+
+        if let Some(line) = content.lines().find(|line| line.starts_with(part)) {
+            let parts: Vec<&str> = line.split('\t').collect();
+            if parts.len() < 2 {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid data format"));
+            }
+            current_hash = parts[1].to_string();
+        } else {
+            return Err(io::Error::new(io::ErrorKind::NotFound, format!("{} not found", part)));
+        }
     }
 
-    let content = fs::read_to_string(&target_path).ok()?;
-    Some(content)
+    let content = fs::read_to_string(&current_hash)?;
+    Ok(content)
 }
 
 fn main() {
@@ -29,10 +39,9 @@ fn main() {
 
     match command.as_str() {
         "get" => {
-            if let Some(content) = get(path, root_hash) {
-                println!("{}", content);
-            } else {
-                eprintln!("Error: Couldn't fetch content for {}", path);
+            match get(path, root_hash) {
+                Ok(content) => println!("{}", content),
+                Err(e) => eprintln!("Error: {}", e),
             }
         }
         _ => eprintln!("Unsupported command"),
