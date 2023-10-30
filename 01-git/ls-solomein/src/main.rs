@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use std::fmt::format;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Error, Read};
-use sha256::{digest, try_digest};
+use sha256::{digest, digest_file, try_digest};
 
 
 fn find_target_dir_meta_file<'a>(path: &Vec<&str>, root_blob: &'a str) -> Result<String, Error> {
@@ -50,16 +50,15 @@ fn print_directory_tree_rec(start_blob: &str, depth: usize) -> Result<(), Error>
             let blob_name: Vec<&str> = line.split(":\t").collect();
             let blob = File::open(blob_name[1])?;
             let blob_reader = BufReader::new(blob);
-            let l: Vec<String> = blob_reader.lines().collect::<Result<_, _>>()?;
-            if digest(l.join("\n")) != blob_name[1] {
+            let check_sum = try_digest(blob_name[1]).expect("Ошибка вычисления хеша файла");
+            if check_sum != blob_name[1] {
                 return Err(io::Error::new(io::ErrorKind::NotFound, "Несовпадение хеша, файловая система повреждена"));
             }
         }
     }
     let blob = File::open(start_blob)?;
     let blob_reader = BufReader::new(blob);
-    let l: Vec<String> = blob_reader.lines().collect::<Result<_, _>>()?;
-    if digest(l.join("\n")) != start_blob {
+    if try_digest(start_blob).expect("Ошибка вычисления хеша файла") != start_blob {
         return Err(io::Error::new(io::ErrorKind::NotFound, "Несовпадение хеша, файловая система повреждена"));
     }
     return Ok(());
