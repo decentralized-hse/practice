@@ -87,6 +87,11 @@ func (s Student) MarshalJSON() ([]byte, error) {
 		},
 		Mark: s.Mark,
 	}
+	for _, practice := range s.Practice {
+		if practice != 1 || practice != 0 {
+			return nil, errors.New("practice должена иметь значение либо 0, либо 1")
+		}
+	}
 
 	return json.Marshal(comp)
 }
