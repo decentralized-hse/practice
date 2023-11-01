@@ -3,6 +3,7 @@
 from dicttoxml import dicttoxml
 from pathlib import Path
 from xml.dom.minidom import parseString
+import ast
 import argparse
 import struct
 import xmltodict
@@ -80,13 +81,13 @@ def DeserializeListOfUint8(bytes):
 
 
 def SerializeString(obj, size):
-    ans = obj.encode()[:size]
+    ans = ast.literal_eval(obj).encode('utf-8')[:size]
     ans += b'\x00' * (size - len(ans))
     return ans
 
 
 def DeserializeString(bytes):
-    return bytes.decode().rstrip('\x00')
+    return repr(bytes.decode().rstrip('\x00'))
 
 
 def get_args():
