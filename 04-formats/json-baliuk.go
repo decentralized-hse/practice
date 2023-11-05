@@ -9,7 +9,16 @@ import (
 	"log"
 	"os"
 	"path"
+	"unicode/utf8"
 )
+
+type BadInputError struct {
+	Info string
+}
+
+func (s BadInputError) Error() string {
+	return "Переданы невалидные данные" + s.Info
+}
 
 type Project struct {
 	Repo [59]byte
@@ -26,15 +35,15 @@ type Student struct {
 }
 
 type projectJSONCompatible struct {
-	Repo [59]uint8 `json:"repository"`
-	Mark uint8     `json:"mark"`
+	Repo string `json:"repository"`
+	Mark uint8  `json:"mark"`
 }
 
 type studentJSONCompatible struct {
-	Name                  string    `json:"name"`
-	Login                 [16]uint8 `json:"login"`
-	Group                 [8]uint8  `json:"group"`
-	Practice              [8]uint8  `json:"practice"`
+	Name                  string   `json:"name"`
+	Login                 string   `json:"login"`
+	Group                 string   `json:"group"`
+	Practice              [8]uint8 `json:"practice"`
 	projectJSONCompatible `json:"project"`
 	Mark                  float32 `json:"mark"`
 }
@@ -75,21 +84,41 @@ func byteSliceToString(b []byte) string {
 	return string(b[:zeroSuffixStart])
 }
 
+func ValidateStrings(s Student) error {
+	if !utf8.ValidString(byteSliceToString(s.Name[:])) {
+		return BadInputError{"Поле Name должно быть валидной utf8 строкой"}
+	}
+	if !utf8.ValidString(byteSliceToString(s.Group[:])) {
+		return BadInputError{"Поле Group должно быть валидной utf8 строкой"}
+	}
+	if !utf8.ValidString(byteSliceToString(s.Project.Repo[:])) {
+		return BadInputError{"Поле Repo должно быть валидной utf8 строкой"}
+	}
+
+	return nil
+}
+
 func (s Student) MarshalJSON() ([]byte, error) {
+	err := ValidateStrings(s)
+	if err != nil {
+		return nil, err
+	}
+
 	comp := studentJSONCompatible{
 		Name:     byteSliceToString(s.Name[:]),
-		Login:    s.Login,
-		Group:    s.Group,
+		Login:    byteSliceToString(s.Login[:]),
+		Group:    byteSliceToString(s.Group[:]),
 		Practice: s.Practice,
 		projectJSONCompatible: projectJSONCompatible{
-			Repo: s.Project.Repo,
+			Repo: byteSliceToString(s.Project.Repo[:]),
 			Mark: s.Project.Mark,
 		},
 		Mark: s.Mark,
 	}
+
 	for _, practice := range s.Practice {
-		if practice != 1 || practice != 0 {
-			return nil, errors.New("practice должена иметь значение либо 0, либо 1")
+		if !(practice == uint8(0) || practice == uint8(0)) {
+			return nil, BadInputError{"practice должена иметь значение либо 0, либо 1"}
 		}
 	}
 
