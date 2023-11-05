@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -45,7 +46,6 @@ func ReadBinary(path string) ([]Student, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		students = append(students, st)
 	}
 
@@ -70,25 +70,28 @@ func WriteBinary(sts []Student, path string) error {
 }
 
 func CToGoString(b []byte) string {
-    i := bytes.IndexByte(b, 0)
-    if i < 0 {
-        i = len(b)
-    }
-    return string(b[:i])
+	i := bytes.IndexByte(b, 0)
+	if i < 0 {
+		i = len(b)
+	}
+	return string(b[:i])
 }
 
 func WriteKeyValue(sts []Student, path string) (err error) {
 	var out string
 	for id, st := range sts {
-		out += fmt.Sprintf("[%v].name: %s\n", id, CToGoString(st.Name[:]))
-		out += fmt.Sprintf("[%v].login: %s\n", id, CToGoString(st.Login[:]))
-		out += fmt.Sprintf("[%v].group: %s\n", id, CToGoString(st.Group[:]))
+		if math.IsNaN(float64(st.Mark)) {
+			return errors.New("The student mark is NaN.")
+		}
+		out += fmt.Sprintf("[%v].name: %q\n", id, CToGoString(st.Name[:]))
+		out += fmt.Sprintf("[%v].login: %q\n", id, CToGoString(st.Login[:]))
+		out += fmt.Sprintf("[%v].group: %q\n", id, CToGoString(st.Group[:]))
 		for i, p := range st.Practice {
 			out += fmt.Sprintf("[%v].practice.[%v]: %v\n", id, i, p)
 		}
-		out += fmt.Sprintf("[%v].project.repo: %s\n", id, CToGoString(st.Project.Repo[:]))
+		out += fmt.Sprintf("[%v].project.repo: %q\n", id, CToGoString(st.Project.Repo[:]))
 		out += fmt.Sprintf("[%v].project.mark: %v\n", id, st.Project.Mark)
-		out += fmt.Sprintf("[%v].mark: %.5f\n", id, st.Mark)
+		out += fmt.Sprintf("[%v].mark: %s\n", id, strconv.FormatFloat(float64(st.Mark), 'f', -1, 32))
 	}
 
 	if err := os.WriteFile(path, []byte(out), 0o644); err != nil {
@@ -97,7 +100,7 @@ func WriteKeyValue(sts []Student, path string) (err error) {
 	return nil
 }
 
-func SortedKeys(m map[int]Student) ([]int) {
+func SortedKeys(m map[int]Student) []int {
 	keys := make([]int, len(m))
 	i := 0
 	for k := range m {
@@ -129,6 +132,11 @@ func ReadKeyValue(path string) (sts []Student, err error) {
 			d[id] = Student{}
 		}
 		st := d[id]
+		if field == "name" || field == "group" || field == "login" || field == "project.repo" {
+			if _, err = fmt.Sscanf(value, "%q", &value); err != nil {
+				return nil, err
+			}
+		}
 		if field == "name" {
 			copy(st.Name[:], value)
 		} else if field == "login" {
