@@ -9,17 +9,27 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
+	"unicode/utf8"
 )
 
+type BadInputError struct {
+	Info string
+}
+
+func (s BadInputError) Error() string {
+	return "Переданы невалидные данные" + s.Info
+}
+
 type ProjectC struct {
-	Repo [59]uint8
+	Repo [59]byte
 	Mark uint8
 }
 
 type StudentC struct {
-	Name     [32]uint8
-	Login    [16]uint8
-	Group    [8]uint8
+	Name     [32]byte
+	Login    [16]byte
+	Group    [8]byte
 	Practice [8]uint8
 	Project  ProjectC
 	Mark     float32
@@ -30,57 +40,67 @@ type StudentsXML struct {
 }
 
 type projectXML struct {
-	Repo []int32 `xml:"repo"`
-	Mark uint8   `xml:"mark"`
+	Repo string `xml:"repo"`
+	Mark uint8  `xml:"mark"`
 }
 
 type StudentXML struct {
-	Name     []int32    `xml:"name"`
-	Login    []int32    `xml:"login"`
-	Group    []int32    `xml:"group"`
+	Name     string     `xml:"name"`
+	Login    string     `xml:"login"`
+	Group    string     `xml:"group"`
 	Practice []int32    `xml:"practice"`
 	Project  projectXML `xml:"project"`
 	Mark     float32    `xml:"mark"`
 }
 
+func ValidateStrings(student StudentC) error {
+	if !utf8.ValidString(strings.TrimRight(string(student.Name[:]), "\x00")) {
+		return BadInputError{"Поле Name должно быть валидной utf8 строкой"}
+	}
+	if !utf8.ValidString(strings.TrimRight(string(student.Group[:]), "\x00")) {
+		return BadInputError{"Поле Group должно быть валидной utf8 строкой"}
+	}
+	if !utf8.ValidString(strings.TrimRight(string(student.Project.Repo[:]), "\x00")) {
+		return BadInputError{"Поле Repo должно быть валидной utf8 строкой"}
+	}
+
+	return nil
+}
+
+func ValidatePractice(student StudentC) error {
+	for _, practice := range student.Practice {
+		if !(practice == uint8(0) || practice == uint8(1)) {
+			return BadInputError{"practice должена иметь значение либо 0, либо 1"}
+		}
+	}
+	return nil
+}
+
 func goStruct2xmlStruct(student StudentC) StudentXML {
 	xmlStudent := StudentXML{
-		Name:  toInt32(student.Name[:])[:],
-		Login: toInt32(student.Login[:])[:],
-		Group: toInt32(student.Group[:])[:],
+		Name:     strings.TrimRight(string(student.Name[:]), "\x00"),
+		Login:    strings.TrimRight(string(student.Login[:]), "\x00"),
+		Group:    strings.TrimRight(string(student.Group[:]), "\x00"),
+		Practice: make([]int32, 8),
 		Project: projectXML{
-			Repo: toInt32(student.Project.Repo[:])[:],
+			Repo: strings.TrimRight(string(student.Project.Repo[:]), "\x00"),
 			Mark: student.Project.Mark,
 		},
-		Mark:     student.Mark,
-		Practice: toInt32(student.Practice[:])[:],
+		Mark: student.Mark,
+	}
+	for i, practice := range student.Practice {
+		xmlStudent.Practice[i] = int32(practice)
 	}
 	return xmlStudent
-}
-
-func toInt32(uint []uint8) []int32 {
-	var res []int32
-	for _, u := range uint {
-		res = append(res, int32(u))
-	}
-	return res
-}
-
-func toUInt(ints []int32) []uint8 {
-	var res []uint8
-	for _, u := range ints {
-		res = append(res, uint8(u))
-	}
-	return res
 }
 
 func xmlStruct2goStruct(xmlStudent StudentXML) StudentC {
 	var student StudentC
 
-	copy(student.Name[:], toUInt(xmlStudent.Name[:]))
-	copy(student.Login[:], toUInt(xmlStudent.Login[:]))
-	copy(student.Group[:], toUInt(xmlStudent.Group[:]))
-	copy(student.Project.Repo[:], toUInt(xmlStudent.Project.Repo[:]))
+	copy(student.Name[:], xmlStudent.Name)
+	copy(student.Login[:], xmlStudent.Login)
+	copy(student.Group[:], xmlStudent.Group)
+	copy(student.Project.Repo[:], xmlStudent.Project.Repo)
 	for i, practice := range xmlStudent.Practice {
 		student.Practice[i] = uint8(practice)
 	}
@@ -164,6 +184,14 @@ func writeXMLFile(filepath string, students []StudentC) error {
 
 	var studentsXML []StudentXML
 	for _, student := range students {
+		err := ValidateStrings(student)
+		if err != nil {
+			return err
+		}
+		err = ValidatePractice(student)
+		if err != nil {
+			return err
+		}
 		studentsXML = append(studentsXML, goStruct2xmlStruct(student))
 	}
 	result := StudentsXML{Students: studentsXML}

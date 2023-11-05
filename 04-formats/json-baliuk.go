@@ -117,7 +117,7 @@ func (s Student) MarshalJSON() ([]byte, error) {
 	}
 
 	for _, practice := range s.Practice {
-		if !(practice == uint8(0) || practice == uint8(0)) {
+		if !(practice == uint8(0) || practice == uint8(1)) {
 			return nil, BadInputError{"practice должена иметь значение либо 0, либо 1"}
 		}
 	}
