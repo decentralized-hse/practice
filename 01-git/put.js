@@ -22,27 +22,27 @@ process.stdin.on("readable", () => {
         inputFile += chunk;
     }
 });
-inputFile = Buffer.from([10,101,10,121])
-//process.stdin.on("end", () => {
+
+process.stdin.on("end", () => {
     const [dirToChange, lineToUpdateIndex] = dirDown(hash)
     const lastHash = updateDir(dirToChange, lineToUpdateIndex, inputFile)
 
     console.log(lastHash)
     process.exit()
-//})
+})
 
 function updateDir(dirToChange, lineToUpdateIndex) {
     let currentHash = addFile(inputFile)
 
     for (let i = dirToChange.length - 1; i >= 0; i--) {
-        let lines = dirToChange[i].split('\n').filter(x => x.length > 1);
+        let lines = dirToChange[i].split('\n').filter(x => x.length > 2);
         const lineIndexToUpdate = lineToUpdateIndex[i];
         if (lineIndexToUpdate <= lines.length - 1) {
             lines[lineIndexToUpdate] = lines[lineIndexToUpdate].slice(0, -64) + currentHash;
         } else {
             lines.push(`${fileName}:\t${currentHash}`)
         }
-        const newDir = lines.join('\n');
+        const newDir = lines.join('\n')+'\n';
 
         const encoded = new TextEncoder().encode(newDir)
         currentHash = addFile(encoded)
