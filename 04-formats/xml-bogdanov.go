@@ -10,7 +10,16 @@ import (
 	"os"
 	"path"
 	"strings"
+	"unicode/utf8"
 )
+
+type BadInputError struct {
+	Info string
+}
+
+func (s BadInputError) Error() string {
+	return "Переданы невалидные данные" + s.Info
+}
 
 type ProjectC struct {
 	Repo [59]byte
@@ -42,6 +51,29 @@ type StudentXML struct {
 	Practice []int32    `xml:"practice"`
 	Project  projectXML `xml:"project"`
 	Mark     float32    `xml:"mark"`
+}
+
+func ValidateStrings(student StudentC) error {
+	if !utf8.ValidString(strings.TrimRight(string(student.Name[:]), "\x00")) {
+		return BadInputError{"Поле Name должно быть валидной utf8 строкой"}
+	}
+	if !utf8.ValidString(strings.TrimRight(string(student.Group[:]), "\x00")) {
+		return BadInputError{"Поле Group должно быть валидной utf8 строкой"}
+	}
+	if !utf8.ValidString(strings.TrimRight(string(student.Project.Repo[:]), "\x00")) {
+		return BadInputError{"Поле Repo должно быть валидной utf8 строкой"}
+	}
+
+	return nil
+}
+
+func ValidatePractice(student StudentC) error {
+	for _, practice := range student.Practice {
+		if !(practice == uint8(0) || practice == uint8(1)) {
+			return BadInputError{"practice должена иметь значение либо 0, либо 1"}
+		}
+	}
+	return nil
 }
 
 func goStruct2xmlStruct(student StudentC) StudentXML {
@@ -152,6 +184,14 @@ func writeXMLFile(filepath string, students []StudentC) error {
 
 	var studentsXML []StudentXML
 	for _, student := range students {
+		err := ValidateStrings(student)
+		if err != nil {
+			return err
+		}
+		err = ValidatePractice(student)
+		if err != nil {
+			return err
+		}
 		studentsXML = append(studentsXML, goStruct2xmlStruct(student))
 	}
 	result := StudentsXML{Students: studentsXML}
