@@ -63,13 +63,17 @@ class Router:
         self.entrypoints = entrypoints
         self.table = {}
 
+    @staticmethod
+    def sha256(data) -> bytes:
+        return hashlib.sha256(data).digest()
+
     def announce(self):
-        announce = serialize(Message("a", b"", hashlib.sha256(self.name.encode()).digest()))
+        announce = serialize(Message("a", b"", self.sha256(self.name.encode())))
         for point in self.entrypoints:
             self.io.send_message(announce, point)
 
     def resend_announce(self, sender: str, message: Message):
-        message.receiver = hashlib.sha256(message.receiver).digest()
+        message.receiver = self.sha256(message.receiver)
         for point in self.entrypoints:
             if point != sender:
                 self.io.send_message(serialize(message), point)
@@ -81,13 +85,13 @@ class Router:
             if should_resend:
                 self.resend_announce(sender, message)
         if message.message_type == 'M' or message.message_type == 'm':
-            me_hash = hashlib.sha256(self.name.encode()).digest()
+            me_hash = self.sha256(self.name.encode())
             if me_hash == message.receiver:
                 self.message_output.accept_message(message.payload)
                 return
             to = message.receiver
             for key_hash, address in self.table.items():
-                if hashlib.sha256(key_hash).digest() != to:
+                if self.sha256(key_hash) != to:
                     continue
                 message.receiver = key_hash
                 print(f"{self.name} пересылаю сообщение в {address}")
@@ -96,7 +100,7 @@ class Router:
     def send_message(self, msg: bytes, sender_public_key: str):
         key_hash = sender_public_key.encode()
         for i in range(self.diam):
-            key_hash = hashlib.sha256(key_hash).digest()
+            key_hash = self.sha256(key_hash)
             if key_hash in self.table.keys():
                 message = Message("M", msg, key_hash)
                 self.io.send_message(serialize(message), self.table[key_hash])
@@ -108,7 +112,7 @@ class Router:
             next_iter = target_hash
             for i in range(self.diam):
                 # проверяем если новый ключ короче ключа из таблицы
-                next_iter = hashlib.sha256(next_iter).digest()
+                next_iter = self.sha256(next_iter)
                 if next_iter == existing_key:
                     del self.table[existing_key]
                     self.table[target_hash] = address
@@ -116,7 +120,7 @@ class Router:
             next_iter = existing_key
             for i in range(self.diam):
                 # проверяем если новый ключ длиннее ключа из таблицы
-                next_iter = hashlib.sha256(next_iter).digest()
+                next_iter = self.sha256(next_iter)
                 if next_iter == target_hash:
                     return False
         # новый ключ действительно новый
