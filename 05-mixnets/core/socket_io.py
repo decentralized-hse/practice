@@ -16,12 +16,24 @@ class OurSocketIO(BaseIO):
 
     def send_message(self, message: bytes, address: str):
         if address not in self.connections:
-            new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            new_socket.connect((address, 8008))
-            self.connections[address] = new_socket
+            try:
+                new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                new_socket.connect((address, 8008))
+                self.connections[address] = new_socket
+            except:
+                print("socket is shit!")
+                new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                new_socket.connect((address, 8008))
+                self.connections[address] = new_socket
 
-        current_connection = self.connections[address]
-        current_connection.send(message)
+            try:
+                current_connection = self.connections[address]
+                current_connection.send(message)
+            except:
+                print("socket is shit!")
+                new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                new_socket.connect((address, 8008))
+                self.connections[address] = new_socket
 
     def start_server(self, host, port):
         server_socket = socket.socket()  # get instance
@@ -44,7 +56,7 @@ class OurSocketIO(BaseIO):
                     break
 
             if self.on_message:
-                self.on_message(bytes(data), address[0] + ":" + str(self.port))
+                self.on_message(bytes(data), address[0])
 
             conn.close()  # close the connection
 
