@@ -157,6 +157,7 @@ class TestEnvironment:
         self.nodes["d"].send_message("сам ты *****".encode(), "a_*****")
         self.nodes["c"].send_message("да вы все *****ы".encode(), "a_*****")
 
+
 class TestIO(BaseIO):
     def __init__(self, test_env: TestEnvironment, address):
         super().__init__()
@@ -165,10 +166,6 @@ class TestIO(BaseIO):
 
     def send_message(self, bytes: [bytes], address: str):
         self.test_env.accept_message(bytes, self.address, address)
-
-
-def main():
-    print("8===D")
 
 
 if __name__ == "__main__":
