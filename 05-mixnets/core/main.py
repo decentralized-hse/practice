@@ -1,5 +1,6 @@
 import datetime
 import re
+import sys
 
 from abstractions import *
 from socket_io import *
@@ -74,7 +75,7 @@ class Router:
         self.table = {}
 
     def _schedule_next_announce(self):
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.UTC)
         next_hour = Utilities.get_closes_timestamp() + datetime.timedelta(hours=1)
 
         wait_seconds = (next_hour - now).seconds
@@ -261,12 +262,11 @@ class ShellMessageOutput(BaseMessageOutput):
 
 
 if __name__ == "__main__":
-    address = input("Введите адрес: ")
-    contacts = input("Введите известные вам публичные ключи контактов через запятую: ").split(",")
-    entrypoints = input("Введите известные вам ноды: ").split(",")
-    name = input("Введите ваше имя: ")
-    ip = address.split(':')[0]
-    port = int(address.split(':')[1])
+    address = sys.argv[1]
+    contacts = sys.argv[2].split(",")
+    entrypoints = sys.argv[3].split(",")
+    name = sys.argv[4]
+    ip = address
     io = OurSocketIO(ip)
     shell_out = ShellMessageOutput()
     router = Router(entrypoints, contacts, name, io, shell_out)

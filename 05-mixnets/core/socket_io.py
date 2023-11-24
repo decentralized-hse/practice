@@ -11,14 +11,13 @@ class OurSocketIO(BaseIO):
         self.port = 8008
         self.host = host
 
-        thread = threading.Thread(target=lambda: self.start_server(host, port))
+        thread = threading.Thread(target=lambda: self.start_server(host, self.port))
         thread.start()
 
     def send_message(self, message: bytes, address: str):
         if address not in self.connections:
             new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            ip, port = address.split(':')
-            new_socket.connect((ip, int(port)))
+            new_socket.connect((address, 8008))
             self.connections[address] = new_socket
 
         current_connection = self.connections[address]
@@ -45,7 +44,7 @@ class OurSocketIO(BaseIO):
                     break
 
             if self.on_message:
-                self.on_message(bytes(data), address + ":" + str(self.port))
+                self.on_message(bytes(data), address[0] + ":" + str(self.port))
 
             conn.close()  # close the connection
 

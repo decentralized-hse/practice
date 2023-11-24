@@ -9,7 +9,7 @@ class Utilities:
 
     @staticmethod
     def get_closes_timestamp():
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.UTC)
         closes_timestamp = Utilities.hour_rounder(now)
         return closes_timestamp
 
