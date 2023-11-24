@@ -1,14 +1,15 @@
+import socket
 import threading
 
 from abstractions import BaseIO
 
-import socket
-
 
 class OurSocketIO(BaseIO):
-    def __init__(self, host, port):
+    def __init__(self, host):
         super().__init__()
         self.connections = {}
+        self.port = 8008
+        self.host = host
 
         thread = threading.Thread(target=lambda: self.start_server(host, port))
         thread.start()
@@ -44,7 +45,7 @@ class OurSocketIO(BaseIO):
                     break
 
             if self.on_message:
-                self.on_message(bytearray(data))
+                self.on_message(bytes(data), address + ":" + str(self.port))
 
             conn.close()  # close the connection
 

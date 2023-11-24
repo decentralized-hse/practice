@@ -1,12 +1,9 @@
 import datetime
-import threading
-import hashlib
-import threading
+import re
 
 from abstractions import *
+from socket_io import *
 from utilities import Utilities
-
-import re
 
 
 def split_ignore_quotes(string):
@@ -234,7 +231,16 @@ class Shell:
                     self.router.send_message(command[2].strip("'\"").encode(), command[1])
                 except BaseException as e:
                     print(e)
-                    continue
+                continue
+            if command[0] == 'an':
+                try:
+                    self.router.announce()
+                except BaseException as e:
+                    print(e)
+                continue
+            if command[0] == 'table':
+                print(self.router.table)
+                continue
             if command[0] == 'friends':
                 print(self.router.contacts)
 
@@ -255,4 +261,15 @@ class ShellMessageOutput(BaseMessageOutput):
 
 
 if __name__ == "__main__":
-    TestEnvironment().script()
+    address = input("Введите адрес: ")
+    contacts = input("Введите известные вам публичные ключи контактов через запятую: ").split(",")
+    entrypoints = input("Введите известные вам ноды: ").split(",")
+    name = input("Введите ваше имя: ")
+    ip = address.split(':')[0]
+    port = int(address.split(':')[1])
+    io = OurSocketIO(ip)
+    shell_out = ShellMessageOutput()
+    router = Router(entrypoints, contacts, name, io, shell_out)
+    shell = Shell(router, "8==D ")
+    shell_out.subscribe(shell.accept_message)
+    shell.start_shell()
