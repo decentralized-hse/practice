@@ -1,16 +1,20 @@
+import datetime
+import threading
 import hashlib
 import threading
 
 from abstractions import *
-
+from utilities import Utilities
 
 import re
+
 
 def split_ignore_quotes(string):
     # Разделение строки по пробелам, но не разделять то, что в кавычках
     pattern = r'"[^"]*"|\S+'  # Паттерн для поиска подстрок в кавычках или непосредственно последовательностей непробельных символов
     substrings = re.findall(pattern, string)
     return substrings
+
 
 class MessageSender(BaseMessageSender):
     def __init__(self):
@@ -40,7 +44,7 @@ def deserialize(message: bytes):
     message_length_length = 4 if type.capitalize() == type else 1
     message_length = int.from_bytes(message[1:(1 + message_length_length)])
     address = message[message_length_length + 1:message_length_length + 32 + 1]
-    payload = message[message_length_length + 1 + 32:]
+    payload = message[1 + message_length_length + 32:1 + message_length_length + 32 + message_length]
     return Message(type, payload, address)
 
 
@@ -72,17 +76,27 @@ class Router:
         self.entrypoints = entrypoints
         self.table = {}
 
-    @staticmethod
-    def sha256(data) -> bytes:
-        return hashlib.sha256(data).digest()
+    def _schedule_next_announce(self):
+        now = datetime.datetime.utcnow()
+        next_hour = Utilities.get_closes_timestamp() + datetime.timedelta(hours=1)
+
+        wait_seconds = (next_hour - now).seconds
+
+        threading.Timer(wait_seconds, lambda: self.announce()).start()
 
     def announce(self):
-        announce = serialize(Message("a", b"", self.sha256(self.name.encode())))
+        closes_timestamp = Utilities.get_closes_timestamp()
+
+        key = (self.name + str(closes_timestamp)).encode()
+        announce = serialize(Message("a", b"", Utilities.sha256(key)))
+
         for point in self.entrypoints:
             self.io.send_message(announce, point)
 
+        self._schedule_next_announce()
+
     def resend_announce(self, sender: str, message: Message):
-        message.receiver = self.sha256(message.receiver)
+        message.receiver = Utilities.sha256(message.receiver)
         for point in self.entrypoints:
             if point != sender:
                 self.io.send_message(serialize(message), point)
@@ -94,22 +108,23 @@ class Router:
             if should_resend:
                 self.resend_announce(sender, message)
         if message.message_type == 'M' or message.message_type == 'm':
-            me_hash = self.sha256(self.name.encode())
+            me_hash = Utilities.sha256(self.name.encode())
             if me_hash == message.receiver:
                 self.message_output.accept_message(message.payload)
                 return
             to = message.receiver
             for key_hash, address in self.table.items():
-                if self.sha256(key_hash) != to:
+                if Utilities.sha256(key_hash) != to:
                     continue
                 message.receiver = key_hash
                 print(f"{self.name} пересылаю сообщение в {address}")
                 self.io.send_message(serialize(message), address)
 
     def send_message(self, msg: bytes, sender_public_key: str):
-        key_hash = sender_public_key.encode()
+        timestamp = str(Utilities.get_closes_timestamp())
+        key_hash = (sender_public_key + timestamp).encode()
         for i in range(self.diam):
-            key_hash = self.sha256(key_hash)
+            key_hash = Utilities.sha256(key_hash)
             if key_hash in self.table.keys():
                 message = Message("M", msg, key_hash)
                 self.io.send_message(serialize(message), self.table[key_hash])
@@ -121,7 +136,7 @@ class Router:
             next_iter = target_hash
             for i in range(self.diam):
                 # проверяем если новый ключ короче ключа из таблицы
-                next_iter = self.sha256(next_iter)
+                next_iter = Utilities.sha256(next_iter)
                 if next_iter == existing_key:
                     del self.table[existing_key]
                     self.table[target_hash] = address
@@ -129,7 +144,7 @@ class Router:
             next_iter = existing_key
             for i in range(self.diam):
                 # проверяем если новый ключ длиннее ключа из таблицы
-                next_iter = self.sha256(next_iter)
+                next_iter = Utilities.sha256(next_iter)
                 if next_iter == target_hash:
                     return False
         # новый ключ действительно новый
@@ -164,7 +179,6 @@ class TestEnvironment:
         self.shell_out.subscribe(self.shell.accept_message)
         self.shell.start_shell()
 
-
     def accept_message(self, msg: [bytes], sender: str, receiver: str):
         self.IOs[receiver]._on_message(msg, sender)
 
@@ -175,7 +189,6 @@ class TestEnvironment:
         self.nodes["a"].send_message("ты *****".encode(), "d_*****")
         self.nodes["d"].send_message("сам ты *****".encode(), "a_*****")
         self.nodes["c"].send_message("да вы все *****ы".encode(), "a_*****")
-
 
 
 class TestIO(BaseIO):
@@ -233,6 +246,7 @@ class ShellMessageOutput(BaseMessageOutput):
 
     def subscribe(self, lmb):
         self.lmb = lmb
+
     def accept_message(self, byte: bytes):
         try:
             self.lmb(byte.decode())
