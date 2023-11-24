@@ -22,6 +22,7 @@ class OurSocketIO(BaseIO):
                 self.connections[address] = new_socket
             except:
                 print("socket is shit!")
+                self.connections[address].close()
                 new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 new_socket.connect((address, 8008))
                 self.connections[address] = new_socket
@@ -31,6 +32,7 @@ class OurSocketIO(BaseIO):
                 current_connection.send(message)
             except:
                 print("socket is shit!")
+                self.connections[address].close()
                 new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 new_socket.connect((address, 8008))
                 self.connections[address] = new_socket
