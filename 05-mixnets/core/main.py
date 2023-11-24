@@ -1,7 +1,16 @@
 import hashlib
+import threading
 
 from abstractions import *
 
+
+import re
+
+def split_ignore_quotes(string):
+    # Разделение строки по пробелам, но не разделять то, что в кавычках
+    pattern = r'"[^"]*"|\S+'  # Паттерн для поиска подстрок в кавычках или непосредственно последовательностей непробельных символов
+    substrings = re.findall(pattern, string)
+    return substrings
 
 class MessageSender(BaseMessageSender):
     def __init__(self):
@@ -138,10 +147,11 @@ class BaseMessageInput:
 
 class TestEnvironment:
     def __init__(self):
+        self.shell_out = ShellMessageOutput()
         self.outputs = {"a": PrintLineMessageOutput("a"),
                         "b": PrintLineMessageOutput("b"),
                         "c": PrintLineMessageOutput("c"),
-                        "d": PrintLineMessageOutput("d")}
+                        "d": self.shell_out}
         self.IOs = {"a": TestIO(self, "a"),
                     "b": TestIO(self, "b"),
                     "c": TestIO(self, "c"),
@@ -150,6 +160,10 @@ class TestEnvironment:
                       "b": Router(["a", "c", "d"], [], "b_*****", self.IOs["b"], self.outputs["b"]),
                       "c": Router(["b", "d"], ["a_*****"], "c_*****", self.IOs["c"], self.outputs["c"]),
                       "d": Router(["c", "b"], ["a_*****"], "d_*****", self.IOs["d"], self.outputs["d"])}
+        self.shell = Shell(self.nodes["d"], "|=> ")
+        self.shell_out.subscribe(self.shell.accept_message)
+        self.shell.start_shell()
+
 
     def accept_message(self, msg: [bytes], sender: str, receiver: str):
         self.IOs[receiver]._on_message(msg, sender)
@@ -157,9 +171,11 @@ class TestEnvironment:
     def script(self):
         for addr, node in self.nodes.items():
             node.announce()
+
         self.nodes["a"].send_message("ты *****".encode(), "d_*****")
         self.nodes["d"].send_message("сам ты *****".encode(), "a_*****")
         self.nodes["c"].send_message("да вы все *****ы".encode(), "a_*****")
+
 
 
 class TestIO(BaseIO):
@@ -170,6 +186,58 @@ class TestIO(BaseIO):
 
     def send_message(self, bytes: [bytes], address: str):
         self.test_env.accept_message(bytes, self.address, address)
+
+
+class Shell:
+    def __init__(self, router: Router, shell_invite: str):
+        self.router = router
+        self.shell_invite = shell_invite
+        self.thread: threading.Thread = None
+
+    def accept_message(self, message: str):
+        print(message)
+        self.reset_shell()
+
+    def reset_shell(self):
+        print(self.shell_invite, end='')
+
+    def start_shell(self):
+        thread = threading.Thread(target=self.wait_for_command)
+        thread.start()
+        self.thread = thread
+
+    def exit_shell(self):
+        self.thread.join()
+
+    def wait_for_command(self):
+        while True:
+            self.reset_shell()
+            command = split_ignore_quotes(input())
+
+            if len(command) == 0:
+                continue
+            if command[0] == 'send':
+                try:
+                    self.router.send_message(command[2].strip("'\"").encode(), command[1])
+                except BaseException as e:
+                    print(e)
+                    continue
+            if command[0] == 'friends':
+                print(self.router.contacts)
+
+
+class ShellMessageOutput(BaseMessageOutput):
+    def __init__(self):
+        super().__init__()
+        self.lmb = None
+
+    def subscribe(self, lmb):
+        self.lmb = lmb
+    def accept_message(self, byte: bytes):
+        try:
+            self.lmb(byte.decode())
+        except:
+            self.lmb("Raw bytes: " + byte.hex())
 
 
 if __name__ == "__main__":
