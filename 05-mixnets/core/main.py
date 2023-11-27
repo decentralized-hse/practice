@@ -215,14 +215,17 @@ class Shell:
         while True:
             output_data = self.output_queue.get()
             print(output_data)
-            self.reset_shell()
+            if self.output_queue.empty():
+                self.reset_shell()
 
     def reset_shell(self):
         print(self.shell_invite, end='')
 
     def start_shell(self):
         thread = threading.Thread(target=self.wait_for_command)
+        writter = threading.Thread(target=self.writer)
         thread.start()
+        writter.start()
         self.thread = thread
 
     def exit_shell(self):
@@ -230,9 +233,8 @@ class Shell:
 
     def wait_for_command(self):
         while True:
-            self.reset_shell()
-            input = sys.stdin.read(1)
-            command = split_ignore_quotes(input)
+            inpt = input()
+            command = split_ignore_quotes(inpt)
 
             if len(command) == 0:
                 continue
@@ -240,19 +242,19 @@ class Shell:
                 try:
                     self.router.send_message(command[2].strip("'\"").encode(), command[1])
                 except BaseException as e:
-                    print(e)
+                    self.accept_message(str(e))
                 continue
             if command[0] == 'an':
                 try:
                     self.router.announce()
                 except BaseException as e:
-                    print(e)
+                    self.accept_message(str(e))
                 continue
             if command[0] == 'table':
-                print(self.router.table)
+                self.accept_message(str(self.router.table))
                 continue
             if command[0] == 'friends':
-                print(self.router.contacts)
+                self.accept_message(str(self.router.contacts))
 
 
 class ShellMessageOutput(BaseMessageOutput):
