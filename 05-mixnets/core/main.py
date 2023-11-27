@@ -1,6 +1,7 @@
 import datetime
 import re
 import sys
+from queue import Queue
 
 from abstractions import *
 from socket_io import *
@@ -105,6 +106,7 @@ class Router:
             should_resend = self.find_announce_match(message.receiver, sender)
             if should_resend:
                 self.resend_announce(sender, message)
+            self.message_output.accept_message(message)
         if message.message_type == 'M' or message.message_type == 'm':
             me_hash = Utilities.sha256(self.name.encode())
             if me_hash == message.receiver:
@@ -204,10 +206,16 @@ class Shell:
         self.router = router
         self.shell_invite = shell_invite
         self.thread: threading.Thread = None
+        self.output_queue = Queue()
 
     def accept_message(self, message: str):
-        print(message)
-        self.reset_shell()
+        self.output_queue.put(message)
+
+    def writer(self):
+        while True:
+            output_data = self.output_queue.get()
+            print(output_data)
+            self.reset_shell()
 
     def reset_shell(self):
         print(self.shell_invite, end='')
@@ -223,7 +231,8 @@ class Shell:
     def wait_for_command(self):
         while True:
             self.reset_shell()
-            command = split_ignore_quotes(input())
+            input = sys.stdin.read(1)
+            command = split_ignore_quotes(input)
 
             if len(command) == 0:
                 continue

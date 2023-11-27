@@ -21,19 +21,17 @@ class OurSocketIO(BaseIO):
                 new_socket.connect((address, 8008))
                 self.connections[address] = new_socket
             except:
-                print("socket is shit!")
                 new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 new_socket.connect((address, 8008))
                 self.connections[address] = new_socket
 
-            try:
-                current_connection = self.connections[address]
-                current_connection.send(message)
-            except:
-                print("socket is shit!")
-                new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                new_socket.connect((address, 8008))
-                self.connections[address] = new_socket
+        try:
+            current_connection = self.connections[address]
+            current_connection.send(message)
+        except:
+            new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            new_socket.connect((address, 8008))
+            self.connections[address] = new_socket
 
     def start_server(self, host, port):
         server_socket = socket.socket()  # get instance
@@ -44,13 +42,11 @@ class OurSocketIO(BaseIO):
         server_socket.listen(2)
         while True:
             conn, address = server_socket.accept()  # accept new connection
-            print("Connection from: " + str(address))
             data = []
             while True:
                 # receive data stream. it won't accept data packet greater than 1024 bytes
                 curdata = conn.recv(1024)
                 data += curdata
-                print("from connected user: " + str(data))
                 if len(curdata) < 1024:
                     # if data is not received break
                     break
