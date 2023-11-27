@@ -21,10 +21,19 @@ class OurSocketIO(BaseIO):
                 new_socket.connect((address, 8008))
                 self.connections[address] = new_socket
             except:
+                self.connections[address].close()
                 new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 new_socket.connect((address, 8008))
                 self.connections[address] = new_socket
 
+            try:
+                current_connection = self.connections[address]
+                current_connection.send(message)
+            except:
+                self.connections[address].close()
+                new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                new_socket.connect((address, 8008))
+                self.connections[address] = new_socket
         try:
             current_connection = self.connections[address]
             current_connection.send(message)
