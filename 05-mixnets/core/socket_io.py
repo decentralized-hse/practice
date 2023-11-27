@@ -15,25 +15,10 @@ class OurSocketIO(BaseIO):
         thread.start()
 
     def send_message(self, message: bytes, address: str):
-        print("sending")
-        if address not in self.connections:
-            try:
-                new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                new_socket.connect((address, 8008))
-                self.connections[address] = new_socket
-            except:
-                self.connections[address].close()
-                new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                new_socket.connect((address, 8008))
-                self.connections[address] = new_socket
-
-        try:
-            current_connection = self.connections[address]
-            current_connection.send(message)
-        except:
-            new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            new_socket.connect((address, 8008))
-            self.connections[address] = new_socket
+        new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        new_socket.connect((address, 8008))
+        new_socket.send(message)
+        new_socket.close()
 
     def start_server(self, host, port):
         server_socket = socket.socket()  # get instance
@@ -55,7 +40,6 @@ class OurSocketIO(BaseIO):
 
             if self.on_message:
                 self.on_message(bytes(data), address[0])
-
             conn.close()  # close the connection
 
     def subscribe(self, event):
