@@ -106,9 +106,10 @@ class Router:
             should_resend = self.find_announce_match(message.receiver, sender)
             if should_resend:
                 self.resend_announce(sender, message)
-            self.message_output.accept_message(message)
         if message.message_type == 'M' or message.message_type == 'm':
-            me_hash = Utilities.sha256(self.name.encode())
+            timestamp = str(Utilities.get_closes_timestamp())
+            key_hash = (self.name + timestamp).encode()
+            me_hash = Utilities.sha256(key_hash)
             if me_hash == message.receiver:
                 self.message_output.accept_message(message.payload)
                 return
@@ -234,12 +235,14 @@ class Shell:
     def wait_for_command(self):
         while True:
             inpt = input()
+            print(inpt)
             command = split_ignore_quotes(inpt)
 
             if len(command) == 0:
                 continue
             if command[0] == 'send':
                 try:
+                    print("send")
                     self.router.send_message(command[2].strip("'\"").encode(), command[1])
                 except BaseException as e:
                     self.accept_message(str(e))

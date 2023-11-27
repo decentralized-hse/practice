@@ -15,21 +15,25 @@ class OurSocketIO(BaseIO):
         thread.start()
 
     def send_message(self, message: bytes, address: str):
+        print("sending")
         if address not in self.connections:
             try:
                 new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 new_socket.connect((address, 8008))
                 self.connections[address] = new_socket
-            except:
-                self.connections[address].close()
+                print("sended to new connection")
+            except BaseException as e:
                 new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 new_socket.connect((address, 8008))
                 self.connections[address] = new_socket
+                print("fallback")
 
         try:
+            print("sending to existing")
             current_connection = self.connections[address]
             current_connection.send(message)
         except:
+            print("fallback 2")
             new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             new_socket.connect((address, 8008))
             self.connections[address] = new_socket
@@ -46,13 +50,14 @@ class OurSocketIO(BaseIO):
             data = []
             while True:
                 # receive data stream. it won't accept data packet greater than 1024 bytes
-                curdata = conn.recv(1024)
+                curdata = conn.recv(64)
                 data += curdata
-                if len(curdata) < 1024:
+                if len(curdata) < 64:
                     # if data is not received break
                     break
 
             if self.on_message:
+                print(self.on_message)
                 self.on_message(bytes(data), address[0])
 
             conn.close()  # close the connection
