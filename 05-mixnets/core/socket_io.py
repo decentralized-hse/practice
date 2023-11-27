@@ -21,19 +21,16 @@ class OurSocketIO(BaseIO):
                 new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 new_socket.connect((address, 8008))
                 self.connections[address] = new_socket
-                print("sended to new connection")
-            except BaseException as e:
+            except:
+                self.connections[address].close()
                 new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 new_socket.connect((address, 8008))
                 self.connections[address] = new_socket
-                print("fallback")
 
         try:
-            print("sending to existing")
             current_connection = self.connections[address]
             current_connection.send(message)
         except:
-            print("fallback 2")
             new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             new_socket.connect((address, 8008))
             self.connections[address] = new_socket
@@ -57,7 +54,6 @@ class OurSocketIO(BaseIO):
                     break
 
             if self.on_message:
-                print(self.on_message)
                 self.on_message(bytes(data), address[0])
 
             conn.close()  # close the connection
