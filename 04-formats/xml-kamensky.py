@@ -1,49 +1,35 @@
 #!/bin/python3
+from typing import Any
 
 from dicttoxml import dicttoxml
+import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 from xml.dom.minidom import parseString
-import ast
 import argparse
 import struct
-import xmltodict
 
 
 def XmlEncode(object):
     return parseString(dicttoxml(object)).toprettyxml()
 
 
-def parceTypes(tmpDict):
-    currType = tmpDict['@type']
-    if currType == 'int':
-        return int(tmpDict['#text'])
-    elif currType == 'float':
-        return float(tmpDict['#text'])
-    elif currType == 'str':
-        return tmpDict['#text']
-    elif currType == 'dict':
-        newDict = dict()
-        for dictItem in tmpDict.keys():
-            if dictItem == '@type':
-                continue
-            newDict[dictItem] = parceTypes(tmpDict[dictItem])
-        return newDict
-    elif currType == 'list':
-        lst = list()
-        if type(tmpDict['item']) is dict:
-            tmpDict['item'] = [tmpDict['item']]
-        for listItem in tmpDict['item']:
-            lst.append(parceTypes(listItem))
-        return lst
+def parse_element(element: ElementTree.Element):
+    element_type = element.attrib['type']
+    if element_type == 'int':
+        return int(element.text)
+    elif element_type == 'float':
+        return float(element.text)
+    elif element_type == 'str':
+        return element.text if element.text else ''
+    elif element_type == 'dict':
+        return {child.tag: parse_element(child) for child in list(element)}
+    elif element_type == 'list':
+        return list(map(parse_element, list(element)))
 
 
-def XmlDecode(fileName):
-    file = open(fileName, 'rb')
-    tmpObject = xmltodict.parse(file, dict_constructor=dict)['root']
-    newObject = dict()
-    for key in tmpObject:
-        newObject[key] = parceTypes(tmpObject[key])
-    return newObject
+def XmlDecode(file_name: str):
+    data = ElementTree.parse(file_name).getroot()[0]
+    return parse_element(data)
 
 
 def XmlSaveEncoded(serializedObject, fileName):
@@ -81,13 +67,13 @@ def DeserializeListOfUint8(bytes):
 
 
 def SerializeString(obj, size):
-    ans = ast.literal_eval(obj).encode('utf-8')[:size]
+    ans = obj.encode('utf-8')[:size]
     ans += b'\x00' * (size - len(ans))
     return ans
 
 
 def DeserializeString(bytes):
-    return repr(bytes.decode().rstrip('\x00'))
+    return bytes.decode().rstrip('\x00')
 
 
 def get_args():
@@ -126,26 +112,27 @@ def process_bin(file_path):
     print(f'Xml data written to {output_filename}')
 
 
-def ObjectToBytes(object):
-    cnt = len(object["data"])
-    print(f'{cnt} student{"s" if cnt > 1 else ""} found')
-    ans = b''
-    for item in object['data']:
-        ans += SerializeString(item['name'], 32)
-        ans += SerializeString(item['login'], 16)
-        ans += SerializeString(item['group'], 8)
-        ans += SerializeListOfUint8(item['practice'], 8)
-        ans += SerializeString(item['project']['repo'], 59)
-        ans += SerializeUint8(item['project']['mark'])
-        ans += SerializeFloat(item['mark'])
-    return ans
+def students_to_bytes(students: list[dict[str, Any]]) -> bytes:
+    students_count = len(students)
+    print(f'{students_count} student{"s" if students_count > 1 else ""} found')
+    return b''.join(map(student_to_bytes, students))
 
+def student_to_bytes(student: dict[str, Any]) -> bytes:
+    student_bytes = b''
+    student_bytes += SerializeString(student['name'], 32)
+    student_bytes += SerializeString(student['login'], 16)
+    student_bytes += SerializeString(student['group'], 8)
+    student_bytes += SerializeListOfUint8(student['practice'], 8)
+    student_bytes += SerializeString(student['project']['repo'], 59)
+    student_bytes += SerializeUint8(student['project']['mark'])
+    student_bytes += SerializeFloat(student['mark'])
+    return student_bytes
 
 def process_xml(file_path):
     print(f'Processing file {file_path}')
     object = XmlDecode(file_path)
     file = Path(f'{file_path[:-4]}.bin')
-    file.write_bytes(ObjectToBytes(object))
+    file.write_bytes(students_to_bytes(object))
     print(f'Data written to {file.name}')
 
 
