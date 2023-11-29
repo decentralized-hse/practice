@@ -9,7 +9,16 @@ import (
 	"log"
 	"os"
 	"path"
+	"unicode/utf8"
 )
+
+type BadInputError struct {
+	Info string
+}
+
+func (s BadInputError) Error() string {
+	return "Переданы невалидные данные" + s.Info
+}
 
 type Project struct {
 	Repo [59]byte
@@ -75,7 +84,26 @@ func byteSliceToString(b []byte) string {
 	return string(b[:zeroSuffixStart])
 }
 
+func ValidateStrings(s Student) error {
+	if !utf8.ValidString(byteSliceToString(s.Name[:])) {
+		return BadInputError{"Поле Name должно быть валидной utf8 строкой"}
+	}
+	if !utf8.ValidString(byteSliceToString(s.Group[:])) {
+		return BadInputError{"Поле Group должно быть валидной utf8 строкой"}
+	}
+	if !utf8.ValidString(byteSliceToString(s.Project.Repo[:])) {
+		return BadInputError{"Поле Repo должно быть валидной utf8 строкой"}
+	}
+
+	return nil
+}
+
 func (s Student) MarshalJSON() ([]byte, error) {
+	err := ValidateStrings(s)
+	if err != nil {
+		return nil, err
+	}
+
 	comp := studentJSONCompatible{
 		Name:     byteSliceToString(s.Name[:]),
 		Login:    byteSliceToString(s.Login[:]),
@@ -86,6 +114,12 @@ func (s Student) MarshalJSON() ([]byte, error) {
 			Mark: s.Project.Mark,
 		},
 		Mark: s.Mark,
+	}
+
+	for _, practice := range s.Practice {
+		if !(practice == uint8(0) || practice == uint8(1)) {
+			return nil, BadInputError{"practice должена иметь значение либо 0, либо 1"}
+		}
 	}
 
 	return json.Marshal(comp)
