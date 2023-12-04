@@ -25,8 +25,7 @@ class Shell:
         while True:
             output_data = self.output_queue.get()
             print(output_data)
-            if self.output_queue.empty():
-                self.reset_shell()
+            self.reset_shell()
 
     def reset_shell(self):
         print(self.shell_invite, end='')
