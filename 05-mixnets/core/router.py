@@ -1,7 +1,10 @@
 from abstractions import BaseRouter, BaseIO, BaseMessageOutput
 from utilities import *
-import threading
+from datetime import datetime, timezone, timedelta
 from models import Message
+import threading
+
+
 class Router(BaseRouter):
     def __init__(self, entrypoints: [str], contacts: [str], name: str, io: BaseIO, message_output: BaseMessageOutput):
         super().__init__()
@@ -15,8 +18,8 @@ class Router(BaseRouter):
         self.table = {}
 
     def _schedule_next_announce(self):
-        now = datetime.datetime.now(datetime.UTC)
-        next_hour = Utilities.get_closes_timestamp() + datetime.timedelta(hours=1)
+        now = datetime.now(timezone.utc)
+        next_hour = Utilities.get_closes_timestamp() + timedelta(hours=1)
 
         wait_seconds = (next_hour - now).seconds
 

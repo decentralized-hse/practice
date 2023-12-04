@@ -11,7 +11,8 @@ class OurSocketIO(BaseIO):
         self.port = 8000
         self.host = host
 
-        thread = threading.Thread(target=lambda: self.start_server(host, self.port))
+        thread = threading.Thread(
+            target=lambda: self.start_server(host, self.port))
         thread.start()
 
     def send_message(self, message: bytes, address: str):

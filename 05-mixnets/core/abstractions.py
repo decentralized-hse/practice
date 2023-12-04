@@ -1,4 +1,6 @@
 from models import Message
+
+
 class BaseIO:
     def __init__(self):
         self.on_message = None
@@ -45,12 +47,14 @@ class BaseRouter:
     def find_announce_match(self, target_hash, address):
         pass
 
+
 class BaseMessageInput:
     def __init__(self, router: BaseRouter):
         self.router = router
 
     def send_message(self, msg: bytes, public_key: str):
         self.router.send_message(msg, public_key)
+
 
 class BaseMessageOutput:
     def __init__(self):

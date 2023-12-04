@@ -1,16 +1,18 @@
-import datetime
+from datetime import datetime, timezone
 import hashlib
-from models import Message
 import re
+from models import Message
+
+
 class Utilities:
     @staticmethod
-    def hour_rounder(t):
+    def hour_rounder_floor(t: datetime) -> datetime:
         return t.replace(second=0, microsecond=0, minute=0, hour=t.hour)
 
     @staticmethod
-    def get_closes_timestamp():
-        now = datetime.datetime.now(datetime.UTC)
-        closes_timestamp = Utilities.hour_rounder(now)
+    def get_closes_timestamp() -> datetime:
+        now = datetime.now(timezone.utc)
+        closes_timestamp = Utilities.hour_rounder_floor(now)
         return closes_timestamp
 
     @staticmethod
@@ -20,21 +22,24 @@ class Utilities:
 
 def serialize(message: Message):
     message_length_length = 4 if message.message_type.capitalize() == message.message_type else 1
-    message_bytes = (message.message_type.encode() +
-                     (len(message.payload) + 32).to_bytes(message_length_length) +
-                     message.receiver +
-                     message.payload)
+    message_bytes = (
+            message.message_type.encode() +
+            (len(message.payload) + 32).to_bytes(message_length_length) +
+            message.receiver +
+            message.payload)
 
     return message_bytes
 
 
 def deserialize(message: bytes):
-    type = message[0].to_bytes(1).decode()
-    message_length_length = 4 if type.capitalize() == type else 1
+    type_ = message[0].to_bytes(1).decode()
+    message_length_length = 4 if type_.capitalize() == type_ else 1
     message_length = int.from_bytes(message[1:(1 + message_length_length)])
     address = message[message_length_length + 1:message_length_length + 32 + 1]
-    payload = message[1 + message_length_length + 32:1 + message_length_length + 32 + message_length]
-    return Message(type, payload, address)
+    payload = message[1 + message_length_length + 32:
+                      1 + message_length_length + 32 + message_length]
+    return Message(type_, payload, address)
+
 
 def split_ignore_quotes(string):
     # Разделение строки по пробелам, но не разделять то, что в кавычках

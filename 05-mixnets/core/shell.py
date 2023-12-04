@@ -2,6 +2,8 @@ from abstractions import *
 from utilities import split_ignore_quotes
 import threading
 import queue
+
+
 class Shell:
     def __init__(self, router: BaseRouter, shell_invite: str):
         self.router = router
@@ -43,7 +45,8 @@ class Shell:
             if command[0] == 'send':
                 try:
                     print("send")
-                    self.router.send_message(command[2].strip("'\"").encode(), command[1])
+                    self.router.send_message(command[2].strip("'\"").encode(),
+                                             command[1])
                 except BaseException as e:
                     self.accept_message(str(e))
                 continue
