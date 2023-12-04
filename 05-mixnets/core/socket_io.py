@@ -8,7 +8,7 @@ class OurSocketIO(BaseIO):
     def __init__(self, host):
         super().__init__()
         self.connections = {}
-        self.port = 8008
+        self.port = 8000
         self.host = host
 
         thread = threading.Thread(target=lambda: self.start_server(host, self.port))
@@ -16,7 +16,7 @@ class OurSocketIO(BaseIO):
 
     def send_message(self, message: bytes, address: str):
         new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        new_socket.connect((address, 8008))
+        new_socket.connect((address, 8000))
         new_socket.send(message)
         new_socket.close()
 
