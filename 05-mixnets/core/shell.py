@@ -1,7 +1,8 @@
+import queue
+import threading
+
 from abstractions import *
 from utilities import split_ignore_quotes
-import threading
-import queue
 
 
 class Shell:
@@ -13,6 +14,12 @@ class Shell:
 
     def accept_message(self, message: str):
         self.output_queue.put("Пришло сообщение: " + message)
+
+    def print(self, message: str):
+        self.output_queue.put(message)
+
+    def exception(self, message: str):
+        self.output_queue.put("Ошибка: " + message)
 
     def writer(self):
         while True:
@@ -37,30 +44,28 @@ class Shell:
     def wait_for_command(self):
         while True:
             inpt = input()
-            print(inpt)
             command = split_ignore_quotes(inpt)
 
             if len(command) == 0:
                 continue
             if command[0] == 'send':
                 try:
-                    print("send")
                     self.router.send_message(command[2].strip("'\"").encode(),
                                              command[1])
                 except BaseException as e:
-                    self.accept_message(str(e))
+                    self.exception(str(e))
                 continue
             if command[0] == 'an':
                 try:
                     self.router.announce()
                 except BaseException as e:
-                    self.accept_message(str(e))
+                    self.exception(str(e))
                 continue
             if command[0] == 'table':
-                self.accept_message(str(self.router.table))
+                self.print(str(self.router.table))
                 continue
             if command[0] == 'friends':
-                self.accept_message(str(self.router.contacts))
+                self.print(str(self.router.contacts))
 
 
 class ShellMessageOutput(BaseMessageOutput):
