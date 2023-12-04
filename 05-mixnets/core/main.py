@@ -2,17 +2,36 @@ import sys
 from router import Router
 from socket_io import *
 from shell import *
-
+import argparse
 
 if __name__ == "__main__":
-    address = sys.argv[1]
-    contacts = sys.argv[2].split(",")
-    entrypoints = sys.argv[3].split(",")
-    name = sys.argv[4]
-    ip = address
-    io = OurSocketIO(ip)
+    # Создаем парсер аргументов командной строки
+    parser = argparse.ArgumentParser(description='Один из вариантов ноды для mixnets')
+
+    # Добавляем аргументы с помощью ключей
+    parser.add_argument('--node', action='append', metavar='IP', help='Добавить один из IP адресов известных вам нод')
+    parser.add_argument('--own-ip', metavar='IP', help='На каком IP адресе открыть сервер? 0.0.0.0 для всех подключений')
+    parser.add_argument('--contact', action='append', help='Добавить один из публичных ключей известных вам контактов')
+    parser.add_argument('--name', help='Ваш ключ. Это может быть никнейм или последовательность символов')
+
+    # Разбираем аргументы командной строки
+    args = parser.parse_args()
+
+    # Получаем значения аргументов
+    ip_addresses = args.node
+    own_ip = args.own_ip
+    contacts = args.contact
+    name = args.name
+
+    # Выводим значения аргументов
+    print("Список IP адресов:", ip_addresses)
+    print("Свой IP адрес:", own_ip)
+    print("Список строк:", contacts)
+    print("Еще одна строка:", name)
+
+    io = OurSocketIO(own_ip)
     shell_out = ShellMessageOutput()
-    router = Router(entrypoints, contacts, name, io, shell_out)
+    router = Router(ip_addresses, contacts, name, io, shell_out)
     shell = Shell(router, "-> ")
     shell_out.subscribe(shell.accept_message)
     shell.start_shell()
