@@ -12,7 +12,7 @@ class Shell:
         self.output_queue = queue.Queue()
 
     def accept_message(self, message: str):
-        self.output_queue.put(message)
+        self.output_queue.put("Пришло сообщение: " + message)
 
     def writer(self):
         while True:
