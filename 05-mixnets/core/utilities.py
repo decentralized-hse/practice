@@ -24,7 +24,7 @@ def serialize(message: Message):
     message_length_length = 4 if message.message_type.capitalize() == message.message_type else 1
     message_bytes = (
             message.message_type.encode() +
-            (len(message.payload) + 32).to_bytes(message_length_length) +
+            (len(message.payload) + 32).to_bytes(message_length_length, "little") +
             message.receiver +
             message.payload)
 
@@ -32,7 +32,7 @@ def serialize(message: Message):
 
 
 def deserialize(message: bytes):
-    type_ = message[0].to_bytes(1).decode()
+    type_ = message[0].to_bytes(1, "little").decode()
     message_length_length = 4 if type_.capitalize() == type_ else 1
     message_length = int.from_bytes(message[1:(1 + message_length_length)])
     address = message[message_length_length + 1:message_length_length + 32 + 1]
