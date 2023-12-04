@@ -17,14 +17,15 @@ var commands = map[string]string{
 	"help":     "display this message",
 	"listen":   "[host][:port]	network listen (TCP)",
 	"connect":  "[host][:port]	connect to a node",
-	"announce": "[keyfile]		announce a public key",
-	"keygen":   "keyfile			generate a pair of keys",
+	"announce": "keyfile		announce a public key",
+	"send":     "keyfile text   send a simple message",
+	"keygen":   "keyfile		generate a pair of keys",
 	"ping":     "[ndx]			send a ping to a peer",
 	"quit":     "				quit this program for good",
 	"exit":     "				exit",
 }
 
-var node = router.Node{}
+var node = router.NewNode()
 
 // implements repl.Handler interface
 type MyHandler struct {
@@ -82,11 +83,13 @@ func SaveKeys(fn string, keypair sodium.BoxKP) error {
 	if err != nil {
 		return err
 	}
-	txt := make([]byte, keypair.PublicKey.Length()*2+keypair.SecretKey.Length()*2+2)
-	hex.Encode(txt, keypair.PublicKey.Bytes)
-	txt[keypair.PublicKey.Length()*2] = '\n'
-	hex.Encode(txt, keypair.SecretKey.Bytes[keypair.PublicKey.Length()*2:])
-	txt[keypair.PublicKey.Length()*2+keypair.SecretKey.Length()*2+1] = '\n'
+	pub := keypair.PublicKey.Length()
+	sec := keypair.SecretKey.Length()
+	txt := make([]byte, (pub+sec)*2+2)
+	hex.Encode(txt[0:pub*2], keypair.PublicKey.Bytes)
+	txt[pub*2] = '\n'
+	hex.Encode(txt[pub*2+1:(pub+sec)*2+2], keypair.SecretKey.Bytes)
+	txt[(pub+sec)*2+1] = '\n'
 	_, err = file.Write(txt)
 	if err != nil {
 		return err
@@ -131,10 +134,8 @@ func (h *MyHandler) Eval(line string) string {
 		case "help":
 			helpMessage := []byte{}
 			for k, v := range commands {
-				helpMessage = append(helpMessage, k...)
-				helpMessage = append(helpMessage, '\t')
-				helpMessage = append(helpMessage, v...)
-				helpMessage = append(helpMessage, '\n')
+				str := fmt.Sprintf("%16s %v\r\n", k, v)
+				helpMessage = append(helpMessage, str...)
 			}
 			return string(helpMessage)
 		case "listen":
@@ -184,6 +185,19 @@ func (h *MyHandler) Eval(line string) string {
 				return err.Error()
 			}
 			node.Announce(pair)
+			return ""
+		case "send":
+			if len(args) != 2 {
+				return Usage(cmd)
+			}
+			pair, err := LoadKeys(args[0])
+			if err != nil {
+				return err.Error()
+			}
+			err = node.Send(pair.PublicKey, args[1])
+			if err != nil {
+				return err.Error()
+			}
 			return ""
 		case "keygen":
 			if len(args) != 1 {

@@ -42,10 +42,13 @@ func (node *Node) Read(ndx int) (err error) {
 		buf, err = ReadBuf(buf, conn)
 		//fmt.Printf("bytes pending %d\n", len(buf))
 		if err != nil {
-			return
+			break
 		}
 		lit, body, buf, err = TLVTake(buf)
-		if err != nil {
+		if err == NoDataYet {
+			time.Sleep(time.Millisecond)
+			continue
+		} else if err != nil {
 			break
 		}
 		switch lit {

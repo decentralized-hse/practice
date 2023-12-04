@@ -17,7 +17,7 @@ func TLVlit(lit byte) bool {
 	return TLVShortLit(lit) || TLVLongLit(lit)
 }
 
-var NoDataYet = errors.New("not enough data")
+var NoDataYet = errors.New("incomplete data")
 var BadRecord = errors.New("bad record format")
 
 func TLVTake(data []byte) (lit byte, body, rest []byte, err error) {
@@ -34,7 +34,7 @@ func TLVTake(data []byte) (lit byte, body, rest []byte, err error) {
 			err = NoDataYet
 		} else {
 			body = data[2 : 2+reclen]
-			data = data[2+reclen:]
+			rest = data[2+reclen:]
 		}
 	} else if TLVLongLit(lit) {
 		if len(data) < 5 {
@@ -48,7 +48,7 @@ func TLVTake(data []byte) (lit byte, body, rest []byte, err error) {
 			err = NoDataYet
 		} else {
 			body = data[5 : 5+reclen]
-			data = data[5+reclen:]
+			rest = data[5+reclen:]
 		}
 	} else {
 		err = BadRecord

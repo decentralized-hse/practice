@@ -29,3 +29,10 @@ func WriteBuf(buf []byte, wrr io.Writer) ([]byte, error) {
 	}
 	return buf, err
 }
+
+func NewNode() Node {
+	return Node{
+		prev:   make(map[SHA256]SHA256),
+		routes: make(map[SHA256]int),
+	}
+}

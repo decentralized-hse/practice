@@ -3,7 +3,9 @@ package router
 import (
 	"crypto"
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"github.com/jamesruan/sodium"
 	"net"
 	"sync"
@@ -34,6 +36,12 @@ type Peer struct {
 	boxmx     sync.Mutex
 }
 
+func Hex(data []byte) string {
+	ret := make([]byte, len(data)*2)
+	hex.Encode(ret, data)
+	return string(ret)
+}
+
 func (node *Node) Register(recvd SHA256, ndx int) {
 	_, ok := node.prev[recvd]
 	if ok {
@@ -47,6 +55,7 @@ func (node *Node) Register(recvd SHA256, ndx int) {
 	}
 	node.routes[recvd] = ndx
 	next := sha256.Sum256(recvd[:])
+	fmt.Printf("reg %s\r\nfwd %s\r\n", Hex(recvd[:]), Hex(next[:]))
 
 	relay, _ := TLVAppend(nil, 'A', next[:])
 	for i := 0; i < len(node.peers); i++ {
@@ -75,6 +84,10 @@ func (node *Node) RouteMessage(msg Message) error {
 	if !ok {
 		return RouteUnknown
 	}
+	if ndx == -1 {
+		fmt.Printf("Received for %s\r\n%s\r\n", Hex(prev[:]), msg.body)
+		return nil
+	}
 	peer := node.peers[ndx]
 	if peer != nil {
 		fwd, _ := TLVAppend2(nil, 'M', prev[:], msg.body)
@@ -83,4 +96,21 @@ func (node *Node) RouteMessage(msg Message) error {
 		peer.boxmx.Unlock()
 	}
 	return nil
+}
+
+func (node *Node) Send(key sodium.BoxPublicKey, txt string) error {
+	hash := sha256.Sum256(key.Bytes)
+	for i := 0; i < MAXD; i++ {
+		ndx, ok := node.routes[hash]
+		if ok {
+			peer := node.peers[ndx]
+			if peer != nil {
+				msg, _ := TLVAppend2(nil, 'M', hash[:], []byte(txt))
+				peer.Queue(msg)
+				return nil
+			}
+		}
+		hash = sha256.Sum256(hash[:])
+	}
+	return AddressUnknown
 }
