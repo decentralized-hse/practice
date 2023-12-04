@@ -72,7 +72,7 @@ class Router(BaseRouter):
                 message = Message("M", msg, key_hash)
                 self.io.send_message(serialize(message), self.table[key_hash])
                 return
-        raise
+        raise Exception("Маршрут до получателя не найден в таблице")
 
     def find_announce_match(self, target_hash, address):
         for existing_key in self.table.keys():
