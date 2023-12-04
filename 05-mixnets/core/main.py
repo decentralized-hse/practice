@@ -284,6 +284,6 @@ if __name__ == "__main__":
     io = OurSocketIO(ip)
     shell_out = ShellMessageOutput()
     router = Router(entrypoints, contacts, name, io, shell_out)
-    shell = Shell(router, "8==D ")
+    shell = Shell(router, "-> ")
     shell_out.subscribe(shell.accept_message)
     shell.start_shell()
