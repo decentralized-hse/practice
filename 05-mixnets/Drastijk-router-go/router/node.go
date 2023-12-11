@@ -1,0 +1,357 @@
+package router
+
+import (
+	"crypto"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"github.com/cockroachdb/pebble"
+	"github.com/jamesruan/sodium"
+	"net"
+	"os"
+	"sync"
+)
+
+const MAXD = 5
+
+type pd uint32
+
+type SHA256 [32]byte
+
+// Node database scheme
+// private key 		P nick: 	privhex
+// announce         A hash: 	time, uri
+// connections 		C uri:      -
+// public keys 		K nick: 	pub (hex)
+// message history	M nick: 	time, string
+// ignored announce E hash uri: time
+// next-hash		N hash:		prev hash hex
+// traffix stats    S ndx32 time: packets, bytes, announces
+// listen addresses L addr: 	-
+type Node struct {
+	pubkey crypto.PublicKey
+	inbox  [][]byte
+	peers  map[string]*Peer
+	listen map[string]net.Listener
+	boxmx  sync.Mutex
+	DB     *pebble.DB
+}
+
+type Message struct {
+	to   SHA256
+	body []byte
+}
+
+func Hex(data []byte) string {
+	ret := make([]byte, len(data)*2)
+	hex.Encode(ret, data)
+	return string(ret)
+}
+
+func KeyN(hash SHA256) []byte {
+	ret := make([]byte, 65)
+	ret[0] = 'K'
+	hex.Encode(ret[1:], hash[:])
+	return ret
+}
+
+func KeyA(hash SHA256) []byte {
+	ret := make([]byte, 65)
+	ret[0] = 'A'
+	hex.Encode(ret[1:], hash[:])
+	return ret
+}
+
+func KeyE(ndx pd, hash SHA256) []byte {
+	ret := make([]byte, 69)
+	ret[0] = 'E'
+	binary.LittleEndian.PutUint32(ret[1:5], uint32(ndx))
+	hex.Encode(ret[5:], hash[:])
+	return ret
+}
+
+func ValPD(ndx pd) []byte {
+	var ret [4]byte
+	binary.LittleEndian.PutUint32(ret[:], uint32(ndx))
+	return ret[:]
+}
+
+func SHA256Hex(hash SHA256) []byte {
+	ret := make([]byte, 64)
+	hex.Encode(ret[:], hash[:])
+	return ret
+}
+
+var ErrMalformedRecord = errors.New("malformed record")
+
+func SHA256Bin(hexhash []byte) (ret SHA256, err error) {
+	i, err := hex.Decode(ret[:], hexhash)
+	if i != len(SHA256{}) {
+		err = ErrMalformedRecord
+	}
+	return
+}
+
+var HaveBetterPath = errors.New("have a shorter path")
+
+func (node *Node) Register(recvd SHA256, address string) error {
+	_, cl, err := node.DB.Get(KeyN(recvd))
+	if err == nil {
+		_ = cl.Close()
+		return HaveBetterPath // a shorter path is known
+	}
+	wo := pebble.WriteOptions{}
+	wb := pebble.Batch{}
+	hash := recvd
+	for i := 0; i < MAXD; i++ {
+		next := sha256.Sum256(hash[:])
+		_ = wb.Set(KeyN(next), SHA256Hex(hash), &wo)
+		hash = next
+	}
+	_ = wb.Set(KeyA(recvd), []byte(address), &wo)
+	err = node.DB.Apply(&wb, &wo)
+	if err != nil {
+		return err
+	}
+	next := sha256.Sum256(recvd[:])
+	fmt.Printf("reg %s\r\nfwd %s\r\n", Hex(recvd[:]), Hex(next[:]))
+
+	relay, _ := TLVAppend(nil, 'A', next[:])
+	for _, p := range node.peers {
+		if p == nil || p.address == address {
+			continue
+		}
+		p.Queue(relay)
+	}
+	return nil
+}
+
+func (node *Node) Announce(kp sodium.BoxKP) error {
+	hash0 := sha256.Sum256(kp.PublicKey.Bytes)
+	return node.Register(hash0, "")
+}
+
+var AddressUnknown = errors.New("Address unknown")
+var RouteUnknown = errors.New("RouteUnknown")
+
+func (node *Node) findPrevHash(hash SHA256) (prev SHA256, err error) {
+	recprev, cl1, err := node.DB.Get(KeyN(hash))
+	if err != nil {
+		return
+	}
+	prev, err = SHA256Bin(recprev)
+	_ = cl1.Close()
+	return
+}
+
+func (node *Node) findFwdPeer(hash SHA256) (peer *Peer, err error) {
+	recndx, cl, err := node.DB.Get(KeyA(hash))
+	if err != nil {
+		return
+	}
+	var ts int64 = 0
+	addr := ""
+	n, err := fmt.Sscanf(string(recndx), "%d, %s", &ts, &addr)
+	// TODO check too old
+	if n != 2 {
+		err = ErrMalformedRecord
+	} else {
+		peer = node.peers[addr]
+	}
+	_ = cl.Close()
+	return
+}
+
+func (node *Node) Init() (err error) {
+	node.peers = make(map[string]*Peer)
+	node.listen = make(map[string]net.Listener)
+	// TODO replace logger
+	opts := pebble.Options{Logger: pebble.DefaultLogger}
+	node.DB, err = pebble.Open("drastijk", &opts)
+	io := pebble.IterOptions{}
+	i, err := node.DB.NewIter(&io)
+	if err != nil {
+		return
+	}
+	for i.SeekGE([]byte{'L'}); i.Valid() && i.Key()[0] == 'L'; i.Next() {
+		address := string(i.Key()[1:])
+		go node.Listen(address)
+	}
+	for i.SeekGE([]byte{'C'}); i.Valid() && i.Key()[0] == 'C'; i.Next() {
+		address := string(i.Key()[1:])
+		go node.Connect(address, nil)
+	}
+	_ = i.Close()
+	return
+}
+
+func (node *Node) Listen(addr string) (err error) {
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "listen() fails: %s\r\n", err.Error())
+		return
+	}
+	pre, ok := node.listen[addr]
+	if ok {
+		_ = pre.Close()
+	}
+	node.listen[addr] = listener
+	for {
+		con, err := listener.Accept()
+		fmt.Fprintf(os.Stderr, "%s connected\r\n", con.RemoteAddr().String())
+		if err != nil {
+			fmt.Println(err.Error())
+			break
+		}
+		node.Connect("", con)
+	}
+	delete(node.listen, addr)
+	return
+}
+
+func (node *Node) RouteMessage(msg Message) error {
+	prev, err := node.findPrevHash(msg.to)
+	if err != nil {
+		return err
+	}
+	peer, err := node.findFwdPeer(prev)
+	if err != nil {
+		return err
+	}
+	if peer == nil { // FIXME check have secret
+		fmt.Printf("Received for %s\r\n%s\r\n", Hex(msg.to[:]), msg.body)
+		return nil
+	}
+	if peer != nil {
+		fwd, _ := TLVAppend2(nil, 'M', prev[:], msg.body)
+		peer.boxmx.Lock()
+		peer.outbox = append(peer.outbox, fwd)
+		peer.boxmx.Unlock()
+	}
+	return nil
+}
+
+func (node *Node) Send(key sodium.BoxPublicKey, txt string) error {
+	hash := sha256.Sum256(key.Bytes)
+	for i := 0; i < MAXD; i++ {
+		peer, err := node.findFwdPeer(hash)
+		if err == nil {
+			if peer != nil {
+				msg, _ := TLVAppend2(nil, 'M', hash[:], []byte(txt))
+				peer.Queue(msg)
+				return nil
+			}
+		}
+		hash = sha256.Sum256(hash[:])
+	}
+	return AddressUnknown
+}
+
+var ErrKeyIsAlreadyDefined = errors.New("the key is already defined")
+
+func hexize(data []byte) []byte {
+	h := make([]byte, len(data)*2)
+	hex.Encode(h, data)
+	return h
+}
+
+func unhexize(hexdata []byte) (bin []byte, err error) {
+	bin = make([]byte, len(hexdata)/2)
+	_, err = hex.Decode(bin, hexdata)
+	return
+}
+
+var _litKey = [64]byte{'K'}
+var litKey = _litKey[0:1]
+
+var _litPrivate = [64]byte{'P'}
+var litPrivate = _litPrivate[0:1]
+
+var _litListen = [64]byte{'L'}
+var litListen = _litListen[0:1]
+
+// private key 		P nick: 	privhex
+// public keys 		K nick: 	pub (hex)
+func (node *Node) SaveKeys(name string, keypair sodium.BoxKP) error {
+	_, _, err := node.DB.Get(append(litKey, name...))
+	if err == nil {
+		return ErrKeyIsAlreadyDefined
+	}
+	wb := pebble.Batch{}
+	wo := pebble.WriteOptions{}
+	_ = wb.Set(append(litKey, name...), hexize(keypair.PublicKey.Bytes), &wo)
+	_ = wb.Set(append(litPrivate, name...), hexize(keypair.SecretKey.Bytes), &wo)
+	return node.DB.Apply(&wb, &wo)
+}
+
+func (node *Node) LoadKeys(name string) (keypair sodium.BoxKP, err error) {
+	pubhex, cl, err := node.DB.Get(append(litKey, name...))
+	if err != nil {
+		return
+	}
+	keypair.PublicKey.Bytes, err = unhexize(pubhex)
+	_ = cl.Close()
+	if err != nil {
+		return
+	}
+	sechex, cl2, err := node.DB.Get(append(litPrivate, name...))
+	if err != nil {
+		err = nil
+		return
+	}
+	keypair.SecretKey.Bytes, err = unhexize(sechex)
+	_ = cl2.Close()
+	return
+}
+
+// private key 		P nick: 	privhex
+// public keys 		K nick: 	pub (hex)
+func (node *Node) ShowKeys() {
+	io := pebble.IterOptions{}
+	i, err := node.DB.NewIter(&io)
+	if err != nil {
+		return
+	}
+	for i.SeekGE(litKey); i.Valid() && i.Key()[0] == litKey[0]; i.Next() {
+		name := string(i.Key()[1:])
+		key := i.Value()
+		seckey := append(litPrivate, name...)
+		_, cl, err := node.DB.Get(seckey)
+		mine := ""
+		if err == nil {
+			mine = " (mine)"
+			_ = cl.Close()
+		}
+		fmt.Printf("%s:\t%s%s\r\n", name, string(key), mine)
+	}
+	_ = i.Close()
+}
+
+func (node *Node) ShowListenAddresses() {
+	io := pebble.IterOptions{}
+	i, err := node.DB.NewIter(&io)
+	if err != nil {
+		return
+	}
+	i.SeekGE(litListen)
+	for i.Valid() && i.Key()[0] == litListen[0] {
+		address := string(i.Key()[1:])
+		fmt.Printf("%s\r\n", address)
+		i.Next()
+	}
+	_ = i.Close()
+}
+
+func (node *Node) ShowAll() {
+	io := pebble.IterOptions{}
+	i, err := node.DB.NewIter(&io)
+	if err != nil {
+		return
+	}
+	for i.SeekGE([]byte{0}); i.Valid(); i.Next() {
+		fmt.Printf("%s:\t%s\r\n", i.Key(), i.Value())
+	}
+	_ = i.Close()
+}

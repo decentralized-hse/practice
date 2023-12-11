@@ -2,8 +2,8 @@ package main
 
 import (
 	"Drastijk/router"
-	"encoding/hex"
 	"fmt"
+	"github.com/cockroachdb/pebble"
 	"github.com/jamesruan/sodium"
 	repl "github.com/openengineer/go-repl"
 	"log"
@@ -14,18 +14,20 @@ import (
 )
 
 var commands = map[string]string{
-	"help":     "display this message",
-	"listen":   "[host][:port]	network listen (TCP)",
-	"connect":  "[host][:port]	connect to a node",
-	"announce": "keyfile		announce a public key",
-	"send":     "keyfile text   send a simple message",
-	"keygen":   "keyfile		generate a pair of keys",
-	"ping":     "[ndx]			send a ping to a peer",
-	"quit":     "				quit this program for good",
-	"exit":     "				exit",
+	"help":     "               display this message",
+	"listen":   "[host][:port]	listen on an address (TCP)",
+	"connect":  "[host][:port]	connect to an address",
+	"announce": "name           announce a public key",
+	"send":     "name text      send a simple message",
+	"keys":     "name           generate a named pair of keys",
+	"contact":  "name pubkey    add a contact",
+	"ping":     "[host][:port]  send a ping to a peer",
+	"dump":     "[command]      dump the command's metadata",
+	"quit":     "               quit this program for good",
+	"exit":     "               exit",
 }
 
-var node = router.NewNode()
+var node = router.Node{}
 
 // implements repl.Handler interface
 type MyHandler struct {
@@ -34,6 +36,12 @@ type MyHandler struct {
 
 func main() {
 	fmt.Println("Welcome, type \"help\" for more info")
+
+	err := node.Init()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		return
+	}
 
 	h := &MyHandler{}
 	h.r = repl.NewRepl(h)
@@ -60,6 +68,13 @@ func (h *MyHandler) Tab(buffer string) string {
 				return cmd[len(c):] + " "
 			}
 		}
+	} else if len(fields) == 2 && fields[0] == "dump" {
+		c := fields[1]
+		for cmd, _ := range commands {
+			if len(c) < len(cmd) && strings.HasPrefix(cmd, c) {
+				return cmd[len(c):] + " "
+			}
+		}
 	}
 	return ""
 }
@@ -78,52 +93,9 @@ func Usage(cmd string) string {
 	return "Usage: " + cmd + " " + commands[cmd]
 }
 
-func SaveKeys(fn string, keypair sodium.BoxKP) error {
-	file, err := os.Create(fn + ".keys")
-	if err != nil {
-		return err
-	}
-	pub := keypair.PublicKey.Length()
-	sec := keypair.SecretKey.Length()
-	txt := make([]byte, (pub+sec)*2+2)
-	hex.Encode(txt[0:pub*2], keypair.PublicKey.Bytes)
-	txt[pub*2] = '\n'
-	hex.Encode(txt[pub*2+1:(pub+sec)*2+2], keypair.SecretKey.Bytes)
-	txt[(pub+sec)*2+1] = '\n'
-	_, err = file.Write(txt)
-	if err != nil {
-		return err
-	}
-	return file.Close()
-}
-
-func LoadKeys(fn string) (keypair sodium.BoxKP, err error) {
-	file, err := os.Open(fn + ".keys")
-	if err != nil {
-		return
-	}
-	var pub string
-	var sec string
-	_, err = fmt.Fscan(file, &pub, &sec)
-	if err != nil {
-		return
-	}
-	keypair.PublicKey.Bytes = make([]byte, len(pub)/2)
-	keypair.SecretKey.Bytes = make([]byte, len(sec)/2)
-	_, err = hex.Decode(keypair.PublicKey.Bytes, []byte(pub))
-	if err != nil {
-		return
-	}
-	_, err = hex.Decode(keypair.SecretKey.Bytes, []byte(sec))
-	if err != nil {
-		return
-	}
-	err = file.Close()
-	return
-}
-
 func (h *MyHandler) Eval(line string) string {
 	fields := strings.Fields(line)
+	wo := pebble.WriteOptions{}
 
 	if len(fields) == 0 {
 		return ""
@@ -147,31 +119,32 @@ func (h *MyHandler) Eval(line string) string {
 			} else {
 				addr = addrDefaults(args[0])
 			}
-			listener, err := net.Listen("tcp", addr)
-			if err != nil {
-				return err.Error()
-			}
-			go node.Listen(listener)
+			l := []byte{'L'}
+			_ = node.DB.Set(append(l, addr...), []byte{}, &wo)
+			go node.Listen(addr)
 			return "OK"
 		case "connect":
 			if len(args) != 1 {
 				return "Usage: connect [address][:port]"
 			}
 			addr := addrDefaults(args[0])
-			con, err := net.Dial("tcp", addr)
+			conn, err := net.Dial("tcp", addr)
 			if err != nil {
 				return err.Error()
 			}
-			ndx := node.Connect(con)
-			fmt.Printf("peer %d connected: %s\n", ndx, addr)
+			C := []byte{'C'}
+			_ = node.DB.Set(append(C, addr...), []byte{'-'}, &wo)
+			go node.Connect(addr, conn)
+			fmt.Printf("peer %s connected\n", addr)
 			return ""
 		case "ping":
-			if len(args) != 1 {
+			if len(args) < 1 {
 				return Usage(cmd)
 			}
-			ndx := 0
-			fmt.Sscanf(args[0], "%d", &ndx)
-			err := node.Ping(ndx)
+			addr := ""
+			fmt.Sscanf(args[0], "%s", &addr)
+			msg := strings.Join(args[1:], " ")
+			err := node.Ping(addr, msg)
 			if err != nil {
 				return err.Error()
 			}
@@ -180,7 +153,7 @@ func (h *MyHandler) Eval(line string) string {
 			if len(args) != 1 {
 				return Usage(cmd)
 			}
-			pair, err := LoadKeys(args[0])
+			pair, err := node.LoadKeys(args[0])
 			if err != nil {
 				return err.Error()
 			}
@@ -190,7 +163,7 @@ func (h *MyHandler) Eval(line string) string {
 			if len(args) != 2 {
 				return Usage(cmd)
 			}
-			pair, err := LoadKeys(args[0])
+			pair, err := node.LoadKeys(args[0])
 			if err != nil {
 				return err.Error()
 			}
@@ -199,13 +172,13 @@ func (h *MyHandler) Eval(line string) string {
 				return err.Error()
 			}
 			return ""
-		case "keygen":
+		case "keys":
 			if len(args) != 1 {
 				return Usage(cmd)
 			}
-			fn := args[0]
+			name := args[0]
 			keypair := sodium.MakeBoxKP()
-			err := SaveKeys(fn, keypair)
+			err := node.SaveKeys(name, keypair)
 			if err != nil {
 				return err.Error()
 			}
@@ -217,7 +190,27 @@ func (h *MyHandler) Eval(line string) string {
 				return add(args[0], args[1])
 			}
 		case "quit", "exit":
+			err := node.DB.Close()
+			if err != nil {
+				return err.Error()
+			}
+			node.DB = nil
 			h.r.Quit()
+			return ""
+		case "show", "list":
+			for i := 0; i < len(args); i++ {
+				cmd := args[i]
+				switch cmd {
+				case "listen":
+					node.ShowListenAddresses()
+				case "keys":
+					node.ShowKeys()
+				case "all":
+					node.ShowAll()
+				default:
+					fmt.Fprintf(os.Stdout, "no dump for command %s\r\n", cmd)
+				}
+			}
 			return ""
 		default:
 			return fmt.Sprintf("unrecognized command \"%s\"", cmd)

@@ -5,38 +5,75 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sync"
 	"time"
 )
 
-func (node *Node) Listen(lstn net.Listener) {
-	for {
-		con, err := lstn.Accept()
-		if err != nil {
-			fmt.Println(err.Error())
-			break
+type Peer struct {
+	address   string
+	node      *Node
+	announces map[SHA256]uint64
+	conn      net.Conn
+	outbox    [][]byte
+	boxmx     sync.Mutex
+}
+
+const RETRY = time.Minute
+
+func (node *Node) Connect(addr string, conn net.Conn) {
+	con_backoff := time.Millisecond
+	read_backoff := time.Millisecond
+	for len(addr) > 0 || conn != nil {
+		var err error
+		if conn == nil {
+			time.Sleep(read_backoff)
+			conn, err = net.Dial("tcp", addr)
 		}
-		node.Connect(con)
+		if err != nil {
+			if con_backoff < RETRY/2 {
+				con_backoff = con_backoff * 2
+			} else {
+				con_backoff = RETRY
+			}
+			time.Sleep(con_backoff)
+			continue
+		} else {
+			con_backoff = time.Millisecond
+		}
+		conntime := time.Now()
+		key := addr
+		if len(addr) == 0 {
+			key = conn.RemoteAddr().String()
+		}
+		node.boxmx.Lock()
+		peer := Peer{
+			node:    node,
+			conn:    conn,
+			address: key,
+		}
+		node.peers[key] = &peer
+		node.boxmx.Unlock()
+		go peer.doWrite()
+		err = peer.Read()
+		node.boxmx.Lock()
+		delete(node.peers, key)
+		node.boxmx.Unlock()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			if len(addr) > 0 && conntime.Add(time.Minute*5).After(time.Now()) && read_backoff < RETRY/2 {
+				read_backoff *= 2
+			} else {
+				read_backoff = time.Millisecond
+			}
+		}
+		conn = nil
 	}
 }
 
-func (node *Node) Connect(conn net.Conn) int {
-	node.boxmx.Lock()
-	ndx := len(node.peers)
-	node.peers = append(node.peers, &Peer{
-		conn: conn,
-	})
-	node.boxmx.Unlock()
-	go node.doWrite(ndx)
-	go node.Read(ndx)
-	// todo reconnect here
-	return ndx
-}
-
-func (node *Node) Read(ndx int) (err error) {
+func (peer *Peer) Read() (err error) {
 	var buf []byte
 	var lit byte
 	var body []byte
-	peer := node.peers[ndx]
 	conn := peer.conn
 	for conn != nil {
 		buf, err = ReadBuf(buf, conn)
@@ -55,21 +92,23 @@ func (node *Node) Read(ndx int) (err error) {
 		case 'A':
 			var to SHA256
 			copy(to[:], body[:32])
-			node.Register(to, ndx)
-
+			err = peer.node.Register(to, peer.address)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err.Error())
+			}
 		case 'M':
 			var to SHA256
 			copy(to[:], body[:32])
 			msg := Message{to: to, body: body[32:]}
-			err = node.RouteMessage(msg)
+			err = peer.node.RouteMessage(msg)
 		case 'P':
-			fmt.Printf("Pinged by #%d: %s\n\r", ndx, body)
+			fmt.Printf("Pinged by %s: %s\n\r", peer.address, body)
 			pong, _ := TLVAppend2(nil, 'O', []byte("Re: "), body)
 			peer.boxmx.Lock()
 			peer.outbox = append(peer.outbox, pong)
 			peer.boxmx.Unlock()
 		case 'O':
-			fmt.Printf("Ping response from #%d: %s\n\r", ndx, body)
+			fmt.Printf("Ping response from %s: %s\n\r", peer.address, body)
 		default:
 			err = errors.New("unsupported message type")
 		}
@@ -81,13 +120,13 @@ func (node *Node) Read(ndx int) (err error) {
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s\n\r", err.Error())
 	}
+
 	peer.conn = nil
-	return nil
+	return
 }
 
-func (node *Node) doWrite(ndx int) {
+func (peer *Peer) doWrite() {
 	var buf = make([]byte, 0, 4096)
-	peer := node.peers[ndx]
 	conn := peer.conn
 	for conn != nil {
 		peer.boxmx.Lock()
@@ -115,12 +154,12 @@ func (node *Node) doWrite(ndx int) {
 
 var NoSuchPeer = errors.New("no such peer")
 
-func (node *Node) Ping(ndx int) error {
-	if ndx >= len(node.peers) || node.peers[ndx] == nil {
+func (node *Node) Ping(addr string, msgtxt string) error {
+	peer, ok := node.peers[addr]
+	if !ok {
 		return NoSuchPeer
 	}
-	peer := node.peers[ndx]
-	msg, _ := TLVAppend(nil, 'P', []byte("Hello there!"))
+	msg, _ := TLVAppend(nil, 'P', []byte(msgtxt))
 	peer.boxmx.Lock()
 	peer.outbox = append(peer.outbox, msg)
 	peer.boxmx.Unlock()
