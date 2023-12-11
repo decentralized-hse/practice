@@ -3,6 +3,7 @@ from utilities import *
 from datetime import datetime, timezone, timedelta
 from models import Message
 import threading
+import time
 
 
 class Router(BaseRouter):
@@ -17,19 +18,22 @@ class Router(BaseRouter):
         self.entrypoints = entrypoints
         self.table = {}
 
-    def _schedule_next_announce(self):
-        now = datetime.now(timezone.utc)
-        next_hour = Utilities.get_closes_timestamp() + timedelta(hours=1)
+    @staticmethod
+    def _current_timestamp_in_bytes():
+        return Utilities.get_hour_start_ns(time.time_ns()).to_bytes(length=8, byteorder='little')
 
-        wait_seconds = (next_hour - now).seconds
+    def _schedule_next_announce(self):
+        now = time.time_ns()
+        next_hour = Utilities.get_hour_start_ns(now + 3600)
+
+        wait_seconds = next_hour - now
 
         threading.Timer(wait_seconds, lambda: self.announce()).start()
 
     def announce(self):
-        closes_timestamp = Utilities.get_closes_timestamp()
-
-        key = (self.name + str(closes_timestamp)).encode()
-        announce = serialize(Message("a", b"", Utilities.sha256(key)))
+        key = self.name.encode() + self._current_timestamp_in_bytes()
+        key_hash = Utilities.sha256(key)
+        announce = serialize(Message("a", b"", key_hash))
 
         for point in self.entrypoints:
             self.io.send_message(announce, point)
@@ -49,12 +53,13 @@ class Router(BaseRouter):
             if should_resend:
                 self.resend_announce(sender, message)
         if message.message_type == 'M' or message.message_type == 'm':
-            timestamp = str(Utilities.get_closes_timestamp())
-            key_hash = (self.name + timestamp).encode()
-            me_hash = Utilities.sha256(key_hash)
-            if me_hash == message.receiver:
+            key = self.name.encode() + self._current_timestamp_in_bytes()
+            key_hash = Utilities.sha256(key)
+
+            if key_hash == message.receiver:
                 self.message_output.accept_message(message.payload)
                 return
+
             to = message.receiver
             for key_hash, address in self.table.items():
                 if Utilities.sha256(key_hash) != to:
@@ -64,8 +69,9 @@ class Router(BaseRouter):
                 self.io.send_message(serialize(message), address)
 
     def send_message(self, msg: bytes, sender_public_key: str):
-        timestamp = str(Utilities.get_closes_timestamp())
-        key_hash = (sender_public_key + timestamp).encode()
+        key = sender_public_key.encode() + self._current_timestamp_in_bytes()
+        key_hash = Utilities.sha256(key)
+
         for i in range(self.diam):
             key_hash = Utilities.sha256(key_hash)
             if key_hash in self.table.keys():
