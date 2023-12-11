@@ -144,7 +144,7 @@ func (node *Node) Register(recvd SHA256, address string) error {
 }
 
 func (node *Node) Announce(kp sodium.BoxKP) error {
-	hash0 := sha256.Sum256(kp.PublicKey.Bytes)
+	hash0 := CurrentHash(kp.PublicKey)
 	return node.Register(hash0, "-")
 }
 
@@ -253,8 +253,21 @@ func (node *Node) RouteMessage(msg Message) error {
 	return nil
 }
 
+func HourlyHash(key sodium.BoxPublicKey, time int64) SHA256 {
+	time -= time % (60 * 60 * 1000000000) // round to an hour
+	var timestr [8]byte
+	binary.LittleEndian.PutUint64(timestr[:], uint64(time))
+	str := append(key.Bytes, timestr[0:8]...)
+	return sha256.Sum256(str)
+}
+
+func CurrentHash(key sodium.BoxPublicKey) SHA256 {
+	return HourlyHash(key, time.Now().UnixNano())
+}
+
 func (node *Node) Send(key sodium.BoxPublicKey, txt string) error {
-	hash := sha256.Sum256(key.Bytes)
+	hash := CurrentHash(key)
+	fmt.Fprintf(os.Stderr, "current hash %s\r\n", hexize(hash[:]))
 	for i := 0; i < MAXD; i++ {
 		peer, err := node.findFwdPeer(hash)
 		if err == nil && peer != nil {
