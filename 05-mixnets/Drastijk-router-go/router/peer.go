@@ -1,8 +1,10 @@
 package router
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
+	"github.com/cockroachdb/pebble"
 	"net"
 	"os"
 	"sync"
@@ -77,7 +79,7 @@ func (peer *Peer) Read() (err error) {
 	conn := peer.conn
 	for conn != nil {
 		buf, err = ReadBuf(buf, conn)
-		//fmt.Printf("bytes pending %d\n", len(buf))
+		//fmt.Fprintf(os.Stderr, "bytes pending %d\n", len(buf))
 		if err != nil {
 			break
 		}
@@ -93,6 +95,9 @@ func (peer *Peer) Read() (err error) {
 			var to SHA256
 			copy(to[:], body[:32])
 			err = peer.node.Register(to, peer.address)
+			if err == HaveBetterPath {
+				err = nil
+			}
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err.Error())
 			}
@@ -100,6 +105,7 @@ func (peer *Peer) Read() (err error) {
 			var to SHA256
 			copy(to[:], body[:32])
 			msg := Message{to: to, body: body[32:]}
+			fmt.Printf("Messaged by %s: %s\n\r", peer.address, body)
 			err = peer.node.RouteMessage(msg)
 		case 'P':
 			fmt.Printf("Pinged by %s: %s\n\r", peer.address, body)
@@ -127,6 +133,28 @@ func (peer *Peer) Read() (err error) {
 
 func (peer *Peer) doWrite() {
 	var buf = make([]byte, 0, 4096)
+	// send all the announces
+	io := pebble.IterOptions{}
+	db := peer.node.DB
+	if db == nil {
+		return
+	}
+	i, err := db.NewIter(&io)
+	if err != nil {
+		return
+	}
+	for i.SeekGE(litAnnounce); i.Valid() && i.Key()[0] == litAnnounce[0]; i.Next() {
+		// FIXME expiration check
+		hex := i.Key()[1:]
+		bin, err := unhexize(hex)
+		if len(bin) != 32 || err != nil {
+			continue
+		}
+		next := sha256.Sum256(bin)
+		buf, _ = TLVAppend(buf, 'A', next[:])
+	}
+	_ = i.Close()
+	// the send loop
 	conn := peer.conn
 	for conn != nil {
 		peer.boxmx.Lock()
@@ -141,7 +169,7 @@ func (peer *Peer) doWrite() {
 			continue
 		}
 		n, err := conn.Write(buf)
-		//fmt.Printf("sent %d bytes\n", n)
+		//fmt.Fprintf(os.Stderr, "sent %d bytes\n", n)
 		if err != nil {
 			peer.conn = nil
 			_, _ = fmt.Fprint(os.Stderr, err.Error())

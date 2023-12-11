@@ -12,6 +12,7 @@ import (
 	"net"
 	"os"
 	"sync"
+	"time"
 )
 
 const MAXD = 5
@@ -44,32 +45,27 @@ type Message struct {
 	body []byte
 }
 
+// database
+
+var _litKey = [64]byte{'K'}
+var litKey = _litKey[0:1]
+
+var _litPrivate = [64]byte{'P'}
+var litPrivate = _litPrivate[0:1]
+
+var _litListen = [64]byte{'L'}
+var litListen = _litListen[0:1]
+
+var _litNext = [64]byte{'N'}
+var litNext = _litNext[0:1]
+
+var _litAnnounce = [64]byte{'A'}
+var litAnnounce = _litAnnounce[0:1]
+
 func Hex(data []byte) string {
 	ret := make([]byte, len(data)*2)
 	hex.Encode(ret, data)
 	return string(ret)
-}
-
-func KeyN(hash SHA256) []byte {
-	ret := make([]byte, 65)
-	ret[0] = 'K'
-	hex.Encode(ret[1:], hash[:])
-	return ret
-}
-
-func KeyA(hash SHA256) []byte {
-	ret := make([]byte, 65)
-	ret[0] = 'A'
-	hex.Encode(ret[1:], hash[:])
-	return ret
-}
-
-func KeyE(ndx pd, hash SHA256) []byte {
-	ret := make([]byte, 69)
-	ret[0] = 'E'
-	binary.LittleEndian.PutUint32(ret[1:5], uint32(ndx))
-	hex.Encode(ret[5:], hash[:])
-	return ret
 }
 
 func ValPD(ndx pd) []byte {
@@ -96,8 +92,26 @@ func SHA256Bin(hexhash []byte) (ret SHA256, err error) {
 
 var HaveBetterPath = errors.New("have a shorter path")
 
+func KeyHash(lit byte, sha256 SHA256) []byte {
+	ret := make([]byte, 65)
+	ret[0] = lit
+	hex.Encode(ret[1:], sha256[:])
+	return ret
+}
+
+func KeyString(lit byte, str string) []byte {
+	ret := make([]byte, len(str)+1)
+	ret[0] = lit
+	copy(ret[1:], str)
+	return ret
+}
+
+// announce cycle:
+//  1. on connect, all announces are sent
+//  2. own keys are announced by a job
+//  3. announces that make difference get relayed
 func (node *Node) Register(recvd SHA256, address string) error {
-	_, cl, err := node.DB.Get(KeyN(recvd))
+	_, cl, err := node.DB.Get(KeyHash('N', recvd))
 	if err == nil {
 		_ = cl.Close()
 		return HaveBetterPath // a shorter path is known
@@ -107,10 +121,11 @@ func (node *Node) Register(recvd SHA256, address string) error {
 	hash := recvd
 	for i := 0; i < MAXD; i++ {
 		next := sha256.Sum256(hash[:])
-		_ = wb.Set(KeyN(next), SHA256Hex(hash), &wo)
+		_ = wb.Set(KeyHash('N', next), SHA256Hex(hash), &wo)
 		hash = next
 	}
-	_ = wb.Set(KeyA(recvd), []byte(address), &wo)
+	value := fmt.Sprintf("%d,%s", time.Now().UnixNano(), address)
+	_ = wb.Set(KeyHash('A', recvd), []byte(value), &wo)
 	err = node.DB.Apply(&wb, &wo)
 	if err != nil {
 		return err
@@ -130,14 +145,14 @@ func (node *Node) Register(recvd SHA256, address string) error {
 
 func (node *Node) Announce(kp sodium.BoxKP) error {
 	hash0 := sha256.Sum256(kp.PublicKey.Bytes)
-	return node.Register(hash0, "")
+	return node.Register(hash0, "-")
 }
 
-var AddressUnknown = errors.New("Address unknown")
+var ErrAddressUnknown = errors.New("Address unknown")
 var RouteUnknown = errors.New("RouteUnknown")
 
 func (node *Node) findPrevHash(hash SHA256) (prev SHA256, err error) {
-	recprev, cl1, err := node.DB.Get(KeyN(hash))
+	recprev, cl1, err := node.DB.Get(KeyHash('N', hash))
 	if err != nil {
 		return
 	}
@@ -147,16 +162,21 @@ func (node *Node) findPrevHash(hash SHA256) (prev SHA256, err error) {
 }
 
 func (node *Node) findFwdPeer(hash SHA256) (peer *Peer, err error) {
-	recndx, cl, err := node.DB.Get(KeyA(hash))
+	key := KeyHash('A', hash)
+	recndx, cl, err := node.DB.Get(key)
 	if err != nil {
 		return
 	}
 	var ts int64 = 0
 	addr := ""
-	n, err := fmt.Sscanf(string(recndx), "%d, %s", &ts, &addr)
+	n, err := fmt.Sscanf(string(recndx), "%d,%s", &ts, &addr)
 	// TODO check too old
 	if n != 2 {
+		fmt.Fprintf(os.Stderr, "malformed record\r\n")
 		err = ErrMalformedRecord
+	} else if addr == "-" {
+		fmt.Fprintf(os.Stderr, "message for me\r\n")
+		peer = nil
 	} else {
 		peer = node.peers[addr]
 	}
@@ -237,16 +257,15 @@ func (node *Node) Send(key sodium.BoxPublicKey, txt string) error {
 	hash := sha256.Sum256(key.Bytes)
 	for i := 0; i < MAXD; i++ {
 		peer, err := node.findFwdPeer(hash)
-		if err == nil {
-			if peer != nil {
-				msg, _ := TLVAppend2(nil, 'M', hash[:], []byte(txt))
-				peer.Queue(msg)
-				return nil
-			}
+		if err == nil && peer != nil {
+			msg, _ := TLVAppend2(nil, 'M', hash[:], []byte(txt))
+			peer.Queue(msg)
+			fmt.Fprintf(os.Stderr, "message sent to %s\r\n", hexize(key.Bytes))
+			return nil
 		}
 		hash = sha256.Sum256(hash[:])
 	}
-	return AddressUnknown
+	return ErrAddressUnknown
 }
 
 var ErrKeyIsAlreadyDefined = errors.New("the key is already defined")
@@ -263,15 +282,6 @@ func unhexize(hexdata []byte) (bin []byte, err error) {
 	return
 }
 
-var _litKey = [64]byte{'K'}
-var litKey = _litKey[0:1]
-
-var _litPrivate = [64]byte{'P'}
-var litPrivate = _litPrivate[0:1]
-
-var _litListen = [64]byte{'L'}
-var litListen = _litListen[0:1]
-
 // private key 		P nick: 	privhex
 // public keys 		K nick: 	pub (hex)
 func (node *Node) SaveKeys(name string, keypair sodium.BoxKP) error {
@@ -287,7 +297,7 @@ func (node *Node) SaveKeys(name string, keypair sodium.BoxKP) error {
 }
 
 func (node *Node) LoadKeys(name string) (keypair sodium.BoxKP, err error) {
-	pubhex, cl, err := node.DB.Get(append(litKey, name...))
+	pubhex, cl, err := node.DB.Get(KeyString('K', name))
 	if err != nil {
 		return
 	}
@@ -296,7 +306,7 @@ func (node *Node) LoadKeys(name string) (keypair sodium.BoxKP, err error) {
 	if err != nil {
 		return
 	}
-	sechex, cl2, err := node.DB.Get(append(litPrivate, name...))
+	sechex, cl2, err := node.DB.Get(KeyString('P', name))
 	if err != nil {
 		err = nil
 		return
@@ -317,7 +327,7 @@ func (node *Node) ShowKeys() {
 	for i.SeekGE(litKey); i.Valid() && i.Key()[0] == litKey[0]; i.Next() {
 		name := string(i.Key()[1:])
 		key := i.Value()
-		seckey := append(litPrivate, name...)
+		seckey := KeyString('P', name)
 		_, cl, err := node.DB.Get(seckey)
 		mine := ""
 		if err == nil {

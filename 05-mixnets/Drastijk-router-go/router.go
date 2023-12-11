@@ -157,7 +157,10 @@ func (h *MyHandler) Eval(line string) string {
 			if err != nil {
 				return err.Error()
 			}
-			node.Announce(pair)
+			err = node.Announce(pair)
+			if err != nil {
+				return err.Error()
+			}
 			return ""
 		case "send":
 			if len(args) != 2 {
@@ -183,7 +186,26 @@ func (h *MyHandler) Eval(line string) string {
 				return err.Error()
 			}
 			return ""
-		case "add":
+		case "contact":
+			if len(args) != 2 {
+				return Usage(cmd)
+			}
+			name := args[0]
+			pubkey := args[1]
+			if len(pubkey) != 64 {
+				return "bad public key length"
+			}
+			_, _, err := node.DB.Get(router.KeyString('K', name))
+			if err == nil {
+				return "the name is already known"
+			}
+			wo := pebble.WriteOptions{}
+			err = node.DB.Set(router.KeyString('K', name), []byte(pubkey), &wo)
+			if err != nil {
+				return err.Error()
+			}
+			return ""
+		case "add": //7f6d324080cc5c289974f6bc121cb3316eb41bc41915d615cc6cdc07c8ad8165
 			if len(args) != 2 {
 				return "\"add\" expects 2 args"
 			} else {
