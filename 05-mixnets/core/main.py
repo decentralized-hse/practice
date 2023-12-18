@@ -18,16 +18,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Получаем значения аргументов
-    ip_addresses = args.node
+    ip_addresses = args.node if args.node else []
     own_ip = args.own_ip
-    contacts = args.contact
+    contacts = args.contact if args.contact else []
     name = args.name
-
-    # Выводим значения аргументов
-    print("Список IP адресов:", ip_addresses)
-    print("Свой IP адрес:", own_ip)
-    print("Список строк:", contacts)
-    print("Еще одна строка:", name)
 
     io = OurSocketIO(own_ip)
     shell_out = ShellMessageOutput()

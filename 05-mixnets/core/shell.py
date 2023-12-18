@@ -3,10 +3,11 @@ import threading
 
 from abstractions import *
 from utilities import split_ignore_quotes
+from router import Router
 
 
 class Shell:
-    def __init__(self, router: BaseRouter, shell_invite: str):
+    def __init__(self, router: Router, shell_invite: str):
         self.router = router
         self.shell_invite = shell_invite
         self.thread: threading.Thread = None
@@ -65,6 +66,12 @@ class Shell:
                 continue
             if command[0] == 'friends':
                 self.print(str(self.router.contacts))
+
+            if command[0] == 'new':
+                self.router.entrypoints.append(command[1])
+                self.router.announce()
+            if command[0] == 'af':
+                self.router.contacts.append(command[1])
 
 
 class ShellMessageOutput(BaseMessageOutput):
