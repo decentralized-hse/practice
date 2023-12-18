@@ -42,7 +42,7 @@ class OurSocketIO(BaseIO):
     def accept_connections(self, serverSocket):
         client, address = serverSocket.accept()
         print('Connected to: ' + address[0] + ':' + str(address[1]))
-        self.queues[address] = Queue()
+        self.queues[address[0]] = Queue()
         new_thread = threading.Thread(target=self.client_handler, args=(client,address[0]), daemon=True)
         new_thread.start()
 
