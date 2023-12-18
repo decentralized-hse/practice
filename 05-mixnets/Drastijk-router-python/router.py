@@ -1,14 +1,17 @@
+import sched
+import struct
+import time
+
 from abstractions import BaseRouter, BaseIO, BaseMessageOutput
 from utilities import *
-from datetime import datetime, timezone, timedelta
-from models import Message
-import threading
-import time
-import sched
 
 
 class Router(BaseRouter):
-    def __init__(self, entrypoints: [str], contacts: [str], name: str, io: BaseIO, message_output: BaseMessageOutput):
+    def __init__(self, entrypoints: [str],
+                 contacts: {str: bytes},
+                 name: bytes,
+                 io: BaseIO,
+                 message_output: BaseMessageOutput):
         super().__init__()
         self.message_output = message_output
         self.diam = 1000
@@ -24,6 +27,10 @@ class Router(BaseRouter):
     @staticmethod
     def _current_timestamp_in_bytes():
         return Utilities.get_hour_start_ns(int(time.time_ns())).to_bytes(length=8, byteorder='little')
+
+    @staticmethod
+    def _current_timestamp():
+        return Utilities.get_hour_start_ns(int(time.time_ns()))
 
     def _schedule_next_announce(self):
         now = time.time_ns()
@@ -81,9 +88,20 @@ class Router(BaseRouter):
                 print(f"{self.name} пересылаю сообщение в {address}")
                 self.io.send_message(serialize(message), address)
 
+    def hourly_hash(self, key, current_hour):
+        print(current_hour)
+        current_hour -= current_hour % (60 * 60 * 1000000000)  # округляем до часа
+        timestr = struct.pack('<Q', current_hour)
+        data = key + timestr[:8]
+        return hashlib.sha256(data).digest()
+
     def send_message(self, msg: bytes, sender_public_key: str):
-        key = sender_public_key.encode() + self._current_timestamp_in_bytes()
+        print("sending message")
+        if sender_public_key not in self.contacts:
+            raise Exception("Неизвестный контакт")
+        key = self.hourly_hash(self.contacts[sender_public_key], self._current_timestamp())
         key_hash = Utilities.sha256(key)
+        print(key_hash.hex())
 
         for i in range(self.diam):
             if key_hash in self.table.keys():
