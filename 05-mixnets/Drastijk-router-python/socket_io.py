@@ -34,6 +34,7 @@ class OurSocketIO(BaseIO):
             new_socket.setblocking(False)
             new_socket.settimeout(1)
             self.addresses[socket] = new_socket
+            self.inputs.append(new_socket)
 
         self.queues[address].put(message)
 
