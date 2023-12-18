@@ -21,6 +21,9 @@ class OurSocketIO(BaseIO):
             new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             new_socket.connect((address, 8000))
             new_socket.send(message)
+            self.queues[address] = Queue()
+            new_thread = threading.Thread(target=self.client_handler, args=(new_socket, address), daemon=True)
+            new_thread.start()
         self.queues[address].put(message)
 
     def client_handler(self, conn, address):
@@ -36,11 +39,11 @@ class OurSocketIO(BaseIO):
                 while not self.queues[address].empty():
                     conn.send(self.queues[address].popleft())
 
-    def accept_connections(self, ServerSocket):
-        Client, address = ServerSocket.accept()
+    def accept_connections(self, serverSocket):
+        client, address = serverSocket.accept()
         print('Connected to: ' + address[0] + ':' + str(address[1]))
         self.queues[address] = Queue()
-        new_thread = threading.Thread(target=self.client_handler, args=(Client,address[0]))
+        new_thread = threading.Thread(target=self.client_handler, args=(client,address[0]), daemon=True)
         new_thread.start()
 
     def start_server(self, host, port):
