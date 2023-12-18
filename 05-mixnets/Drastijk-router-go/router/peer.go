@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"github.com/cockroachdb/pebble"
 	"net"
 	"os"
 	"sync"
@@ -134,16 +133,8 @@ func (peer *Peer) Read() (err error) {
 func (peer *Peer) doWrite() {
 	var buf = make([]byte, 0, 4096)
 	// send all the announces
-	io := pebble.IterOptions{}
-	db := peer.node.DB
-	if db == nil {
-		return
-	}
-	i, err := db.NewIter(&io)
-	if err != nil {
-		return
-	}
-	for i.SeekGE(litAnnounce); i.Valid() && i.Key()[0] == litAnnounce[0]; i.Next() {
+	i := peer.node.DB.Range('A', "", "~")
+	for i.Next() {
 		// FIXME expiration check
 		hex := i.Key()[1:]
 		bin, err := unhexize(hex)
@@ -153,7 +144,6 @@ func (peer *Peer) doWrite() {
 		next := sha256.Sum256(bin)
 		buf, _ = TLVAppend(buf, 'A', next[:])
 	}
-	_ = i.Close()
 	// the send loop
 	conn := peer.conn
 	for conn != nil {
