@@ -53,6 +53,8 @@ class Router(BaseRouter):
                 self.io.send_message(serialize(message), point)
 
     def receive_message(self, msg: [bytes], sender: str):
+        if sender not in self.entrypoints:
+            self.entrypoints.append(sender)
         message = deserialize(msg)
         if message.message_type == 'a':
             should_resend = self.find_announce_match(message.receiver, sender)
