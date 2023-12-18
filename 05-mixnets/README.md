@@ -78,3 +78,20 @@ We imply TCP-like transport between nodes (WebSocket etc).
 12. ...implement simple e-mail for such network assuming
     there are full nodes (announced) and clients attached
     to full nodes; may use (11)
+
+##  Examples
+
+````
+Current time: 2023-12-18 15:35:14.303890614 +0700 +07 m=+0.002900986
+Current time (Unix): 1702888514
+Current time (Unix nano): 1702888514303890614
+Current time (start of the hour): 1702886400000000000
+Public key: d4f94a31c97b8952368d0bdeec05c6b0b641e45a7a8e3035d273aecee7cab817
+Hash A(0): 739547b5525eca23ef9e3e31391b7ad4bed7276ad09863721f0142362018f8ab
+Hash A(1): a06a48b4c4f53be7446260d1d0b98adb8e5911bc430eec84439948feb519954c
+Hash A(2): a848ff2a440c7d888957265a26ff24d78eb6720c7b4a05c74a1ddb20fff7962e
+Announce A(0) ToyTLV: 6120739547b5525eca23ef9e3e31391b7ad4bed7276ad09863721f0142362018f8ab
+Announce A(1) ToyTLV: 6120a06a48b4c4f53be7446260d1d0b98adb8e5911bc430eec84439948feb519954c
+Message text: Hello world!
+Message relayed for A(1): 6d2ca06a48b4c4f53be7446260d1d0b98adb8e5911bc430eec84439948feb519954c48656c6c6f20776f726c6421
+````
