@@ -72,7 +72,7 @@ class Router(BaseRouter):
             if should_resend:
                 self.resend_announce(sender, message)
         if message.message_type == 'M' or message.message_type == 'm':
-            key = self.name + self._current_timestamp_in_bytes()
+            key = self.hourly_hash(self.name, self._current_timestamp())
             key_hash = Utilities.sha256(key)
 
             if key_hash == message.receiver:
