@@ -3,7 +3,6 @@ package main
 import (
 	"Drastijk/router"
 	"fmt"
-	"github.com/cockroachdb/pebble"
 	"github.com/jamesruan/sodium"
 	repl "github.com/openengineer/go-repl"
 	"log"
@@ -95,7 +94,6 @@ func Usage(cmd string) string {
 
 func (h *MyHandler) Eval(line string) string {
 	fields := strings.Fields(line)
-	wo := pebble.WriteOptions{}
 
 	if len(fields) == 0 {
 		return ""
@@ -119,8 +117,8 @@ func (h *MyHandler) Eval(line string) string {
 			} else {
 				addr = addrDefaults(args[0])
 			}
-			l := []byte{'L'}
-			_ = node.DB.Set(append(l, addr...), []byte{}, &wo)
+			_ = node.DB.Set('L', addr, "")
+			_ = node.DB.Commit()
 			go node.Listen(addr)
 			return "OK"
 		case "connect":
@@ -132,8 +130,7 @@ func (h *MyHandler) Eval(line string) string {
 			if err != nil {
 				return err.Error()
 			}
-			C := []byte{'C'}
-			_ = node.DB.Set(append(C, addr...), []byte{'-'}, &wo)
+			_ = node.DB.Set('C', addr, "-")
 			go node.Connect(addr, conn)
 			fmt.Printf("peer %s connected\n", addr)
 			return ""
@@ -195,12 +192,11 @@ func (h *MyHandler) Eval(line string) string {
 			if len(pubkey) != 64 {
 				return "bad public key length"
 			}
-			_, _, err := node.DB.Get(router.KeyString('K', name))
+			_, err := node.DB.Get('K', name)
 			if err == nil {
 				return "the name is already known"
 			}
-			wo := pebble.WriteOptions{}
-			err = node.DB.Set(router.KeyString('K', name), []byte(pubkey), &wo)
+			err = node.DB.Set('K', name, pubkey)
 			if err != nil {
 				return err.Error()
 			}
@@ -212,11 +208,7 @@ func (h *MyHandler) Eval(line string) string {
 				return add(args[0], args[1])
 			}
 		case "quit", "exit":
-			err := node.DB.Close()
-			if err != nil {
-				return err.Error()
-			}
-			node.DB = nil
+			node.DB.Close()
 			h.r.Quit()
 			return ""
 		case "show", "list":
