@@ -38,6 +38,7 @@ class Router(BaseRouter):
 
     def announce(self):
         key = self.name.encode() + self._current_timestamp_in_bytes()
+        print(self._current_timestamp_in_bytes())
         key_hash = Utilities.sha256(key)
         announce = serialize(Message("a", b"", key_hash))
 
