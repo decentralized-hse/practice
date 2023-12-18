@@ -86,11 +86,11 @@ class Router(BaseRouter):
         key_hash = Utilities.sha256(key)
 
         for i in range(self.diam):
-            key_hash = Utilities.sha256(key_hash)
             if key_hash in self.table.keys():
                 message = Message("M", msg, key_hash)
                 self.io.send_message(serialize(message), self.table[key_hash])
                 return
+            key_hash = Utilities.sha256(key_hash)
         raise Exception("Маршрут до получателя не найден в таблице")
 
     def find_announce_match(self, target_hash, address):
