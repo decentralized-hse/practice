@@ -36,20 +36,17 @@ class OurSocketIO(BaseIO):
         while True:
             conns = copy.copy(self.connections)
             for address, conn in conns.items():
-                try:
-                    curdata = conn.recv(64)
-                    data = []
-                    data += curdata
-                    while True:
-                        # receive data stream. it won't accept data packet greater than 1024 bytes
+                data = []
+                while True:
+                    # receive data stream. it won't accept data packet greater than 1024 bytes
+                    try:
                         curdata = conn.recv(64)
                         data += curdata
-                        if len(curdata) < 64:
-                            if self.on_message:
-                                self.on_message(bytes(data), address)
-                                break
-                except OSError or TypeError as e:
-                    pass
+                    except OSError or TypeError as e:
+                        if self.on_message and len(data) > 0:
+                            self.on_message(bytes(data), address)
+                            break
+
 
                 while not self.queues[address].empty():
                     print("sending to {}".format(address))
