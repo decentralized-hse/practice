@@ -27,7 +27,6 @@ class OurSocketIO(BaseIO):
         self.queues[address].put(message)
 
     def client_handler(self, conn, address):
-        conn.send(str.encode('You are now connected to the replay server... Type BYE to stop'))
         data = []
         while True:
             # receive data stream. it won't accept data packet greater than 1024 bytes
