@@ -33,7 +33,7 @@ class OurSocketIO(BaseIO):
             self.queues[address] = Queue()
             new_socket.setblocking(False)
             new_socket.settimeout(1)
-            self.addresses[new_socket] = new_socket
+            self.addresses[new_socket] = address
             self.inputs.append(new_socket)
 
         self.queues[address].put(message)
