@@ -1,3 +1,4 @@
+import copy
 import socket
 import threading
 from queue import Queue
@@ -8,13 +9,17 @@ from abstractions import BaseIO
 class OurSocketIO(BaseIO):
     def __init__(self, host):
         super().__init__()
-        self.queues: {str:Queue} = {}
+        self.queues: {str: Queue} = {}
         self.port = 8000
         self.host = host
+        self.connections = {}
 
         thread = threading.Thread(
             target=lambda: self.start_server(host, self.port))
         thread.start()
+
+        client_thread = threading.Thread(target=self.client_handler)
+        client_thread.start()
 
     def send_message(self, message: bytes, address: str):
         if address not in self.queues:
@@ -22,28 +27,40 @@ class OurSocketIO(BaseIO):
             new_socket.connect((address, 8000))
             new_socket.send(message)
             self.queues[address] = Queue()
-            new_thread = threading.Thread(target=self.client_handler, args=(new_socket, address), daemon=True)
-            new_thread.start()
+            new_socket.setblocking(False)
+            self.connections[address] = new_socket
+
         self.queues[address].put(message)
 
-    def client_handler(self, conn, address):
-        data = []
+    def client_handler(self):
         while True:
-            # receive data stream. it won't accept data packet greater than 1024 bytes
-            curdata = conn.recv(64)
-            data += curdata
-            if len(curdata) < 64:
-                if self.on_message:
-                    self.on_message(bytes(data), address)
+            conns = copy.copy(self.connections)
+            for address, conn in conns.items():
+                try:
+                    curdata = conn.recv(64)
+                    data = []
+                    data += curdata
+                    while True:
+                        # receive data stream. it won't accept data packet greater than 1024 bytes
+                        curdata = conn.recv(64)
+                        data += curdata
+                        if len(curdata) < 64:
+                            if self.on_message:
+                                self.on_message(bytes(data), address)
+                                break
+                except OSError or TypeError as e:
+                    pass
+
                 while not self.queues[address].empty():
-                    conn.send(self.queues[address].popleft())
+                    print("sending to {}".format(address))
+                    conn.send(self.queues[address].get())
 
     def accept_connections(self, serverSocket):
         client, address = serverSocket.accept()
+        client.setblocking(False)
         print('Connected to: ' + address[0] + ':' + str(address[1]))
         self.queues[address[0]] = Queue()
-        new_thread = threading.Thread(target=self.client_handler, args=(client,address[0]), daemon=True)
-        new_thread.start()
+        self.connections[address[0]] = client
 
     def start_server(self, host, port):
         ServerSocket = socket.socket()

@@ -2,8 +2,8 @@ import queue
 import threading
 
 from abstractions import *
-from utilities import split_ignore_quotes
 from router import Router
+from utilities import split_ignore_quotes
 
 
 class Shell:
@@ -62,7 +62,10 @@ class Shell:
                     self.exception(str(e))
                 continue
             if command[0] == 'table':
-                self.print(str(self.router.table))
+                table = {}
+                for k, v in self.router.table.items():
+                    table[k.hex()] = v
+                self.print(str(table))
                 continue
             if command[0] == 'friends':
                 self.print(str(self.router.contacts))
