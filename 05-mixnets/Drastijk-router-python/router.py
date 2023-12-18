@@ -4,6 +4,7 @@ from datetime import datetime, timezone, timedelta
 from models import Message
 import threading
 import time
+import sched
 
 
 class Router(BaseRouter):
@@ -17,18 +18,23 @@ class Router(BaseRouter):
         self.contacts = contacts
         self.entrypoints = entrypoints
         self.table = {}
+        self.lastHour = 123
+        self.scheduler = sched.scheduler(time.time, time.sleep)
 
     @staticmethod
     def _current_timestamp_in_bytes():
-        return Utilities.get_hour_start_ns(time.time_ns()).to_bytes(length=8, byteorder='little')
+        return Utilities.get_hour_start_ns(int(time.time_ns())).to_bytes(length=8, byteorder='little')
 
     def _schedule_next_announce(self):
         now = time.time_ns()
-        next_hour = Utilities.get_hour_start_ns(now + 3600)
-
+        next_hour = Utilities.get_hour_start_ns(int(now) + 60 * 60 * 1000000000)
+        if self.lastHour == next_hour:
+            return
+        self.lastHour = int(next_hour)
         wait_seconds = next_hour - now
-
-        threading.Timer(wait_seconds, lambda: self.announce()).start()
+        self.scheduler.enter(int(wait_seconds / 1000000000), 1, action=self.announce)
+        self.scheduler.run(blocking=False)
+        print("sheduled")
 
     def announce(self):
         key = self.name.encode() + self._current_timestamp_in_bytes()
