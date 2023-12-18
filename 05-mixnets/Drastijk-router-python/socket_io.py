@@ -45,8 +45,7 @@ class OurSocketIO(BaseIO):
                     except OSError or TypeError as e:
                         if self.on_message and len(data) > 0:
                             self.on_message(bytes(data), address)
-                            break
-
+                        break
 
                 while not self.queues[address].empty():
                     print("sending to {}".format(address))
