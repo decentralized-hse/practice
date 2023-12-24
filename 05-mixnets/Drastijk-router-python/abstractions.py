@@ -44,6 +44,9 @@ class BaseRouter:
     def send_message(self, msg: bytes, sender_public_key: str):
         pass
 
+    def send_message_with_ack(self, msg: bytes, sender_public_key: str):
+        pass
+
     def find_announce_match(self, target_hash, address):
         pass
 
@@ -61,4 +64,18 @@ class BaseMessageOutput:
         pass
 
     def accept_message(self, bytes):
+        pass
+
+
+class BaseAcknowledgementJournal:
+    def __init__(self):
+        pass
+
+    def add_new_session(self, full_message, window, message_size):
+        pass
+
+    def is_session_finished(self, session_id):
+        pass
+
+    def get_next_messages(self, session_id):
         pass

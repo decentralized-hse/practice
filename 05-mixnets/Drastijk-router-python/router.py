@@ -2,7 +2,9 @@ from abstractions import BaseRouter, BaseIO, BaseMessageOutput
 from utilities import *
 from datetime import datetime, timezone, timedelta
 from models import Message
+from acknowledgement_journal import AcknowledgementJournal
 import threading
+import time
 
 
 class Router(BaseRouter):
@@ -16,6 +18,7 @@ class Router(BaseRouter):
         self.contacts = contacts
         self.entrypoints = entrypoints
         self.table = {}
+        self.journal = AcknowledgementJournal()
 
     def _schedule_next_announce(self):
         now = datetime.now(timezone.utc)
@@ -73,6 +76,32 @@ class Router(BaseRouter):
                 self.io.send_message(serialize(message), self.table[key_hash])
                 return
         raise Exception("Маршрут до получателя не найден в таблице")
+
+    def send_message_with_ack(self, msg: bytes, sender_public_key: str):
+        session_id = self.journal.add_new_session(msg, 3, 10)
+        while not self.journal.is_session_finished(session_id):
+            timestamp = str(Utilities.get_closes_timestamp())
+            key_hash = (sender_public_key + timestamp).encode()
+            my_key_hash = (self.name + timestamp).encode()
+            msg_parts = self.journal.get_next_messages(session_id)
+            prepared_parts = []
+            for part_with_index in msg_parts:
+                prepared_part = Message("C", part_with_index[0], key_hash)
+                prepared_part.add_delivery_ack(
+                    part_with_index[1],
+                    0,
+                    session_id,
+                    session_id.hex,
+                    len(msg_parts),
+                    my_key_hash)
+                prepared_parts.append(prepared_part)
+            for i in range(self.diam):
+                key_hash = Utilities.sha256(key_hash)
+                if key_hash in self.table.keys():
+                    for part in prepared_parts:
+                        self.io.send_message(serialize(part), self.table[key_hash])
+                    break
+            time.sleep(0.001)
 
     def find_announce_match(self, target_hash, address):
         for existing_key in self.table.keys():

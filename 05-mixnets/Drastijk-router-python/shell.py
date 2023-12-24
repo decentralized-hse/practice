@@ -41,6 +41,7 @@ class Shell:
         self.thread.join()
 
     def wait_for_command(self):
+        send_with_acknowledgement = False
         while True:
             inpt = input()
             command = split_ignore_quotes(inpt)
@@ -49,8 +50,12 @@ class Shell:
                 continue
             if command[0] == 'send':
                 try:
-                    self.router.send_message(command[2].strip("'\"").encode(),
-                                             command[1])
+                    message = command[2].strip("'\"").encode()
+                    sender_public_key = command[1]
+                    if send_with_acknowledgement:
+                        self.router.send_message_with_ack(message, sender_public_key)
+                    else:
+                        self.router.send_message(message, sender_public_key)
                 except BaseException as e:
                     self.exception(str(e))
                 continue
@@ -65,6 +70,11 @@ class Shell:
                 continue
             if command[0] == 'friends':
                 self.print(str(self.router.contacts))
+            if command[0] == 'enableAck':
+                send_with_acknowledgement = True
+            if command[0] == 'disableAck':
+                send_with_acknowledgement = False
+
 
 
 class ShellMessageOutput(BaseMessageOutput):
