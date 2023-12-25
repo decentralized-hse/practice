@@ -2,6 +2,8 @@ import argparse
 import hashlib
 import random
 
+import pysodium
+
 from shell import *
 from socket_io import *
 
@@ -21,7 +23,8 @@ if __name__ == "__main__":
     # Получаем значения аргументов
     ip_addresses = args.node if args.node else []
     own_ip = args.own_ip
-    name = hashlib.sha256(random.Random().randint(0, 100).to_bytes()).digest()
+    eB = pysodium.randombytes(pysodium.crypto_scalarmult_curve25519_BYTES)
+    name = pysodium.crypto_scalarmult_curve25519_base(eB)
     print("Ваш публичный ключ: " + name.hex())
 
     io = OurSocketIO(own_ip)

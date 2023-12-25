@@ -23,6 +23,7 @@ class Router(BaseRouter):
         self.table = {}
         self.lastHour = 123
         self.scheduler = sched.scheduler(time.time, time.sleep)
+        self.key: str = None
 
     @staticmethod
     def _current_timestamp_in_bytes():
