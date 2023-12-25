@@ -2,8 +2,8 @@ import queue
 import threading
 
 from abstractions import *
-from utilities import split_ignore_quotes
 from router import Router
+from utilities import split_ignore_quotes
 
 
 class Shell:
@@ -62,7 +62,10 @@ class Shell:
                     self.exception(str(e))
                 continue
             if command[0] == 'table':
-                self.print(str(self.router.table))
+                table = {}
+                for k, v in self.router.table.items():
+                    table[k.hex()] = v
+                self.print(str(table))
                 continue
             if command[0] == 'friends':
                 self.print(str(self.router.contacts))
@@ -70,8 +73,14 @@ class Shell:
             if command[0] == 'new':
                 self.router.entrypoints.append(command[1])
                 self.router.announce()
-            if command[0] == 'af':
-                self.router.contacts.append(command[1])
+            if command[0] == 'contact':
+                if len(command) < 3:
+                    self.print("Введите сначала имя контакта, а потом его публичный ключ")
+                try:
+                    key = bytes.fromhex(command[2])
+                    self.router.contacts[command[1]] = key
+                except:
+                    self.print("Введите верный ключ")
 
 
 class ShellMessageOutput(BaseMessageOutput):

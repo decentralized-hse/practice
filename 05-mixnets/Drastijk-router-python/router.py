@@ -1,14 +1,17 @@
+import sched
+import struct
+import time
+
 from abstractions import BaseRouter, BaseIO, BaseMessageOutput
 from utilities import *
-from datetime import datetime, timezone, timedelta
-from models import Message
-import threading
-import time
-import sched
 
 
 class Router(BaseRouter):
-    def __init__(self, entrypoints: [str], contacts: [str], name: str, io: BaseIO, message_output: BaseMessageOutput):
+    def __init__(self, entrypoints: [str],
+                 contacts: {str: bytes},
+                 name: bytes,
+                 io: BaseIO,
+                 message_output: BaseMessageOutput):
         super().__init__()
         self.message_output = message_output
         self.diam = 1000
@@ -20,10 +23,15 @@ class Router(BaseRouter):
         self.table = {}
         self.lastHour = 123
         self.scheduler = sched.scheduler(time.time, time.sleep)
+        self.key: str = None
 
     @staticmethod
     def _current_timestamp_in_bytes():
         return Utilities.get_hour_start_ns(int(time.time_ns())).to_bytes(length=8, byteorder='little')
+
+    @staticmethod
+    def _current_timestamp():
+        return Utilities.get_hour_start_ns(int(time.time_ns()))
 
     def _schedule_next_announce(self):
         now = time.time_ns()
@@ -37,7 +45,7 @@ class Router(BaseRouter):
         print("sheduled")
 
     def announce(self):
-        key = self.name.encode() + self._current_timestamp_in_bytes()
+        key = self.hourly_hash(self.name, self._current_timestamp())
         key_hash = Utilities.sha256(key)
         announce = serialize(Message("a", b"", key_hash))
 
@@ -55,13 +63,17 @@ class Router(BaseRouter):
     def receive_message(self, msg: [bytes], sender: str):
         if sender not in self.entrypoints:
             self.entrypoints.append(sender)
-        message = deserialize(msg)
+        try:
+            message = deserialize(msg)
+        except:
+            print(msg)
+            return
         if message.message_type == 'a':
             should_resend = self.find_announce_match(message.receiver, sender)
             if should_resend:
                 self.resend_announce(sender, message)
         if message.message_type == 'M' or message.message_type == 'm':
-            key = self.name.encode() + self._current_timestamp_in_bytes()
+            key = self.hourly_hash(self.name, self._current_timestamp())
             key_hash = Utilities.sha256(key)
 
             if key_hash == message.receiver:
@@ -76,16 +88,27 @@ class Router(BaseRouter):
                 print(f"{self.name} пересылаю сообщение в {address}")
                 self.io.send_message(serialize(message), address)
 
+    def hourly_hash(self, key, current_hour):
+        print(current_hour)
+        current_hour -= current_hour % (60 * 60 * 1000000000)  # округляем до часа
+        timestr = struct.pack('<Q', current_hour)
+        data = key + timestr[:8]
+        return hashlib.sha256(data).digest()
+
     def send_message(self, msg: bytes, sender_public_key: str):
-        key = sender_public_key.encode() + self._current_timestamp_in_bytes()
+        print("sending message")
+        if sender_public_key not in self.contacts:
+            raise Exception("Неизвестный контакт")
+        key = self.hourly_hash(self.contacts[sender_public_key], self._current_timestamp())
         key_hash = Utilities.sha256(key)
+        print(key_hash.hex())
 
         for i in range(self.diam):
-            key_hash = Utilities.sha256(key_hash)
             if key_hash in self.table.keys():
                 message = Message("M", msg, key_hash)
                 self.io.send_message(serialize(message), self.table[key_hash])
                 return
+            key_hash = Utilities.sha256(key_hash)
         raise Exception("Маршрут до получателя не найден в таблице")
 
     def find_announce_match(self, target_hash, address):
