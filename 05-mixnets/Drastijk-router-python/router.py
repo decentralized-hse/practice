@@ -1,6 +1,7 @@
 import sched
 import struct
 import time
+from math import ceil
 
 from abstractions import BaseRouter, BaseIO, BaseMessageOutput
 from utilities import *
@@ -24,6 +25,7 @@ class Router(BaseRouter):
         self.lastHour = 123
         self.scheduler = sched.scheduler(time.time, time.sleep)
         self.key: str = None
+        self.entrypoints_segment_start = 0
 
     @staticmethod
     def _current_timestamp_in_bytes():
@@ -49,9 +51,11 @@ class Router(BaseRouter):
         key_hash = Utilities.sha256(key)
         announce = serialize(Message("a", b"", key_hash))
 
-        for point in self.entrypoints:
+        for num in range(ceil(len(self.entrypoints) / 2)):
+            point = self.entrypoints[(self.entrypoints_segment_start + num) % len(self.entrypoints)]
             self.io.send_message(announce, point)
 
+        self.entrypoints_segment_start += 1
         self._schedule_next_announce()
 
     def resend_announce(self, sender: str, message: Message):
