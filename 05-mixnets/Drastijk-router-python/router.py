@@ -14,7 +14,7 @@ class Router(BaseRouter):
                  message_output: BaseMessageOutput):
         super().__init__()
         self.message_output = message_output
-        self.diam = 1000
+        self.diam = 6
         self.io = io
         self.io.subscribe(self.receive_message)
         self.name = name
@@ -24,6 +24,7 @@ class Router(BaseRouter):
         self.lastHour = 123
         self.scheduler = sched.scheduler(time.time, time.sleep)
         self.key: str = None
+        self.zeros_count_for_happiness_of_hashes = 2
 
     @staticmethod
     def _current_timestamp_in_bytes():
@@ -46,7 +47,7 @@ class Router(BaseRouter):
 
     def announce(self):
         key = self.hourly_hash(self.name, self._current_timestamp())
-        key_hash = Utilities.sha256(key)
+        key_hash = self.find_happy_announce(key)
         announce = serialize(Message("a", b"", key_hash))
 
         for point in self.entrypoints:
@@ -54,11 +55,31 @@ class Router(BaseRouter):
 
         self._schedule_next_announce()
 
+    # считаем такой nonce, что до диаметра все хэши от него будут "счастливыми"
+    def find_happy_announce(self, key):
+        nonce = 0
+        while True:
+            key_hash = Utilities.sha256(key + struct.pack(str(nonce)))
+            for i in range(self.diam):
+                key_hash = Utilities.sha256(key_hash)
+                if self.is_hash_not_happy(key_hash):
+                    break
+            else:
+                return Utilities.sha256(key + struct.pack(str(nonce)))
+
+            nonce += 1
+
     def resend_announce(self, sender: str, message: Message):
         message.receiver = Utilities.sha256(message.receiver)
+        if self.is_hash_not_happy(message.receiver):
+            return
         for point in self.entrypoints:
             if point != sender:
                 self.io.send_message(serialize(message), point)
+
+    # проверяем хэш на счастливость
+    def is_hash_not_happy(self, hash: bytes):
+        return hash.endswith('0' * self.zeros_count_for_happiness_of_hashes)
 
     def receive_message(self, msg: [bytes], sender: str):
         if sender not in self.entrypoints:
@@ -130,3 +151,14 @@ class Router(BaseRouter):
         # новый ключ действительно новый
         self.table[target_hash] = address
         return True
+
+# guid D
+# announce_hash = guid
+# Hash(timestamp + announce_hash + nonce) 1 ноль в конце
+# Hash(Hash(announce_hash)) 1 нуля в конце
+# И так D раз ...
+
+# прилетело: (announce_hash: announce_hash, nonce: nonce)
+# проверяем, что annoce_hash кончается k нулями
+# проверяем что анонса лучше нет в нашей табличке
+# отдали: (announce_hash: Hash(timestamp + announce_hash + nonce), nonce: nonce)
