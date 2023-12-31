@@ -151,14 +151,3 @@ class Router(BaseRouter):
         # новый ключ действительно новый
         self.table[target_hash] = address
         return True
-
-# guid D
-# announce_hash = guid
-# Hash(timestamp + announce_hash + nonce) 1 ноль в конце
-# Hash(Hash(announce_hash)) 1 нуля в конце
-# И так D раз ...
-
-# прилетело: (announce_hash: announce_hash, nonce: nonce)
-# проверяем, что annoce_hash кончается k нулями
-# проверяем что анонса лучше нет в нашей табличке
-# отдали: (announce_hash: Hash(timestamp + announce_hash + nonce), nonce: nonce)
