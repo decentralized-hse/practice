@@ -71,3 +71,10 @@ def split_ignore_quotes(string):
     pattern = r'"[^"]*"|\S+'  # Паттерн для поиска подстрок в кавычках или непосредственно последовательностей непробельных символов
     substrings = re.findall(pattern, string)
     return substrings
+
+def find_ack_number(nums: list):
+    sort_nums = sorted(nums)
+    for i in range(1, len(nums)):
+        if sort_nums[i] - sort_nums[i - 1] != 1:
+            return sort_nums[i - 1]
+    return sort_nums[-1]

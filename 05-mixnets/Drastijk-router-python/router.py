@@ -1,4 +1,5 @@
 from abstractions import BaseRouter, BaseIO, BaseMessageOutput
+from threading import Timer
 from utilities import *
 from datetime import datetime, timezone, timedelta
 from models import Message
@@ -45,13 +46,21 @@ class Router(BaseRouter):
             if point != sender:
                 self.io.send_message(serialize(message), point)
 
+    def send_ack(self, receiver, record):
+        ack = Message('C', '', receiver)
+        ack.ack_number = find_ack_number(record.ackMessagesIndexes)
+        record.timer.cancel()
+        self.io.send_message(serialize(ack), receiver)
+        record.ackMessagesIndexes = list()
+
     def receive_message(self, msg: [bytes], sender: str):
         message = deserialize(msg)
         if message.message_type == 'a':
             should_resend = self.find_announce_match(message.receiver, sender)
             if should_resend:
                 self.resend_announce(sender, message)
-        if message.message_type == 'M' or message.message_type == 'm':
+        if message.message_type == 'M' or message.message_type == 'm' or \
+                message.message_type == 'C' or message.message_type == 'c':
             timestamp = str(Utilities.get_closes_timestamp())
             key_hash = (self.name + timestamp).encode()
             me_hash = Utilities.sha256(key_hash)
@@ -65,6 +74,20 @@ class Router(BaseRouter):
                 message.receiver = key_hash
                 print(f"{self.name} пересылаю сообщение в {address}")
                 self.io.send_message(serialize(message), address)
+        if message.message_type == 'C' or message.message_type == 'c':
+            if message.ack_number != -1:
+                record = self.journal.sent_messages[message.session_id]
+                record.lastAckMsg = message.ack_number
+                return
+            if not self.journal.received_messages[message.session_id]:
+                self.journal.add_new_recv_session(message.window_size, message.session_id)
+            record = self.journal.received_messages[message.session_id]
+            if len(record) == 0:
+                record.timer = Timer(10, self.send_ack, args=(message.sender, record))
+                record.timer.start()
+            record.ackMessagesIndexes.append(message.message_number)
+            if len(record.ackMessagesIndexes) == record.window:
+                self.send_ack(message.sender, record)
 
     def send_message(self, msg: bytes, sender_public_key: str):
         timestamp = str(Utilities.get_closes_timestamp())
@@ -89,7 +112,7 @@ class Router(BaseRouter):
                 prepared_part = Message("C", part_with_index[0], key_hash)
                 prepared_part.add_delivery_ack(
                     part_with_index[1],
-                    0,
+                    -1,
                     session_id,
                     session_id.hex,
                     len(msg_parts),
