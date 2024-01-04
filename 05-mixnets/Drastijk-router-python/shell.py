@@ -72,8 +72,10 @@ class Shell:
                 self.print(str(self.router.contacts))
             if command[0] == 'enableAck':
                 send_with_acknowledgement = True
+                self.print('Включено подтверждение доставки')
             if command[0] == 'disableAck':
                 send_with_acknowledgement = False
+                self.print('Выключено подтверждение доставки')
 
 
 
