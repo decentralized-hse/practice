@@ -120,7 +120,6 @@ class Router(BaseRouter):
                         prepared_part.add_delivery_ack(
                             part_with_index[1],
                             -1,
-                            session_id,
                             session_id.hex,
                             len(msg_parts),
                             my_key_hash)
