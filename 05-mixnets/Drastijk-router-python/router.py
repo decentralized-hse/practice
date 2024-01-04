@@ -107,20 +107,21 @@ class Router(BaseRouter):
             key_hash = (sender_public_key + timestamp).encode()
             my_key_hash = (self.name + timestamp).encode()
             msg_parts = self.journal.get_next_messages(session_id)
-            prepared_parts = []
-            for part_with_index in msg_parts:
-                prepared_part = Message("C", part_with_index[0], key_hash)
-                prepared_part.add_delivery_ack(
-                    part_with_index[1],
-                    -1,
-                    session_id,
-                    session_id.hex,
-                    len(msg_parts),
-                    my_key_hash)
-                prepared_parts.append(prepared_part)
             for i in range(self.diam):
                 key_hash = Utilities.sha256(key_hash)
+                my_key_hash = Utilities.sha256(my_key_hash)
                 if key_hash in self.table.keys():
+                    prepared_parts = []
+                    for part_with_index in msg_parts:
+                        prepared_part = Message("C", part_with_index[0], key_hash)
+                        prepared_part.add_delivery_ack(
+                            part_with_index[1],
+                            -1,
+                            session_id,
+                            session_id.hex,
+                            len(msg_parts),
+                            my_key_hash)
+                        prepared_parts.append(prepared_part)
                     for part in prepared_parts:
                         self.io.send_message(serialize(part), self.table[key_hash])
                     break
