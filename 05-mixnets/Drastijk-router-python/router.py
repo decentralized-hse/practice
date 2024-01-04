@@ -68,13 +68,14 @@ class Router(BaseRouter):
                 self.message_output.accept_message(message.payload)
                 if message.message_type == 'M' or message.message_type == 'm':
                     return
-            to = message.receiver
-            for key_hash, address in self.table.items():
-                if Utilities.sha256(key_hash) != to:
-                    continue
-                message.receiver = key_hash
-                print(f"{self.name} пересылаю сообщение в {address}")
-                self.io.send_message(serialize(message), address)
+            if message.message_type == 'M' or message.message_type == 'm':
+                to = message.receiver
+                for key_hash, address in self.table.items():
+                    if Utilities.sha256(key_hash) != to:
+                        continue
+                    message.receiver = key_hash
+                    print(f"{self.name} пересылаю сообщение в {address}")
+                    self.io.send_message(serialize(message), address)
         # TODO: буфер добавить
         if message.message_type == 'C' or message.message_type == 'c':
             if message.ack_number != -1:
