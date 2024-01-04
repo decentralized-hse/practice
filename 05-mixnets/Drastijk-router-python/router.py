@@ -48,10 +48,10 @@ class Router(BaseRouter):
 
     def send_ack(self, receiver, record):
         ack = Message('C', '', receiver)
-        ack.ack_number = find_ack_number(record.ackMessagesIndexes)
+        payload, ack.ack_number = get_next_msg(record.part_with_index)
         record.timer.cancel()
         self.io.send_message(serialize(ack), receiver)
-        record.ackMessagesIndexes = list()
+        record.part_with_index = list()
         to = ack.receiver
         for key_hash, address in self.table.items():
             if Utilities.sha256(key_hash) != to:
@@ -95,8 +95,8 @@ class Router(BaseRouter):
             if len(record) == 0:
                 record.timer = Timer(10, self.send_ack, args=(message.sender, record))
                 record.timer.start()
-            record.ackMessagesIndexes.append(message.message_number)
-            if len(record.ackMessagesIndexes) == message.window_size:
+            record.part_with_index.append((message.payload, message.message_number))
+            if len(record.part_with_index) == message.window_size:
                 self.send_ack(message.sender, record)
 
     def send_message(self, msg: bytes, sender_public_key: str):

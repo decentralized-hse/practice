@@ -72,9 +72,16 @@ def split_ignore_quotes(string):
     substrings = re.findall(pattern, string)
     return substrings
 
-def find_ack_number(nums: list):
-    sort_nums = sorted(nums)
+
+def get_next_msg(nums: list):
+    sort_nums = sorted(nums, key=lambda x: x[1])
     for i in range(1, len(nums)):
-        if sort_nums[i] - sort_nums[i - 1] != 1:
-            return sort_nums[i - 1]
-    return sort_nums[-1]
+        if sort_nums[i][1] - sort_nums[i - 1][1] != 1:
+            msg = ''
+            for j in range(i):
+                msg += sort_nums[i][0]
+            return msg, sort_nums[i - 1][1]
+    msg = ''
+    for j in range(len(sort_nums)):
+        msg += sort_nums[j][0]
+    return msg, sort_nums[-1][1]

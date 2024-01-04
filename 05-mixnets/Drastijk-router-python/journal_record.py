@@ -9,6 +9,6 @@ class JournalSentRecord:
 
 class JournalRecvRecord:
     def __init__(self, window):
-        self.ackMessagesIndexes = list()
+        self.part_with_index = list()
         self.window = window
         self.timer = None
