@@ -23,7 +23,7 @@ class AcknowledgementJournal(BaseAcknowledgementJournal):
         if session_id not in self.sent_messages:
             raise Exception("Session not exist")
         record = self.sent_messages[session_id]
-        return record.lastAckMsg == len(record.part_with_index)
+        return record.lastAckMsg == len(record.part_with_index) - 1
 
     def get_next_messages(self, session_id):
         if session_id not in self.sent_messages:
