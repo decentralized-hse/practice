@@ -1,5 +1,3 @@
-import uuid
-
 from shell import *
 from router import *
 
@@ -34,20 +32,8 @@ class TestEnvironment:
         self.IOs[receiver]._on_message(msg, sender)
 
     def script(self):
-        msg = Message("C", b"aaa", Utilities.sha256(b'a_*****'))
-        msg.add_delivery_ack(
-            0,
-            2147483647,
-            uuid.uuid4().hex,
-            3,
-            Utilities.sha256(b'b_*****')
-        )
-
         for addr, node in self.nodes.items():
             node.announce()
-
-        smsg = serialize(msg)
-        self.nodes["a"].receive_message(smsg, 'b_*****')
 
         self.nodes["a"].send_message("ты *****".encode(), "d_*****")
         self.nodes["d"].send_message("сам ты *****".encode(), "a_*****")

@@ -1,6 +1,3 @@
-from uuid import UUID
-
-
 class Message:
     def __init__(self, message_type: str, payload: [bytes], receiver: bytes):
         self.sender, self.window_size, self.session_id, self.ack_number, self.message_number = \

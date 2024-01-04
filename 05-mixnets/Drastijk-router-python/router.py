@@ -48,57 +48,70 @@ class Router(BaseRouter):
             if point != sender:
                 self.io.send_message(serialize(message), point)
 
-    def send_ack(self, receiver, record):
-        ack = Message('C', b"", receiver)
-        payload, ack.ack_number = get_next_msg(record.part_with_index)
+    def send_ack(self, record, message: Message, receiver):
+        ack_number = get_next_msg(record.part_with_index)
+        ack = Message('C', b"", message.sender)
+        ack.add_delivery_ack(
+            0,
+            ack_number,
+            message.session_id,
+            message.window_size,
+            message.receiver
+        )
         record.timer.cancel()
         self.io.send_message(serialize(ack), receiver)
         record.part_with_index = list()
-        to = ack.receiver
-        for key_hash, address in self.table.items():
-            if Utilities.sha256(key_hash) != to:
-                continue
-            ack.receiver = key_hash
-            print(f"{self.name} пересылаю сообщение в {address}")
-            self.io.send_message(serialize(ack), address)
 
     def receive_message(self, msg: [bytes], sender: str):
         message = deserialize(msg)
+
+        timestamp = str(Utilities.get_closes_timestamp())
+        key = (self.name + timestamp).encode()
+        me_hash = Utilities.sha256(key)
+
         if message.message_type == 'a':
             should_resend = self.find_announce_match(message.receiver, sender)
             if should_resend:
                 self.resend_announce(sender, message)
-        if message.message_type == 'M' or message.message_type == 'm' or \
-                message.message_type == 'C' or message.message_type == 'c':
-            timestamp = str(Utilities.get_closes_timestamp())
-            key_hash = (self.name + timestamp).encode()
-            me_hash = Utilities.sha256(key_hash)
+
+        if message.message_type == 'M' or message.message_type == 'm':
             if me_hash == message.receiver:
                 self.message_output.accept_message(message.payload)
-                if message.message_type == 'M' or message.message_type == 'm':
-                    return
-            if message.message_type == 'M' or message.message_type == 'm':
-                to = message.receiver
-                for key_hash, address in self.table.items():
-                    if Utilities.sha256(key_hash) != to:
-                        continue
-                    message.receiver = key_hash
-                    print(f"{self.name} пересылаю сообщение в {address}")
-                    self.io.send_message(serialize(message), address)
-        if message.message_type == 'C' or message.message_type == 'c':
-            if message.ack_number != 2147483647:
-                record = self.journal.sent_messages[message.session_id]
-                record.lastAckMsg = message.ack_number
                 return
-            if message.session_id not in self.journal.received_messages:
-                self.journal.add_new_recv_session(message.window_size, message.session_id)
-            record = self.journal.received_messages[message.session_id]
-            if len(record) == 0:
-                record.timer = Timer(10, self.send_ack, args=(message.sender, record))
-                record.timer.start()
-            record.part_with_index.append((message.payload, message.message_number))
-            if len(record.part_with_index) == message.window_size:
-                self.send_ack(message.sender, record)
+            to = message.receiver
+            for key_hash, address in self.table.items():
+                if Utilities.sha256(key_hash) != to:
+                    continue
+                message.receiver = key_hash
+                print(f"{self.name} пересылаю сообщение в {address}")
+                self.io.send_message(serialize(message), address)
+
+        if message.message_type == 'C' or message.message_type == 'c':
+            if me_hash == message.receiver:
+                if message.ack_number != 2147483647:
+                    record = self.journal.sent_messages[message.session_id]
+                    record.lastAckMsg = message.ack_number
+                    self.message_output.accept_message(b"ACK")
+                    return
+                self.message_output.accept_message(message.payload)
+                if message.session_id not in self.journal.received_messages:
+                    self.journal.add_new_recv_session(message.window_size, message.session_id)
+                record = self.journal.received_messages[message.session_id]
+                if len(record.part_with_index) == 0:
+                    record.timer = Timer(5, self.send_ack, args=(record, message, sender))
+                    record.timer.start()
+                record.part_with_index.append((message.payload, message.message_number))
+                if len(record.part_with_index) == message.window_size:
+                    self.send_ack(record, message, sender)
+                return
+
+            to = message.receiver
+            for key_hash, address in self.table.items():
+                if Utilities.sha256(key_hash) != to:
+                    continue
+                message.receiver = key_hash
+                print(f"{self.name} пересылаю сообщение в {address}")
+                self.io.send_message(serialize(message), address)
 
     def send_message(self, msg: bytes, sender_public_key: str):
         timestamp = str(Utilities.get_closes_timestamp())
@@ -128,14 +141,14 @@ class Router(BaseRouter):
                         prepared_part.add_delivery_ack(
                             part_with_index[1],
                             2147483647,
-                            session_id.hex,
-                            len(msg_parts),
+                            session_id,
+                            5,
                             my_key_hash)
                         prepared_parts.append(prepared_part)
                     for part in prepared_parts:
                         self.io.send_message(serialize(part), self.table[key_hash])
                     break
-            time.sleep(0.001)
+            time.sleep(10)
 
     def find_announce_match(self, target_hash, address):
         for existing_key in self.table.keys():

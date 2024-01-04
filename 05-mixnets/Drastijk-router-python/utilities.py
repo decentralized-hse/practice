@@ -30,6 +30,9 @@ def serialize(message: Message):
             message.payload)
 
     if message.message_type == 'C' or message.message_type == 'c':
+        if message.message_number is None:
+            pass
+
         message_bytes += (
                 message.message_number.to_bytes(4, "little") +
                 message.ack_number.to_bytes(4, "little") +
@@ -77,11 +80,5 @@ def get_next_msg(nums: list):
     sort_nums = sorted(nums, key=lambda x: x[1])
     for i in range(1, len(nums)):
         if sort_nums[i][1] - sort_nums[i - 1][1] != 1:
-            msg = ''
-            for j in range(i):
-                msg += sort_nums[i][0]
-            return msg, sort_nums[i - 1][1]
-    msg = ''
-    for j in range(len(sort_nums)):
-        msg += sort_nums[j][0]
-    return msg, sort_nums[-1][1]
+            return sort_nums[i - 1][1]
+    return sort_nums[-1][1]

@@ -41,7 +41,7 @@ class Shell:
         self.thread.join()
 
     def wait_for_command(self):
-        send_with_acknowledgement = True
+        send_with_acknowledgement = False
         while True:
             inpt = input()
             command = split_ignore_quotes(inpt)

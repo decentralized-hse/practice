@@ -15,7 +15,7 @@ class AcknowledgementJournal(BaseAcknowledgementJournal):
 
     def add_new_session(self, full_message, window, message_size):
         new_record = JournalSentRecord(window, full_message, message_size)
-        new_uuid = uuid.uuid4()
+        new_uuid = uuid.uuid4().hex
         self.sent_messages[new_uuid] = new_record
         return new_uuid
 
