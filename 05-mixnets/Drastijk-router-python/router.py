@@ -1,3 +1,5 @@
+import sys
+
 from abstractions import BaseRouter, BaseIO, BaseMessageOutput
 from threading import Timer
 from utilities import *
@@ -83,9 +85,8 @@ class Router(BaseRouter):
                     message.receiver = key_hash
                     print(f"{self.name} пересылаю сообщение в {address}")
                     self.io.send_message(serialize(message), address)
-        # TODO: буфер добавить
         if message.message_type == 'C' or message.message_type == 'c':
-            if message.ack_number != -1:
+            if message.ack_number != sys.maxsize:
                 record = self.journal.sent_messages[message.session_id]
                 record.lastAckMsg = message.ack_number
                 return
@@ -126,7 +127,7 @@ class Router(BaseRouter):
                         prepared_part = Message("C", part_with_index[0], key_hash)
                         prepared_part.add_delivery_ack(
                             part_with_index[1],
-                            -1,
+                            sys.maxsize,
                             session_id.hex,
                             len(msg_parts),
                             my_key_hash)
