@@ -17,6 +17,11 @@ class Utilities:
         return closes_timestamp
 
     @staticmethod
+    def get_hour_start_ns(time_ns: int) -> int:
+        time_ns -= time_ns % (60 * 60 * 1000000000)
+        return time_ns
+
+    @staticmethod
     def sha256(data) -> bytes:
         return hashlib.sha256(data).digest()
 

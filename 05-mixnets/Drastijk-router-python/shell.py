@@ -2,11 +2,12 @@ import queue
 import threading
 
 from abstractions import *
+from router import Router
 from utilities import split_ignore_quotes
 
 
 class Shell:
-    def __init__(self, router: BaseRouter, shell_invite: str):
+    def __init__(self, router: Router, shell_invite: str):
         self.router = router
         self.shell_invite = shell_invite
         self.thread: threading.Thread = None
@@ -66,7 +67,10 @@ class Shell:
                     self.exception(str(e))
                 continue
             if command[0] == 'table':
-                self.print(str(self.router.table))
+                table = {}
+                for k, v in self.router.table.items():
+                    table[k.hex()] = v
+                self.print(str(table))
                 continue
             if command[0] == 'friends':
                 self.print(str(self.router.contacts))
@@ -77,6 +81,18 @@ class Shell:
                 send_with_acknowledgement = False
                 self.print('Выключено подтверждение доставки')
 
+
+            if command[0] == 'new':
+                self.router.entrypoints.append(command[1])
+                self.router.announce()
+            if command[0] == 'contact':
+                if len(command) < 3:
+                    self.print("Введите сначала имя контакта, а потом его публичный ключ")
+                try:
+                    key = bytes.fromhex(command[2])
+                    self.router.contacts[command[1]] = key
+                except:
+                    self.print("Введите верный ключ")
 
 
 class ShellMessageOutput(BaseMessageOutput):

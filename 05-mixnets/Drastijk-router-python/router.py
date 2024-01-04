@@ -1,17 +1,20 @@
-import sys
+import sched
+import struct
 
 from abstractions import BaseRouter, BaseIO, BaseMessageOutput
 from threading import Timer
 from utilities import *
-from datetime import datetime, timezone, timedelta
 from models import Message
 from acknowledgement_journal import AcknowledgementJournal
-import threading
 import time
 
 
 class Router(BaseRouter):
-    def __init__(self, entrypoints: [str], contacts: [str], name: str, io: BaseIO, message_output: BaseMessageOutput):
+    def __init__(self, entrypoints: [str],
+                 contacts: {str: bytes},
+                 name: bytes,
+                 io: BaseIO,
+                 message_output: BaseMessageOutput):
         super().__init__()
         self.message_output = message_output
         self.diam = 1000
@@ -22,20 +25,33 @@ class Router(BaseRouter):
         self.entrypoints = entrypoints
         self.table = {}
         self.journal = AcknowledgementJournal()
+        self.lastHour = 123
+        self.scheduler = sched.scheduler(time.time, time.sleep)
+        self.key: str = None
+
+    @staticmethod
+    def _current_timestamp_in_bytes():
+        return Utilities.get_hour_start_ns(int(time.time_ns())).to_bytes(length=8, byteorder='little')
+
+    @staticmethod
+    def _current_timestamp():
+        return Utilities.get_hour_start_ns(int(time.time_ns()))
 
     def _schedule_next_announce(self):
-        now = datetime.now(timezone.utc)
-        next_hour = Utilities.get_closes_timestamp() + timedelta(hours=1)
-
-        wait_seconds = (next_hour - now).seconds
-
-        threading.Timer(wait_seconds, lambda: self.announce()).start()
+        now = time.time_ns()
+        next_hour = Utilities.get_hour_start_ns(int(now) + 60 * 60 * 1000000000)
+        if self.lastHour == next_hour:
+            return
+        self.lastHour = int(next_hour)
+        wait_seconds = next_hour - now
+        self.scheduler.enter(int(wait_seconds / 1000000000), 1, action=self.announce)
+        self.scheduler.run(blocking=False)
+        print("sheduled")
 
     def announce(self):
-        closes_timestamp = Utilities.get_closes_timestamp()
-
-        key = (self.name + str(closes_timestamp)).encode()
-        announce = serialize(Message("a", b"", Utilities.sha256(key)))
+        key = self.hourly_hash(self.name, self._current_timestamp())
+        key_hash = Utilities.sha256(key)
+        announce = serialize(Message("a", b"", key_hash))
 
         for point in self.entrypoints:
             self.io.send_message(announce, point)
@@ -63,10 +79,15 @@ class Router(BaseRouter):
         record.part_with_index = list()
 
     def receive_message(self, msg: [bytes], sender: str):
-        message = deserialize(msg)
+        if sender not in self.entrypoints:
+            self.entrypoints.append(sender)
+        try:
+            message = deserialize(msg)
+        except:
+            print(msg)
+            return
 
-        timestamp = str(Utilities.get_closes_timestamp())
-        key = (self.name + timestamp).encode()
+        key = self.hourly_hash(self.name, self._current_timestamp())
         me_hash = Utilities.sha256(key)
 
         if message.message_type == 'a':
@@ -78,6 +99,7 @@ class Router(BaseRouter):
             if me_hash == message.receiver:
                 self.message_output.accept_message(message.payload)
                 return
+
             to = message.receiver
             for key_hash, address in self.table.items():
                 if Utilities.sha256(key_hash) != to:
@@ -113,23 +135,34 @@ class Router(BaseRouter):
                 print(f"{self.name} пересылаю сообщение в {address}")
                 self.io.send_message(serialize(message), address)
 
+    def hourly_hash(self, key, current_hour):
+        print(current_hour)
+        current_hour -= current_hour % (60 * 60 * 1000000000)  # округляем до часа
+        timestr = struct.pack('<Q', current_hour)
+        data = key + timestr[:8]
+        return hashlib.sha256(data).digest()
+
     def send_message(self, msg: bytes, sender_public_key: str):
-        timestamp = str(Utilities.get_closes_timestamp())
-        key_hash = (sender_public_key + timestamp).encode()
+        print("sending message")
+        if sender_public_key not in self.contacts:
+            raise Exception("Неизвестный контакт")
+        key = self.hourly_hash(self.contacts[sender_public_key], self._current_timestamp())
+        key_hash = Utilities.sha256(key)
+        print(key_hash.hex())
+
         for i in range(self.diam):
-            key_hash = Utilities.sha256(key_hash)
             if key_hash in self.table.keys():
                 message = Message("M", msg, key_hash)
                 self.io.send_message(serialize(message), self.table[key_hash])
                 return
+            key_hash = Utilities.sha256(key_hash)
         raise Exception("Маршрут до получателя не найден в таблице")
 
     def send_message_with_ack(self, msg: bytes, sender_public_key: str):
         session_id = self.journal.add_new_session(msg, 3, 10)
         while not self.journal.is_session_finished(session_id):
-            timestamp = str(Utilities.get_closes_timestamp())
-            key_hash = (sender_public_key + timestamp).encode()
-            my_key_hash = (self.name + timestamp).encode()
+            key_hash = self.hourly_hash(self.contacts[sender_public_key], self._current_timestamp())
+            my_key_hash = self.hourly_hash(self.key, self._current_timestamp())
             msg_parts = self.journal.get_next_messages(session_id)
             for i in range(self.diam):
                 key_hash = Utilities.sha256(key_hash)
