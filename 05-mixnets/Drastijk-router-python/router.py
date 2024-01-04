@@ -49,7 +49,7 @@ class Router(BaseRouter):
                 self.io.send_message(serialize(message), point)
 
     def send_ack(self, receiver, record):
-        ack = Message('C', '', receiver)
+        ack = Message('C', b"", receiver)
         payload, ack.ack_number = get_next_msg(record.part_with_index)
         record.timer.cancel()
         self.io.send_message(serialize(ack), receiver)
@@ -90,7 +90,7 @@ class Router(BaseRouter):
                 record = self.journal.sent_messages[message.session_id]
                 record.lastAckMsg = message.ack_number
                 return
-            if not self.journal.received_messages[message.session_id]:
+            if message.session_id not in self.journal.received_messages:
                 self.journal.add_new_recv_session(message.window_size, message.session_id)
             record = self.journal.received_messages[message.session_id]
             if len(record) == 0:

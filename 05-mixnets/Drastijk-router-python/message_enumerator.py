@@ -1,5 +1,5 @@
 class MessageEnumerator:
-    def __init__(self, message, start=0):
+    def __init__(self, message: bytes, start=0):
         self.left = start
         self.right = start
         self.message = message
