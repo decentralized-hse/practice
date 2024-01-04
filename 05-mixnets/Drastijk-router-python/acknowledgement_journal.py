@@ -11,7 +11,7 @@ class AcknowledgementJournal(BaseAcknowledgementJournal):
 
     def add_new_recv_session(self, window, session_id):
         new_record = JournalRecvRecord(window)
-        self.sent_messages[session_id] = new_record
+        self.received_messages[session_id] = new_record
 
     def add_new_session(self, full_message, window, message_size):
         new_record = JournalSentRecord(window, full_message, message_size)

@@ -48,7 +48,7 @@ def deserialize(message: bytes):
     message_length_length = 4 if type_.capitalize() == type_ else 1
     message_length = int.from_bytes(message_enumerator.get_next_bytes(message_length_length), "little")
     receiver_address = message_enumerator.get_next_bytes(32)
-    payload = message_enumerator.get_next_bytes(message_length - 32)
+    payload = message_enumerator.get_next_bytes(message_length)
 
     msg = Message(type_, payload, receiver_address)
 
