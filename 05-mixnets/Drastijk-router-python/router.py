@@ -66,7 +66,8 @@ class Router(BaseRouter):
             me_hash = Utilities.sha256(key_hash)
             if me_hash == message.receiver:
                 self.message_output.accept_message(message.payload)
-                return
+                if message.message_type == 'M' or message.message_type == 'm':
+                    return
             to = message.receiver
             for key_hash, address in self.table.items():
                 if Utilities.sha256(key_hash) != to:
@@ -74,6 +75,7 @@ class Router(BaseRouter):
                 message.receiver = key_hash
                 print(f"{self.name} пересылаю сообщение в {address}")
                 self.io.send_message(serialize(message), address)
+        # TODO: буфер добавить
         if message.message_type == 'C' or message.message_type == 'c':
             if message.ack_number != -1:
                 record = self.journal.sent_messages[message.session_id]
@@ -86,7 +88,7 @@ class Router(BaseRouter):
                 record.timer = Timer(10, self.send_ack, args=(message.sender, record))
                 record.timer.start()
             record.ackMessagesIndexes.append(message.message_number)
-            if len(record.ackMessagesIndexes) == record.window:
+            if len(record.ackMessagesIndexes) == message.window_size:
                 self.send_ack(message.sender, record)
 
     def send_message(self, msg: bytes, sender_public_key: str):
