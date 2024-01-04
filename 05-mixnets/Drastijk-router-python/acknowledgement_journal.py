@@ -33,5 +33,5 @@ class AcknowledgementJournal(BaseAcknowledgementJournal):
         if lastAckMsg < record.sentMessageCount:
             return record.part_with_index[lastAckMsg + 1:record.sentMessageCount + 1]
 
-        record.sentMessageCount += record.sentMessageCount
+        record.sentMessageCount += record.window
         return record.part_with_index[lastAckMsg + 1:record.sentMessageCount + 1]

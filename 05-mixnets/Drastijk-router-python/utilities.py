@@ -25,7 +25,7 @@ def serialize(message: Message):
     message_length_length = 4 if message.message_type.capitalize() == message.message_type else 1
     message_bytes = (
             message.message_type.encode() +
-            (len(message.payload) + 32).to_bytes(message_length_length, "little") +
+            (len(message.payload)).to_bytes(message_length_length, "little") +
             message.receiver +
             message.payload)
 
