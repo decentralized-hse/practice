@@ -52,6 +52,13 @@ class Router(BaseRouter):
         record.timer.cancel()
         self.io.send_message(serialize(ack), receiver)
         record.ackMessagesIndexes = list()
+        to = ack.receiver
+        for key_hash, address in self.table.items():
+            if Utilities.sha256(key_hash) != to:
+                continue
+            ack.receiver = key_hash
+            print(f"{self.name} пересылаю сообщение в {address}")
+            self.io.send_message(serialize(ack), address)
 
     def receive_message(self, msg: [bytes], sender: str):
         message = deserialize(msg)
