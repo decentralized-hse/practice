@@ -1,6 +1,11 @@
 from datetime import datetime, timezone
 import hashlib
 import re
+from typing import Tuple
+
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+
 from models import Message
 
 
@@ -29,8 +34,9 @@ def serialize(message: Message):
     message_length_length = 4 if message.message_type.capitalize() == message.message_type else 1
     message_bytes = (
             message.message_type.encode() +
-            (len(message.payload) + 32).to_bytes(message_length_length, "little") +
+            (len(message.payload) + 32 + 16).to_bytes(message_length_length, "little") +
             message.receiver +
+            message.iv +
             message.payload)
 
     return message_bytes
@@ -41,9 +47,10 @@ def deserialize(message: bytes):
     message_length_length = 4 if type_.capitalize() == type_ else 1
     message_length = int.from_bytes(message[1:(1 + message_length_length)])
     address = message[message_length_length + 1:message_length_length + 32 + 1]
-    payload = message[1 + message_length_length + 32:
-                      1 + message_length_length + 32 + message_length]
-    return Message(type_, payload, address)
+    iv = message[1 + message_length_length + 32:1 + message_length_length + 32 + 16]
+    payload = message[1 + message_length_length + 32 + 16:
+                      1 + message_length_length + 32 + 16 + message_length]
+    return Message(type_, payload, address, iv)
 
 
 def split_ignore_quotes(string):
@@ -51,3 +58,15 @@ def split_ignore_quotes(string):
     pattern = r'"[^"]*"|\S+'  # Паттерн для поиска подстрок в кавычках или непосредственно последовательностей непробельных символов
     substrings = re.findall(pattern, string)
     return substrings
+
+
+def encrypt(plaintext: str, key: bytes) -> Tuple[bytes, bytes]:
+    cipher = AES.new(key, AES.MODE_CBC)
+    ciphertext = cipher.encrypt(pad(plaintext, AES.block_size))
+    return ciphertext, cipher.iv
+
+
+def decrypt(ciphertext: bytes, key: bytes, iv: bytes) -> str:
+    cipher = AES.new(key, AES.MODE_CBC, iv=iv)
+    plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
+    return plaintext

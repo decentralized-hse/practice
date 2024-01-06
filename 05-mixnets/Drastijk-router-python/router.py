@@ -75,15 +75,19 @@ class Router(BaseRouter):
         if message.message_type == 'M' or message.message_type == 'm':
             key = self.hourly_hash(self.name, self._current_timestamp())
             key_hash = Utilities.sha256(key)
-
             if key_hash == message.receiver:
-                self.message_output.accept_message(message.payload)
+                dec_msg = decrypt(message.payload, key_hash, message.iv)
+                self.message_output.accept_message(dec_msg)
                 return
 
             to = message.receiver
             for key_hash, address in self.table.items():
-                if Utilities.sha256(key_hash) != to:
+                target_key_hash = Utilities.sha256(key_hash)
+                if target_key_hash != to:
                     continue
+                dec_msg = decrypt(message.payload, target_key_hash, message.iv)
+                message.payload = dec_msg[16:]
+                message.iv = dec_msg[:16]
                 message.receiver = key_hash
                 print(f"{self.name} пересылаю сообщение в {address}")
                 self.io.send_message(serialize(message), address)
@@ -102,13 +106,15 @@ class Router(BaseRouter):
         key = self.hourly_hash(self.contacts[sender_public_key], self._current_timestamp())
         key_hash = Utilities.sha256(key)
         print(key_hash.hex())
-
+        enc_msg, iv = encrypt(msg, key_hash)
         for i in range(self.diam):
             if key_hash in self.table.keys():
-                message = Message("M", msg, key_hash)
+                message = Message("M", enc_msg, key_hash, iv)
                 self.io.send_message(serialize(message), self.table[key_hash])
                 return
             key_hash = Utilities.sha256(key_hash)
+            enc_msg = iv + enc_msg
+            enc_msg, iv = encrypt(enc_msg, key_hash)
         raise Exception("Маршрут до получателя не найден в таблице")
 
     def find_announce_match(self, target_hash, address):
