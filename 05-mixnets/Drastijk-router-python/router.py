@@ -1,5 +1,4 @@
 import sched
-import struct
 import time
 
 from abstractions import BaseRouter, BaseIO, BaseMessageOutput
@@ -23,7 +22,6 @@ class Router(BaseRouter):
         self.table = {}
         self.lastHour = 123
         self.scheduler = sched.scheduler(time.time, time.sleep)
-        self.key: str = None
         self.happiness_percent = 8
 
     @staticmethod
@@ -47,41 +45,23 @@ class Router(BaseRouter):
 
     def announce(self):
         key = self.hourly_hash(self.name, self._current_timestamp())
-        key_hash = self.find_happy_announce(key)
-        announce = serialize(Message("a", b"", key_hash))
+        key_hash = Utilities.sha256(key)
+        happy_hash_nonce = find_happy_announce_hash_nonce(key_hash, self.diam)
+        announce = serialize(Message("a", happy_hash_nonce, key_hash))
 
         for point in self.entrypoints:
             self.io.send_message(announce, point)
 
         self._schedule_next_announce()
 
-    # считаем такой nonce, что до диаметра все хэши от него будут "счастливыми"
-    def find_happy_announce(self, key: bytes):
-        nonce = 0
-        while True:
-            key_hash = Utilities.sha256(key + struct.pack('l', nonce))
-            happy_hash = key_hash
-            for i in range(self.diam):
-                key_hash = Utilities.sha256(key_hash)
-                if not self.is_hash_happy(key_hash):
-                    break
-            else:
-                return happy_hash
-
-            nonce += 1
-
     def resend_announce(self, sender: str, message: Message):
         message.receiver = Utilities.sha256(message.receiver)
         # не пересылаем несчастливые анонсы
-        if not self.is_hash_happy(message.receiver):
+        if not is_hash_happy(message.receiver, message.payload):
             return
         for point in self.entrypoints:
             if point != sender:
                 self.io.send_message(serialize(message), point)
-
-    # проверяем хэш на счастливость
-    def is_hash_happy(self, hash: bytes):
-        return hash[-1] <= (self.happiness_percent * 255 // 100)
 
     def receive_message(self, msg: [bytes], sender: str):
         if sender not in self.entrypoints:

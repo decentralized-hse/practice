@@ -1,3 +1,4 @@
+import struct
 from datetime import datetime, timezone
 import hashlib
 import re
@@ -23,6 +24,36 @@ class Utilities:
     @staticmethod
     def sha256(data) -> bytes:
         return hashlib.sha256(data).digest()
+
+
+CACHE_HAPPINESS_MASK = int('0b11100000', 2)  # маска для первых 3 бит
+ATTEMPTS_TO_FIND_HAPPY_CACHE_NONCE = 10**7
+
+
+def is_hash_happy(announce_hash: bytes, nonce: bytes = b'') -> bool:
+    """
+    Метод, проверяющий, что первые 3 бита кэша - нули.
+
+    Параметры:
+    nonce - если передан, на счастливость проверяется sha256 от announce_hash + nonce, иначе просто announce_hash
+    """
+    if nonce:
+        announce_hash = Utilities.sha256(announce_hash + nonce)
+    return announce_hash[0] & CACHE_HAPPINESS_MASK == 0
+
+
+def find_happy_announce_hash_nonce(announce_hash: bytes, diam: int) -> bytes:
+    """Метод, находящий такой nonce, что до диаметра все хэши от него будут счастливыми"""
+    for x in range(ATTEMPTS_TO_FIND_HAPPY_CACHE_NONCE):
+        nonce = x.to_bytes(length=(x.bit_length() + 7) // 8)
+        hash_ = announce_hash
+        for i in range(diam):
+            if not is_hash_happy(hash_, nonce):
+                break
+            hash_ = Utilities.sha256(hash_)
+        else:
+            return nonce
+    raise Exception("Failed to find happy cache")
 
 
 def serialize(message: Message):
