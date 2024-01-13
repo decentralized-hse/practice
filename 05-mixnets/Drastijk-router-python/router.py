@@ -45,9 +45,8 @@ class Router(BaseRouter):
 
     def announce(self):
         key = self.hourly_hash(self.name, self._current_timestamp())
-        key_hash = Utilities.sha256(key)
-        happy_hash_nonce = find_happy_announce_hash_nonce(key_hash, self.diam)
-        announce = serialize(Message("a", happy_hash_nonce, key_hash))
+        key_hash = find_happy_announce(key, self._current_timestamp(), self.diam)
+        announce = serialize(Message("a", b"", key_hash))
 
         for point in self.entrypoints:
             self.io.send_message(announce, point)
@@ -57,7 +56,7 @@ class Router(BaseRouter):
     def resend_announce(self, sender: str, message: Message):
         message.receiver = Utilities.sha256(message.receiver)
         # не пересылаем несчастливые анонсы
-        if not is_hash_happy(message.receiver, message.payload):
+        if not is_hash_happy(message.receiver):
             return
         for point in self.entrypoints:
             if point != sender:

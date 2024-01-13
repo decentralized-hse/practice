@@ -30,30 +30,28 @@ CACHE_HAPPINESS_MASK = int('0b11100000', 2)  # маска для первых 3 
 ATTEMPTS_TO_FIND_HAPPY_CACHE_NONCE = 10**7
 
 
-def is_hash_happy(announce_hash: bytes, nonce: bytes = b'') -> bool:
+def is_hash_happy(hash_to_check: bytes) -> bool:
     """
     Метод, проверяющий, что первые 3 бита кэша - нули.
 
     Параметры:
     nonce - если передан, на счастливость проверяется sha256 от announce_hash + nonce, иначе просто announce_hash
     """
-    if nonce:
-        announce_hash = Utilities.sha256(announce_hash + nonce)
-    return announce_hash[0] & CACHE_HAPPINESS_MASK == 0
+    return hash_to_check[0] & CACHE_HAPPINESS_MASK == 0
 
 
-def find_happy_announce_hash_nonce(announce_hash: bytes, diam: int) -> bytes:
-    """Метод, находящий такой nonce, что до диаметра все хэши от него будут счастливыми"""
-    for x in range(ATTEMPTS_TO_FIND_HAPPY_CACHE_NONCE):
-        nonce = x.to_bytes(length=(x.bit_length() + 7) // 8)
-        hash_ = announce_hash
+def find_happy_announce(key: bytes, timestamp: int, diam: int) -> bytes:
+    while True:
+        key_hash = Utilities.sha256(key + struct.pack('n', timestamp))
+        happy_hash = key_hash
         for i in range(diam):
-            if not is_hash_happy(hash_, nonce):
+            key_hash = Utilities.sha256(key_hash)
+            if not is_hash_happy(key_hash):
                 break
-            hash_ = Utilities.sha256(hash_)
         else:
-            return nonce
-    raise Exception("Failed to find happy cache")
+            return happy_hash
+
+        timestamp += 1
 
 
 def serialize(message: Message):

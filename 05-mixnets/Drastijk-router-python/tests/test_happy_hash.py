@@ -1,6 +1,7 @@
-from utilities import find_happy_announce_cache_nonce, is_hash_happy, Utilities
+from utilities import Utilities, find_happy_announce, is_hash_happy
 import secrets
 import pytest
+
 
 def get_random_bytes(count: int = 1) -> bytes:
     return secrets.token_bytes(count)
@@ -12,7 +13,8 @@ class TestHappyHashFinding:
         [
             (int('0b00001111', 2).to_bytes() + get_random_bytes(20), True),
             (int('0b00000000', 2).to_bytes() + get_random_bytes(20), True),
-            (int('0b00011111', 2).to_bytes() + get_random_bytes(20), False),
+            (int('0b00011111', 2).to_bytes() + get_random_bytes(20), True),
+            (int('0b00111111', 2).to_bytes() + get_random_bytes(20), False),
             (int('0b11111111', 2).to_bytes() + get_random_bytes(20), False)
         ],
     )
@@ -24,10 +26,7 @@ class TestHappyHashFinding:
     )
     def test_find_happy_announce(self, diam: int):
         hash_ = get_random_bytes(8)
-        happy_nonce = find_happy_announce_cache_nonce(hash_, diam)
+        happy_hash = find_happy_announce(hash_, 0, diam)
         for i in range(diam):
-            assert is_hash_happy(Utilities.sha256(hash_ + happy_nonce))
-            assert is_hash_happy(hash_, happy_nonce)
-            hash_ = Utilities.sha256(hash_)
-
-
+            happy_hash = Utilities.sha256(happy_hash)
+            assert is_hash_happy(happy_hash)
