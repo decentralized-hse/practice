@@ -160,6 +160,9 @@ class Router(BaseRouter):
 
     def send_message_with_ack(self, msg: bytes, sender_public_key: str):
         session_id = self.journal.add_new_session(msg, 3, 10)
+        attempts_count = 0
+        last_ack = -1
+        is_something_send = False
         while not self.journal.is_session_finished(session_id):
             key_hash = self.hourly_hash(self.contacts[sender_public_key], self._current_timestamp())
             my_key_hash = self.hourly_hash(self.key, self._current_timestamp())
@@ -168,7 +171,13 @@ class Router(BaseRouter):
                 key_hash = Utilities.sha256(key_hash)
                 my_key_hash = Utilities.sha256(my_key_hash)
                 if key_hash in self.table.keys():
+                    is_something_send = True
                     prepared_parts = []
+                    if len(msg_parts) > 0 and msg_parts[0][1] == last_ack:
+                        attempts_count += 1
+                    else:
+                        attempts_count = 0
+                    last_ack = msg_parts[0][1]
                     for part_with_index in msg_parts:
                         prepared_part = Message("C", part_with_index[0], key_hash)
                         prepared_part.add_delivery_ack(
@@ -181,7 +190,13 @@ class Router(BaseRouter):
                     for part in prepared_parts:
                         self.io.send_message(serialize(part), self.table[key_hash])
                     break
+            if not is_something_send:
+                attempts_count += 1
+            else:
+                is_something_send = False
             time.sleep(10)
+            if attempts_count > 10:
+                raise Exception("Невозможно доставить сообщение")
 
     def find_announce_match(self, target_hash, address):
         for existing_key in self.table.keys():
