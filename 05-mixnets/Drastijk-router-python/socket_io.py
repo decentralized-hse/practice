@@ -25,7 +25,7 @@ class OurSocketIO(BaseIO):
         # client_thread = threading.Thread(target=self.client_handler)
         # client_thread.start()
 
-    def send_message(self, message: bytes, address: str, mtu: int = None):
+    def send_message(self, message: bytes, address: str):
         if address not in self.queues:
             new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             new_socket.connect((address, 8000))

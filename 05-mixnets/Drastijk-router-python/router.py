@@ -24,7 +24,6 @@ class Router(BaseRouter):
         self.lastHour = 123
         self.scheduler = sched.scheduler(time.time, time.sleep)
         self.key: str = None
-        self.congestion_counter = 0
 
     @staticmethod
     def _current_timestamp_in_bytes():
@@ -87,33 +86,28 @@ class Router(BaseRouter):
                     continue
                 message.receiver = key_hash
                 print(f"{self.name} пересылаю сообщение в {address}")
-
-                mtu = self.calculate_mtu()
-                self.io.send_message(serialize(message), address, mtu=mtu)
-
-    def calculate_mtu(self):
-        self.congestion_counter += 1
-        return max(1000 - self.congestion_counter * 100, 100)
+                self.io.send_message(serialize(message), address)
 
     def hourly_hash(self, key, current_hour):
         print(current_hour)
         current_hour -= current_hour % (60 * 60 * 1000000000)  # округляем до часа
         timestr = struct.pack('<Q', current_hour)
+        if isinstance(key, str):
+            key = key.encode('utf-8')
         data = key + timestr[:8]
         return hashlib.sha256(data).digest()
 
-    def send_message(self, msg: bytes, sender_public_key: str, mtu: int = None):
+    def send_message(self, msg: bytes, sender_public_key: str):
         print("sending message")
         if sender_public_key not in self.contacts:
             raise Exception("Неизвестный контакт")
-
-        key = self.hourly_hash(self.contacts[sender_public_key], self._current_timestamp())
+        key = self.hourly_hash(self.contacts[0], self._current_timestamp())
         key_hash = Utilities.sha256(key)
         print(key_hash.hex())
 
         for i in range(self.diam):
             if key_hash in self.table.keys():
-                message = Message("M", msg, key_hash, mtu=mtu)
+                message = Message("M", msg, key_hash)
                 self.io.send_message(serialize(message), self.table[key_hash])
                 return
             key_hash = Utilities.sha256(key_hash)
