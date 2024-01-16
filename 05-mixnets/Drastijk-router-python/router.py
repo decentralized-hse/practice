@@ -24,6 +24,25 @@ class Router(BaseRouter):
         self.lastHour = 123
         self.scheduler = sched.scheduler(time.time, time.sleep)
         self.key: str = None
+        self.message_delivery_times = []
+        self.message_rate = 1
+
+    def monitor_network_performance(self):
+        average_delivery_time = sum(self.message_delivery_times) / len(self.message_delivery_times)
+        return average_delivery_time
+
+    def adjust_message_transmission_rate(self):
+        average_delivery_time = self.monitor_network_performance()
+
+        THRESHOLD_CONGESTED = 1000
+        THRESHOLD_NORMAL = 500
+        print(f'message_rate before - {self.message_rate}')
+
+        if average_delivery_time > THRESHOLD_CONGESTED:
+            self.message_rate *= 0.9
+        elif average_delivery_time < THRESHOLD_NORMAL:
+            self.message_rate *= 1.1
+        print(f'message_rate after - {self.message_rate}')
 
     @staticmethod
     def _current_timestamp_in_bytes():
@@ -108,7 +127,11 @@ class Router(BaseRouter):
         for i in range(self.diam):
             if key_hash in self.table.keys():
                 message = Message("M", msg, key_hash)
+                start_time = time.time()
                 self.io.send_message(serialize(message), self.table[key_hash])
+                end_time = time.time()
+                self.message_delivery_times.append(end_time - start_time)
+                self.adjust_message_transmission_rate()
                 return
             key_hash = Utilities.sha256(key_hash)
         raise Exception("Маршрут до получателя не найден в таблице")

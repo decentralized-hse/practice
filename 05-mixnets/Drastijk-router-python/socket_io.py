@@ -7,6 +7,9 @@ from queue import Queue
 from abstractions import BaseIO
 
 
+MTU_SIZE = 1024
+
+
 class OurSocketIO(BaseIO):
     def __init__(self, host):
         super().__init__()
@@ -26,17 +29,27 @@ class OurSocketIO(BaseIO):
         # client_thread.start()
 
     def send_message(self, message: bytes, address: str):
-        if address not in self.queues:
-            new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            new_socket.connect((address, 8000))
-            new_socket.send(message)
-            self.queues[address] = Queue()
-            new_socket.setblocking(False)
-            new_socket.settimeout(1)
-            self.addresses[new_socket] = address
-            self.inputs.append(new_socket)
+        for i in range(0, len(message), MTU_SIZE):
+            message_part = message[i:i + MTU_SIZE]
 
-        self.queues[address].put(message)
+            if address not in self.queues:
+                new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                new_socket.connect((address, self.port))
+                new_socket.setblocking(False)
+                new_socket.settimeout(1)
+                self.connections[address] = new_socket
+                self.queues[address] = Queue()
+                self.inputs.append(new_socket)
+
+            print('отправили сообщение')
+            self.queues[address].put(message_part)
+
+            if address in self.connections:
+                connected_socket = self.connections[address]
+                try:
+                    connected_socket.send(message_part)
+                except (BlockingIOError, socket.timeout):
+                    pass
 
     def new_client(self):
         sock = socket.socket()
