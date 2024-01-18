@@ -1,9 +1,10 @@
 use std::io::{self, Read, Error};
 use std::fs::write;
 use std::fs::File;
-use std::mem;
+use std::{mem, string};
 use std::slice;
 use serde::{Serialize, Deserialize};
+use snailquote::{escape, unescape};
 
 
 #[repr(C, packed)]
@@ -90,33 +91,53 @@ struct Project {
 }
 
 impl Student {
-    pub fn to_c(student: &Student) -> CStudent {
+    pub fn to_c(student: &Student) -> Result<CStudent, String> {
         let mut s = CStudent::default();
         to_c_string(&student.name, & mut s.name);
         to_c_string(&student.login, & mut s.login);
         to_c_string(&student.group, & mut s.group);
         for i in 0..student.practice.len() {
-            s.practice[i] = student.practice[i]
+            let practice = student.practice[i];
+
+            if practice == 0 || practice == 1 {
+                s.practice[i] = student.practice[i]
+            } else {
+                return Err(format!("Can't use {practice} as practice element"))
+            }
         }
         to_c_string(&student.project.repo, & mut s.project.repo);
         s.project.mark = student.project.mark;
         s.mark = student.mark;
-        s
+        Ok(s)
     }
-    pub fn from_c(student: &CStudent) -> Student {
+    pub fn from_c(student: &CStudent) -> Result<Student, String> {
         let mut s = Student::default();
         s.name = from_c_string(&student.name).unwrap().to_string();
         s.login = from_c_string(&student.login).unwrap().to_string();
         s.group = from_c_string(&student.group).unwrap().to_string();
         s.practice.resize(8, 0);
         for i in 0..student.practice.len() {
-            s.practice[i] = student.practice[i]
+            let practice = student.practice[i];
+
+            if practice == 0 || practice == 1 {
+                s.practice[i] = student.practice[i]
+            } else {
+                return Err(format!("Can't use {practice} as practice element"))
+            }
         }
         s.project.repo = from_c_string(&student.project.repo).unwrap().to_string();
         s.project.mark = student.project.mark;
         s.mark = student.mark;
-        s
+        Ok(s)
     }
+}
+
+fn unescape_for_xml(string: &String) -> String{
+    return quick_xml::escape::unescape(unescape(string).unwrap().as_str()).unwrap().to_string();
+}
+
+fn escape_for_xml(string: &String) -> String {
+    return escape(quick_xml::escape::escape(string).to_string().as_str()).to_string();
 }
 
 fn main() -> Result<(), Error> {
@@ -132,8 +153,10 @@ fn main() -> Result<(), Error> {
         let studxml = std::fs::read_to_string(filename.clone())?;
         let studs : Root = quick_xml::de::from_str(&studxml).unwrap();
         let mut result : Vec<u8> = vec![];
-        for stud in studs.students.student {
-            let studc = Student::to_c(&stud);
+        for mut stud in studs.students.student {            
+            stud.name = unescape_for_xml(&stud.name);
+            stud.project.repo = unescape_for_xml(&stud.project.repo);
+            let studc = Student::to_c(&stud).unwrap();
             let studbin : Vec<u8> = to_bin(&studc);
             result.extend(studbin);
         }
@@ -151,7 +174,7 @@ fn main() -> Result<(), Error> {
             let cstud_size = mem::size_of::<CStudent>();
             unsafe {
                 let cstud_slice = slice::from_raw_parts_mut(&mut cstud as *mut _ as *mut u8, cstud_size);
-                match  file.read_exact(cstud_slice) {
+                match file.read_exact(cstud_slice) {
                     Ok(_) => {},
                     Err(ref err) if err.kind() == io::ErrorKind::UnexpectedEof => {
                         // End of file reached
@@ -162,7 +185,9 @@ fn main() -> Result<(), Error> {
                     },
                 }
             }
-            let stud = Student::from_c(&cstud);
+            let mut stud = Student::from_c(&cstud).unwrap();
+            stud.name = escape_for_xml(&stud.name);
+            stud.project.repo = escape_for_xml(&stud.project.repo);
             result.students.student.push(stud);
         }
         let studxml = quick_xml::se::to_string(&(result)).unwrap();

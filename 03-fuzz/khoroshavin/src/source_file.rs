@@ -1,154 +1,196 @@
-use rusqlite::params;
+use std::io::{self, Read, Error};
+use std::fs::write;
+use std::fs::File;
+use std::mem;
+use std::slice;
+use serde::{Serialize, Deserialize};
+use snailquote::{escape, unescape};
 
-#[derive(Debug, PartialEq)]
-struct Project {
-    repo: [u8; 59],
-    mark: u8,
-}
 
-#[derive(Debug, PartialEq)]
-struct Student {
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone, Default)]
+struct CStudent {
     name: [u8; 32],
     login: [u8; 16],
     group: [u8; 8],
     practice: [u8; 8],
+    project: CProject,
+    mark: f32,
+}
+
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+struct CProject {
+    repo: [u8; 59],
+    mark: u8
+}
+
+fn to_bin(stud: &CStudent) -> Vec<u8> {
+    let mut res = Vec::<u8>::new();
+    res.extend_from_slice(&stud.name);
+    res.extend_from_slice(&stud.login);
+    res.extend_from_slice(&stud.group);
+    res.extend_from_slice(&stud.practice);
+    res.extend_from_slice(&stud.project.repo);
+    res.push(stud.project.mark);
+    res.extend_from_slice(&stud.mark.to_le_bytes());
+    res
+}
+
+impl Default for CProject {
+    fn default() -> Self {
+        CProject { repo: [0; 59], mark: 0 }
+    }
+}
+
+fn from_c_string(bytes: &[u8]) -> Option<&str> {
+    let bytes_without_null = match bytes.iter().position(|&b| b == 0) {
+        Some(ix) => &bytes[..ix],
+        None => bytes,
+    };
+
+    std::str::from_utf8(bytes_without_null).ok()
+}
+
+fn to_c_string(s: &String, bytes: & mut [u8]) {
+    let sbytes = s.as_bytes();
+    for i in 0..sbytes.len() {
+        bytes[i] = sbytes[i];
+    }
+    for i in sbytes.len()..bytes.len() {
+        bytes[i] = 0;
+    }
+}
+
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct Student {
+    name: String,
+    login: String,
+    group: String,
+    practice: Vec<u8>,
     project: Project,
     mark: f32,
 }
 
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct Students {
+    pub student: Vec<Student>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct Root {
+    pub students: Students,
+}
+
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct Project {
+    repo: String,
+    mark: u8,
+}
+
 impl Student {
-    fn load_from_file(mut f: impl std::io::Read) -> std::io::Result<Self> {
-        let mut res = Student {
-            name: [0; 32],
-            login: [0; 16],
-            group: [0; 8],
-            practice: [0; 8],
-            project: Project {
-                repo: [0; 59],
-                mark: 0,
-            },
-            mark: 0.0,
-        };
+    pub fn to_c(student: &Student) -> Result<CStudent, String> {
+        let mut s = CStudent::default();
+        to_c_string(&student.name, & mut s.name);
+        to_c_string(&student.login, & mut s.login);
+        to_c_string(&student.group, & mut s.group);
+        for i in 0..student.practice.len() {
+            let practice = student.practice[i];
 
-        f.read_exact(&mut res.name)?;
-        f.read_exact(&mut res.login)?;
-        f.read_exact(&mut res.group)?;
-        f.read_exact(&mut res.practice)?;
-        f.read_exact(&mut res.project.repo)?;
-        {
-            let mut buf = [0u8; std::mem::size_of::<u8>()];
-            f.read_exact(&mut buf)?;
-            res.project.mark = u8::from_le_bytes(buf);
+            if practice == 0 || practice == 1 {
+                s.practice[i] = student.practice[i]
+            } else {
+                return Err(format!("Can't use {practice} as practice element"))
+            }
         }
-        {
-            let mut buf = [0u8; std::mem::size_of::<f32>()];
-            f.read_exact(&mut buf)?;
-            res.mark = f32::from_le_bytes(buf);
+        to_c_string(&student.project.repo, & mut s.project.repo);
+        s.project.mark = student.project.mark;
+        s.mark = student.mark;
+        Ok(s)
+    }
+    pub fn from_c(student: &CStudent) -> Result<Student, String> {
+        let mut s = Student::default();
+        s.name = from_c_string(&student.name).unwrap().to_string();
+        s.login = from_c_string(&student.login).unwrap().to_string();
+        s.group = from_c_string(&student.group).unwrap().to_string();
+        s.practice.resize(8, 0);
+        for i in 0..student.practice.len() {
+            let practice = student.practice[i];
+
+            if practice == 0 || practice == 1 {
+                s.practice[i] = student.practice[i]
+            } else {
+                return Err(format!("Can't use {practice} as practice element"))
+            }
         }
-
-        Ok(res)
-    }
-
-    fn save_to_file(&self, mut f: impl std::io::Write) -> std::io::Result<()> {
-        f.write_all(&self.name)?;
-        f.write_all(&self.login)?;
-        f.write_all(&self.group)?;
-        f.write_all(&self.practice)?;
-        f.write_all(&self.project.repo)?;
-        f.write_all(&self.project.mark.to_le_bytes())?;
-        f.write_all(&self.mark.to_le_bytes())?;
-
-        Ok(())
-    }
-
-    fn save_to_db(&self, conn: &rusqlite::Connection) -> rusqlite::Result<()> {
-        conn.execute(
-            "insert into student (name, login, student_group, practice, project_repo, project_mark, mark)
-                  values (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-            params![
-                String::from_utf8(self.name.to_vec()).unwrap(),
-                String::from_utf8(self.login.to_vec()).unwrap(),
-                String::from_utf8(self.group.to_vec()).unwrap(),
-                Vec::from(self.practice),
-                String::from_utf8(self.project.repo.to_vec()).unwrap(),
-                self.project.mark,
-                self.mark.to_ne_bytes(),
-            ],
-        )?;
-
-        Ok(())
+        s.project.repo = from_c_string(&student.project.repo).unwrap().to_string();
+        s.project.mark = student.project.mark;
+        s.mark = student.mark;
+        Ok(s)
     }
 }
 
-fn load_students_from_db(conn: &rusqlite::Connection) -> rusqlite::Result<Vec<Student>> {
-    let mut stmt = conn.prepare("select name, login, student_group, practice, project_repo, project_mark, mark from student")?;
-    let student_iter = stmt.query_map([], |row| {
-        let a: Result<[u8; 4], rusqlite::Error> = row.get(6);
-        Ok(Student {
-            name: row.get::<usize, String>(0)?.as_bytes().try_into().unwrap(),
-            login: row.get::<usize, String>(1)?.as_bytes().try_into().unwrap(),
-            group: row.get::<usize, String>(2)?.as_bytes().try_into().unwrap(),
-            practice: row.get::<usize, Vec<u8>>(3)?.as_slice().try_into().unwrap(),
-            project: Project {
-                repo: row.get::<usize, String>(4)?.as_bytes().try_into().unwrap(),
-                mark: row.get(5)?,
-            },
-            mark: f32::from_ne_bytes(a.expect("asd")),
-        })
-    })?;
+fn unescape_for_xml(string: &String) -> String{
+    return quick_xml::escape::unescape(unescape(string).unwrap().as_str()).unwrap().to_string();
+}
 
-    let mut students = Vec::new();
-    for student in student_iter {
-        students.push(student?);
+fn escape_for_xml(string: &String) -> String {
+    return escape(quick_xml::escape::escape(string).to_string().as_str()).to_string();
+}
+
+fn run_internal(mut filename: String) -> Result<(), Error> {
+    if filename.ends_with(".xml") {
+        println!("Detected xml file");
+        let studxml = std::fs::read_to_string(filename.clone())?;
+        let studs : Root = quick_xml::de::from_str(&studxml).unwrap();
+        let mut result : Vec<u8> = vec![];
+        for mut stud in studs.students.student {            
+            stud.name = unescape_for_xml(&stud.name);
+            stud.project.repo = unescape_for_xml(&stud.project.repo);
+            let studc = Student::to_c(&stud).unwrap();
+            let studbin : Vec<u8> = to_bin(&studc);
+            result.extend(studbin);
+        }
+        filename.truncate(filename.len() - 3);
+        let outfile = format!("{}bin", filename);
+        write(outfile, result)?;
+    } else {
+        println!("Detected binary file");
+        let mut file = File::open(filename.clone())?;
+        let mut result =  Root { students: Students {
+            student: vec![],
+        }};
+        loop {
+            let mut cstud: CStudent = unsafe { mem::zeroed() };
+            let cstud_size = mem::size_of::<CStudent>();
+            unsafe {
+                let cstud_slice = slice::from_raw_parts_mut(&mut cstud as *mut _ as *mut u8, cstud_size);
+                match file.read_exact(cstud_slice) {
+                    Ok(_) => {},
+                    Err(ref err) if err.kind() == io::ErrorKind::UnexpectedEof => {
+                        // End of file reached
+                        break;
+                    },
+                    Err(err) => {
+                        panic!("Failed reading file: {}", err);
+                    },
+                }
+            }
+            let mut stud = Student::from_c(&cstud).unwrap();
+            stud.name = escape_for_xml(&stud.name);
+            stud.project.repo = escape_for_xml(&stud.project.repo);
+            result.students.student.push(stud);
+        }
+        let studxml = quick_xml::se::to_string(&(result)).unwrap();
+        filename.truncate(filename.len() - 3);
+        let outfile = format!("{}xml", filename);
+        write(outfile, studxml)?;
     }
-
-    Ok(students)
+    Ok(())
 }
 
 pub fn run(filename: String) {
-    let prefix = filename.rsplit_once('.').unwrap().0.to_string();
-    if filename.ends_with(".bin") {
-        println!("Reading binary student data from {}...", filename);
-        let mut f = std::fs::File::open(filename).unwrap();
-        let mut students = Vec::new();
-        while let Ok(student) = Student::load_from_file(&mut f) {
-            students.push(student);
-        }
-        println!("{} students read...", students.len());
-
-        let db_filename = prefix + ".sqlite";
-        let conn = rusqlite::Connection::open(db_filename.clone()).unwrap();
-        conn.execute("drop table if exists student", []).unwrap();
-        conn.execute(
-            "create table student (
-                 name text not null,
-                 login text not null,
-                 student_group text not null,
-                 practice blob not null,
-                 project_repo text not null,
-                 project_mark integer not null,
-                 mark blob not null
-         )",
-            [],
-        ).unwrap();
-        for student in students {
-            print!("{}", student.mark);
-            student.save_to_db(&conn).unwrap();
-        }
-        println!("written to {}", db_filename);
-    } else if filename.ends_with(".sqlite") {
-        println!("Reading sqlite student data from {}...", filename);
-        let conn = rusqlite::Connection::open(filename).unwrap();
-        let students = load_students_from_db(&conn).unwrap();
-        println!("{} students read...", students.len());
-
-        let bin_filename = prefix + ".bin";
-        let mut f = std::fs::File::create(bin_filename.clone()).unwrap();
-        for student in students {
-            student.save_to_file(&mut f).unwrap();
-        }
-        println!("written to {}", bin_filename);
-    } else {
-        panic!("Unknown file type");
-    }
+    run_internal(filename).unwrap()
 }
