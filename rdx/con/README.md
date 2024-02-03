@@ -1,4 +1,4 @@
-#   ConCoin data formats
+#   ConCoin commands and data formats
 
 ConCoin is a BitCoin-inspired cryptocurrency.
 It uses RDX SST files for everything: database, blocks, transactions.
@@ -17,7 +17,7 @@ File layout is as follows:
   - `.con/db` contains the database, including all the accepted blocks,
   - `.con/mempool/blockhash` contains proposed transactions for a block,
 
-In the database, the `cc-1` object is an RDX E element containing a map of user ids to coin balances.
+In the database, the `cc-1` object is an RDX E element mapping user ids to coin balances.
 The `cc-2` object is the nonce as used in blocks for PoW.
 The `cc-3` object is an RDX E element mapping user ids to their public keys.
 Each new block only contains the updated balances.
@@ -46,3 +46,5 @@ Every command can have a malicious mode to try stealing moneys from other partic
 
 Invariant: using commands 1-5 in a loop to advance the state of the system and send money.
 The total amount of coins increases by 1 with each block, nothing gets stolen.
+What `send` and `mine` create non-maliciously should pass `valid` checks,
+anything malicious should not. A newly mined block should be picked by `pick`.
