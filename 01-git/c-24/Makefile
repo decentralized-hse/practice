@@ -10,7 +10,7 @@ PROGS			= example
 PROG_SRC	= $(PROGS:=.c)
 
 $(PROGS): $(SRC_COMMON) $(INC_COMMON) $(PROG_SRC)
-	$(CC) $(CFLAGS) $(SRC_COMMON) $@.c -I$(INC_COMMON) -o $@
+	$(CC) $(CFLAGS) $(SRC_COMMON) $@.c -I$(INC_COMMON) -lcrypto -o $@
 
 build: $(PROGS)
 
