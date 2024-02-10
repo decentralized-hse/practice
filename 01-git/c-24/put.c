@@ -15,13 +15,13 @@ int parse_out_component_name(const unsigned char* path, unsigned char component_
     if (path[i] == '/') {
       component_out[i + 1] = '\0';
       *len_out = i;
-      return 1;
+      return 0;
     }
     if (path[i] == '\0') {
       component_out[i] = ':';
       component_out[i + 1] = '\0';
       *len_out = i;
-      return 0;
+      return 1;
     }
   }
   return -1;
@@ -31,7 +31,7 @@ int put(dir_iter_t* dir, const unsigned char* path, const unsigned char* obj_dat
   while (path[idx] == '/') {
     ++idx;
     if (idx == MAX_PATH_LEN) {
-      fprintf(stderr, "path invalid or too long(max allowed size %d)", MAX_PATH_LEN);
+      fprintf(stderr, "path invalid or too long(max allowed size %d)\n", MAX_PATH_LEN);
       return -1;
     }
   }
@@ -39,21 +39,21 @@ int put(dir_iter_t* dir, const unsigned char* path, const unsigned char* obj_dat
   uint32_t component_len = 0;
   int is_final = parse_out_component_name(path + idx, component_name, &component_len);
   if (is_final == -1) {
-    fprintf(stderr, "path component too long(max allowed size %d)", MAX_NAME_LEN);
+    fprintf(stderr, "path component too long(max allowed size %d)\n", MAX_NAME_LEN);
     return -1;
   }
 
   dir_ent_t* ent = find_in_dir(dir, component_name);
   if (ent != NULL && is_final == 1) {
-    fprintf(stderr, "%s already exists", component_name);
+    fprintf(stderr, "file \"%s\" already exists\n", component_name);
     return -1;
   }
 
   if (ent == NULL && is_final == 0) {
     unsigned char buf[MAX_PATH_LEN];
     memcpy(buf, path, idx + component_len);
-    buf[idx + component_len + 1] = '\0';
-    fprintf(stderr, "%s directory does not exist", buf);
+    buf[idx + component_len] = '\0';
+    fprintf(stderr, "directory \"%s\" does not exist\n", buf);
     return -1;
   }
 
@@ -80,6 +80,10 @@ int put(dir_iter_t* dir, const unsigned char* path, const unsigned char* obj_dat
   reset_dir_iter(dir);
   uint32_t n_dir_entries = 0;
   size_t dir_obj_len = 1; /* 1 for final \n*/
+  if (is_final) {
+    dir_obj_len += strlen(component_name) + HASH_LEN + 2;
+  } 
+
   dirent_foreach(dir, ent) {
     ++n_dir_entries;
     dir_obj_len += strlen(ent->name) + HASH_LEN + 2;
@@ -99,11 +103,14 @@ int put(dir_iter_t* dir, const unsigned char* path, const unsigned char* obj_dat
       materialized_dir_view[ent_idx + 1] = materialized_dir_view[ent_idx];
       memcpy(materialized_dir_view[ent_idx].hash, subobj_hash, sizeof(subobj_hash));
       memcpy(materialized_dir_view[ent_idx].name, component_name, sizeof(component_name));
-      dir_obj_len += strlen(component_name) + HASH_LEN + 2;
       need_to_insert = 0;
       ++ent_idx;
     }
     ++ent_idx;
+  }
+  if (need_to_insert) {
+    memcpy(materialized_dir_view[ent_idx].hash, subobj_hash, sizeof(subobj_hash));
+    memcpy(materialized_dir_view[ent_idx].name, component_name, sizeof(component_name));
   }
   unsigned char* buf = malloc(dir_obj_len + 1); /* +1 for final \0 */
   for (size_t i = 0, offset = 0; i < n_dir_entries; i++) {
@@ -112,7 +119,7 @@ int put(dir_iter_t* dir, const unsigned char* path, const unsigned char* obj_dat
   free(materialized_dir_view);
   buf[dir_obj_len - 2] = '\n';
   buf[dir_obj_len - 1] = '\0';
-  int res = write_object(buf, dir_obj_len, hash_out);
+  int res = write_object(buf, dir_obj_len - 1, hash_out);
   free(buf);
   return res;
 }
@@ -165,7 +172,7 @@ int main(int argc, char** argv) {
     return 1;
   }
   if (res == -2) {
-    printf("Invalid arguments. Path too long (max allowed len: %d)", MAX_PATH_LEN);
+    printf("Invalid arguments. Path too long (max allowed len: %d)\n", MAX_PATH_LEN);
     return 1;
   }
   dir_iter_t root_iter;
@@ -178,14 +185,16 @@ int main(int argc, char** argv) {
   char* obj_data = read_all(stdin, &obj_len);
   if (obj_data == NULL) {
     close_dir(&root_iter);
-    printf("failed to read stdin");
+    printf("failed to read stdin\n");
     return 1;
   }
   unsigned char hash_out[HASH_LEN + 1];
+  hash_out[HASH_LEN] = '\0';
   res = put(&root_iter, argv[1], obj_data, obj_len, 0, hash_out);
   close_dir(&root_iter);
   if (res != 0) {
     return 1;
   }
+  printf("%s\n", hash_out);
   return 0;
 }
