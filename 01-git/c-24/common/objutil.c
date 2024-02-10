@@ -39,13 +39,12 @@ void obj_path_by_hash(const unsigned char hash[HASH_LEN], char unsigned path_out
 }
 
 int write_object(const unsigned char *obj, uint64_t len, unsigned char hash_out[HASH_LEN]) {
-  char hash[HASH_LEN];
-  obj_hash(obj, len, hash);
-  char obj_path[HASH_LEN + 2];
-  obj_path_by_hash(hash, obj_path);
-  char obj_dir[3];
-  obj_dir[0] = hash[0];
-  obj_dir[1] = hash[1];
+  obj_hash(obj, len, hash_out);
+  unsigned char obj_path[HASH_LEN + 2];
+  obj_path_by_hash(hash_out, obj_path);
+  unsigned char obj_dir[3];
+  obj_dir[0] = hash_out[0];
+  obj_dir[1] = hash_out[1];
   obj_dir[2] = '\0';
   int err = mkdir(obj_dir, S_IRWXU);
   if (err != 0 && err != EEXIST) {
@@ -57,7 +56,9 @@ int write_object(const unsigned char *obj, uint64_t len, unsigned char hash_out[
     fprintf(stderr, "failed to write object: %s: %s\n", obj_path, strerror(errno));
     return -1;
   }
-  ssize_t n_written = write(fd, obj, len);
+  FILE* stream = fdopen(fd, "w");
+  ssize_t n_written = fprintf(stream, "%s", obj);
+  fflush(stream);
   if (n_written != len) {
     fprintf(stderr, "failed to write object: %s: %s\n", obj_path, strerror(errno));
     close(fd);
