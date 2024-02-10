@@ -6,7 +6,7 @@ INC_COMMON = common/
 
 # space-separated list of compiled binaries
 # to add new command, add it's name to this list and write name in $(name).c
-PROGS			= example
+PROGS			= example put
 PROG_SRC	= $(PROGS:=.c)
 
 $(PROGS): $(SRC_COMMON) $(INC_COMMON) $(PROG_SRC)
