@@ -26,7 +26,6 @@ def find_new_root_hash_for_blob_in_root_hash(root_hash_data, blob_name, separato
     lines = root_hash_data.split('\n')
     for line in lines:
         tokens = line.split(separator)
-        print(tokens, separator in line)
         if len(tokens) != 2:
             continue
         name, root_hash = tokens
