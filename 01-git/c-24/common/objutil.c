@@ -29,13 +29,10 @@ void obj_hash(const unsigned char *obj, uint64_t len, char unsigned hash_out[HAS
 }
 
 void obj_path_by_hash(const unsigned char hash[HASH_LEN], char unsigned path_out[HASH_LEN + 2]) {
-  path_out[0] = hash[0];
-  path_out[1] = hash[1];
-  path_out[2] = '/';
-  for (int i = 2; i < HASH_LEN; i++) {
-    path_out[i + 1] = hash[i];
+  for (int i = 0; i < HASH_LEN; i++) {
+    path_out[i] = hash[i];
   }
-  path_out[HASH_LEN + 1] = '\0';
+  path_out[HASH_LEN] = '\0';
 }
 
 int write_object(const unsigned char *obj, uint64_t len, unsigned char hash_out[HASH_LEN]) {
@@ -43,14 +40,6 @@ int write_object(const unsigned char *obj, uint64_t len, unsigned char hash_out[
   unsigned char obj_path[HASH_LEN + 2];
   obj_path_by_hash(hash_out, obj_path);
   unsigned char obj_dir[3];
-  obj_dir[0] = hash_out[0];
-  obj_dir[1] = hash_out[1];
-  obj_dir[2] = '\0';
-  int err = mkdir(obj_dir, S_IRWXU);
-  if (err != 0 && err != EEXIST) {
-    fprintf(stderr, "failed to write object: %s: %s\n", obj_path, strerror(errno));
-    return -1;
-  }
   int fd = open(obj_path, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
   if (fd < 0) {
     fprintf(stderr, "failed to write object: %s: %s\n", obj_path, strerror(errno));
