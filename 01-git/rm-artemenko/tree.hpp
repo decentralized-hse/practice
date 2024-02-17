@@ -12,18 +12,18 @@
 
 #include <picosha2.h>
 
+enum class EntryType {
+  Blob,
+  Tree,
+};
+
+struct Entry {
+  std::string name;
+  std::string hash;
+  EntryType type;
+};
+
 class Tree {
-  enum class EntryType {
-    Blob,
-    Tree,
-  };
-
-  struct Entry {
-    std::string name;
-    std::string hash;
-    EntryType type;
-  };
-
  private:
   static Entry ParseLine(const std::string& line) {
     static const std::regex blob_matcher("^([^\t :/]+):\t([a-fA-F0-9]{64})$");
@@ -63,6 +63,20 @@ class Tree {
     return it;
   }
 
+  std::string Serialize() {
+    std::stringstream ss;
+
+    for (const auto& entry : entries_) {
+      if (entry.type == EntryType::Blob) {
+        ss << entry.name << ":\t" << entry.hash << "\n";
+      } else {
+        ss << entry.name << "/\t" << entry.hash << "\n";
+      }
+    }
+
+    return ss.str();
+  }
+
  public:
   static Tree fromHash(const std::string& hash) {
     std::ifstream tree_file(hash, std::ios::in);
@@ -92,21 +106,11 @@ class Tree {
     FindIt(name)->hash = hash;
   }
 
-  void Serialize() {
-    std::stringstream ss;
+  void WriteToFile() {
+    std::string data = Serialize();
+    std::string hash = picosha2::hash256_hex_string(data);
 
-    for (const auto& entry : entries_) {
-      if (entry.type == EntryType::Blob) {
-        ss << entry.name << ":\t" << entry.hash << "\n";
-      } else {
-        ss << entry.name << "/\t" << entry.hash << "\n";
-      }
-    }
-
-    std::string data = ss.str();
-    calculated_hash_ = picosha2::hash256_hex_string(data);
-
-    std::ofstream tree_file(calculated_hash_.value(), std::ios::out | std::ios::trunc);
+    std::ofstream tree_file(hash, std::ios::out | std::ios::trunc);
 
     if (!tree_file.good()) {
       throw std::runtime_error("can not open output file");
@@ -116,12 +120,10 @@ class Tree {
     tree_file.close();
   }
 
-  std::string GetHash() {
-    assert(calculated_hash_.has_value());
-    return calculated_hash_.value();
+  std::string CalculateHash() {
+    return picosha2::hash256_hex_string(Serialize());
   }
 
  private:
   std::list<Entry> entries_;
-  std::optional<std::string> calculated_hash_;
 };

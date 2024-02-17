@@ -6,7 +6,6 @@
 
 #include <tree.hpp>
 
-
 void CheckArgs(const std::string &path, const std::string &root_hash) {
   static const std::regex path_matcher("^[^\t :]+$");
   static const std::regex hash_matcher("^[a-fA-F0-9]{64}$");
@@ -44,6 +43,11 @@ std::string RunRemove(std::vector<std::string> path_parts, std::string root_hash
 
   for (size_t i = 0; i + 1 < path_parts.size(); ++i) {
     auto entry = trees.back().FindEntry(path_parts[i]);
+
+    if (entry.type != EntryType::Tree) {
+      throw std::runtime_error(fmt::format("'{}' is not a folder", path_parts[i]));
+    }
+
     trees.push_back(Tree::fromHash(entry.hash));
   }
 
@@ -53,18 +57,18 @@ std::string RunRemove(std::vector<std::string> path_parts, std::string root_hash
   std::reverse(path_parts.begin(), path_parts.end());
 
   trees[0].RemoveEntry(path_parts[0]);
-  trees[0].Serialize();
+  trees[0].WriteToFile();
 
   for (size_t i = 1; i < trees.size(); ++i) {
-    trees[i].ReplaceHash(path_parts[i], trees[i - 1].GetHash());
-    trees[i].Serialize();
+    trees[i].ReplaceHash(path_parts[i], trees[i - 1].CalculateHash());
+    trees[i].WriteToFile();
   }
 
-  return trees.back().GetHash();
+  return trees.back().CalculateHash();
 }
 
 int main(int argc, char *argv[]) try {
-  argparse::ArgumentParser parser("rm_michicosun");
+  argparse::ArgumentParser parser("rm");
 
   parser.add_argument("path").help("path to remove").required();
   parser.add_argument("root_hash").help("hash of root tree").required();
