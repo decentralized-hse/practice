@@ -26,17 +26,23 @@ func main() {
 }
 
 func getDiff(prevHash, newHash, currentPath string) (string, error) {
-	prevFiles, err := getFilesInDir(prevHash)
+	prevFiles, isPrevDirectory, err := getFilesInDir(prevHash)
 	if err != nil {
 		return "", err
 	}
-	newFiles, err := getFilesInDir(newHash)
+	newFiles, isNewDirectory, err := getFilesInDir(newHash)
 	if err != nil {
 		return "", err
 	}
 	var diff strings.Builder
 	for file, prevHash := range prevFiles {
+		if isPrevDirectory[file] {
+			continue
+		}
 		if newHash, ok := newFiles[file]; ok {
+			if isNewDirectory[file] {
+				continue
+			}
 			if prevHash != newHash {
 				diff.WriteString(fmt.Sprintf("- %s\n", filepath.Join(currentPath, file)))
 			}
@@ -47,18 +53,18 @@ func getDiff(prevHash, newHash, currentPath string) (string, error) {
 	}
 
 	for file := range newFiles {
+		if isNewDirectory[file] {
+			continue
+		}
 		diff.WriteString(fmt.Sprintf("+ %s\n", filepath.Join(currentPath, file)))
 	}
 
 	for dir := range prevFiles {
-		_, prevIsDir := prevFiles[dir+"/"]
-		_, newIsDir := newFiles[dir+"/"]
+		prevIsDir := isPrevDirectory[dir]
+		newIsDir := isNewDirectory[dir]
 
 		if prevIsDir && newIsDir {
-			subDiff, err := getDiff(prevFiles[dir+"/"], newFiles[dir+"/"], filepath.Join(currentPath, dir))
-			if err != nil {
-				return "", err
-			}
+			subDiff, _ := getDiff(prevFiles[dir], newFiles[dir], filepath.Join(currentPath, dir))
 
 			if subDiff != "" {
 				diff.WriteString(fmt.Sprintf("d %s\n", filepath.Join(currentPath, dir)))
@@ -70,32 +76,39 @@ func getDiff(prevHash, newHash, currentPath string) (string, error) {
 	return diff.String(), nil
 }
 
-func getFilesInDir(hash string) (map[string]string, error) {
+func getFilesInDir(path string) (map[string]string, map[string]bool, error) {
 	files := make(map[string]string)
-	dirPath := hash
-	fileInfos, err := ioutil.ReadDir(dirPath)
+	isDirectory := make(map[string]bool)
+	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	for _, fileInfo := range fileInfos {
-		fileName := fileInfo.Name()
-		if fileName == ".parent" {
+
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		// Пропустить пустые строки
+		if line == "" {
 			continue
 		}
-		filePath := filepath.Join(dirPath, fileName)
-		if fileInfo.IsDir() {
-			hash, err := ioutil.ReadFile(filepath.Join(filePath, ".parent"))
-			if err != nil {
-				return nil, err
-			}
-			files[fileName+"/"] = strings.TrimSpace(string(hash))
-		} else {
-			hash, err := ioutil.ReadFile(filePath)
-			if err != nil {
-				return nil, err
-			}
-			files[fileName] = strings.TrimSpace(string(hash))
+
+		parts := strings.SplitN(line, ":\t", 2)
+		isDirectoryCur := false
+		if len(parts) != 2 {
+			parts = strings.SplitN(line, "/\t", 2)
+			isDirectoryCur = true
 		}
+		if len(parts) != 2 {
+			return nil, nil, err
+		}
+
+		name := strings.TrimSpace(parts[0])
+		hash := strings.TrimSpace(parts[1])
+
+		files[name] = hash
+		isDirectory[name] = isDirectoryCur
 	}
-	return files, nil
+
+	return files, isDirectory, nil
 }
