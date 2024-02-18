@@ -46,7 +46,18 @@ fn writeEntry(file: *fs.File, entry: *const []const u8) !void {
     _ = try file.write("\n");
 }
 
-fn mkdirImpl(path: []const u8, parent_hash: []const u8, updated_parent_hash: *[HASH_SIZE]u8) !void {
+fn updatePreviousRootHash(file: *fs.File, hash: []const u8) !void {
+    // setup allocator
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    const line: []const u8 = try std.fmt.allocPrint(allocator, ".parent/\t{s}\n", .{hash});
+    defer allocator.free(line);
+    _ = try file.write(line);
+}
+
+fn mkdirImpl(path: []const u8, parent_hash: []const u8, updated_parent_hash: *[HASH_SIZE]u8, depth: u8) !void {
     // setup allocator
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
@@ -65,7 +76,7 @@ fn mkdirImpl(path: []const u8, parent_hash: []const u8, updated_parent_hash: *[H
         try findHash(parent_hash, dir_name, &dir_hash);
 
         // get new hash recursively
-        try mkdirImpl(path[i + 1 ..], &dir_hash, &updated_dir_hash);
+        try mkdirImpl(path[i + 1 ..], &dir_hash, &updated_dir_hash, depth + 1);
     } else {
         add = true;
         dir_name = path;
@@ -86,6 +97,11 @@ fn mkdirImpl(path: []const u8, parent_hash: []const u8, updated_parent_hash: *[H
         // updated parent file
         var updated_parent = try fs.cwd().createFile(tmp_parent_name, .{});
         defer updated_parent.close();
+
+        // update .parent
+        if (depth == 0) {
+            try updatePreviousRootHash(&updated_parent, parent_hash);
+        }
 
         var buf_reader = std.io.bufferedReader(parent.reader());
         const reader = buf_reader.reader();
@@ -108,15 +124,32 @@ fn mkdirImpl(path: []const u8, parent_hash: []const u8, updated_parent_hash: *[H
                 break;
             }
 
-            if (updated) {} else if ((std.mem.indexOfScalar(u8, line.items, '/'))) |j| {
-                if ((add and std.mem.lessThan(u8, dir_name, line.items[0..j])) or std.mem.eql(u8, line.items[0..j], dir_name)) {
-                    updated = true;
-                    try writeEntry(&updated_parent, &updated_line);
-                    if (!add) {
-                        continue;
-                    }
+            if (std.mem.startsWith(u8, line.items, ".parent/")) {
+                continue;
+            }
+
+            var entry_name: []const u8 = "";
+            var entry_is_dir = false;
+            if (std.mem.indexOfScalar(u8, line.items, '/')) |j| {
+                entry_name = line.items[0..j];
+                entry_is_dir = true;
+            } else {
+                var j = std.mem.indexOfScalar(u8, line.items, ':').?;
+                entry_name = line.items[0..j];
+
+                if (std.mem.eql(u8, entry_name, dir_name)) {
+                    return error.PathAlreadyExists;
                 }
             }
+
+            if (updated) {} else if ((add and std.mem.lessThan(u8, dir_name, entry_name)) or std.mem.eql(u8, entry_name, dir_name)) {
+                updated = true;
+                try writeEntry(&updated_parent, &updated_line);
+                if (!add) {
+                    continue;
+                }
+            }
+
             try writeEntry(&updated_parent, &line.items);
         }
         if (!updated) {
@@ -147,6 +180,6 @@ pub fn main() !void {
     const root_hash = args[2];
 
     var updated_root_hash: [HASH_SIZE]u8 = undefined;
-    try mkdirImpl(path, root_hash, &updated_root_hash);
+    try mkdirImpl(path, root_hash, &updated_root_hash, 0);
     std.debug.print("{s}\n", .{updated_root_hash});
 }
