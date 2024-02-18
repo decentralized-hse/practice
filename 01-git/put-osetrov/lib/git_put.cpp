@@ -117,7 +117,10 @@ std::optional<std::string> GitPut(const std::string& root_hash,
   std::string new_file_hash = CreateBlob(file_content);
   for (const auto& dir_hash : dir_hashes) {
     auto dir = ParseDir(dir_hash);
-    dir.emplace(new_filename, new_file_hash);
+    dir[new_filename] = new_file_hash;
+    if (dir_hash == root_hash) {
+      dir.emplace(".parent/", root_hash);
+    }
 
     new_filename = dir_name_by_hash.at(dir_hash);
     new_file_hash = CreateDir(dir);
