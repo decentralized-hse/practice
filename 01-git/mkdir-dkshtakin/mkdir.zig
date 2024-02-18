@@ -24,7 +24,7 @@ fn sha256fromFile(path: []const u8, output: *[HASH_SIZE]u8) !void {
 }
 
 fn findHash(path: []const u8, dir_name: []const u8, output: *[HASH_SIZE]u8) !void {
-    var dir = try std.fs.cwd().openFile(path, .{});
+    var dir = try fs.cwd().openFile(path, .{});
     defer dir.close();
 
     var buf_reader = std.io.bufferedReader(dir.reader());
@@ -41,7 +41,7 @@ fn findHash(path: []const u8, dir_name: []const u8, output: *[HASH_SIZE]u8) !voi
     }
 }
 
-fn writeEntry(file: *std.fs.File, entry: *const []const u8) !void {
+fn writeEntry(file: *fs.File, entry: *const []const u8) !void {
     _ = try file.write(entry.*);
     _ = try file.write("\n");
 }
@@ -72,7 +72,7 @@ fn mkdirImpl(path: []const u8, parent_hash: []const u8, updated_parent_hash: *[H
         _ = try std.fmt.bufPrint(&updated_dir_hash, EMPTY_HASH, .{});
 
         // updated parent file
-        var empty_dir = try std.fs.cwd().createFile(&updated_dir_hash, .{});
+        var empty_dir = try fs.cwd().createFile(&updated_dir_hash, .{});
         defer empty_dir.close();
     }
 
@@ -80,11 +80,11 @@ fn mkdirImpl(path: []const u8, parent_hash: []const u8, updated_parent_hash: *[H
     const tmp_parent_name = parent_hash[0..4];
     {
         // previous parent file
-        var parent = try std.fs.cwd().openFile(parent_hash, .{});
+        var parent = try fs.cwd().openFile(parent_hash, .{});
         defer parent.close();
 
         // updated parent file
-        var updated_parent = try std.fs.cwd().createFile(tmp_parent_name, .{});
+        var updated_parent = try fs.cwd().createFile(tmp_parent_name, .{});
         defer updated_parent.close();
 
         var buf_reader = std.io.bufferedReader(parent.reader());
@@ -127,10 +127,7 @@ fn mkdirImpl(path: []const u8, parent_hash: []const u8, updated_parent_hash: *[H
     // calculate updated parent hash
     try sha256fromFile(tmp_parent_name, updated_parent_hash);
 
-    try fs.cwd().rename(
-        tmp_parent_name,
-        updated_parent_hash,
-    );
+    try fs.cwd().rename(tmp_parent_name, updated_parent_hash);
 }
 
 pub fn main() !void {
