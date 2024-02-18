@@ -53,6 +53,14 @@
 используется в git (там есть отдельный корневой объект типа commit).
 Дополнительные команды:
 
+````
+    ./commit-ivanov 84786d4331818e6be54f105f48aa7e6d7c13e0aa504c1d7ac26a3b9dc7edb4e1 < README
+    ./log-petrov 84786d4331818e6be54f105f48aa7e6d7c13e0aa504c1d7ac26a3b9dc7edb4e1
+    ./diff-sidorov 41f4e7394004d3dd93001ac397b96a282dd072c58aadd0720fff9c232757a8da 99682225f8eeb6a007bed389c124c659f596a794d556b4c865c99995c5f03b98
+    ./merge-smith 41f4e7394004d3dd93001ac397b96a282dd072c58aadd0720fff9c232757a8da 99682225f8eeb6a007bed389c124c659f596a794d556b4c865c99995c5f03b98
+    ./check-jones 99682225f8eeb6a007bed389c124c659f596a794d556b4c865c99995c5f03b98
+````
+
  1. commit: принимает текст комментария в stdin, создаёт в корне файл
    `.commit` следующего формата:
     ```
