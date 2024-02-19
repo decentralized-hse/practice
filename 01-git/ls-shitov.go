@@ -19,7 +19,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	ListDirsRecursively(hash, "")
+	if hash == root {
+		ListDirsRecursively(hash, "", true)
+	} else {
+		ListDirsRecursively(hash, "", false)
+	}
 }
 
 func FindDir(path string, root string) (string, error) {
@@ -49,7 +53,7 @@ func FindDir(path string, root string) (string, error) {
 	return "", fmt.Errorf("failed to find '%s' for root '%s'", curDir, root)
 }
 
-func ListDirsRecursively(hash string, prefix string) {
+func ListDirsRecursively(hash string, prefix string, ignoreParentDir bool) {
 	file, err := os.Open(hash)
 	if err != nil {
 		log.Fatalf("Failed to open '%s': %s", hash, err)
@@ -65,7 +69,10 @@ func ListDirsRecursively(hash string, prefix string) {
 			fmt.Println(prefix + objectName[:len(objectName)-1])
 		} else {
 			fmt.Println(prefix + objectName)
-			ListDirsRecursively(objectHash, prefix+objectName)
+			if objectName[:len(objectName)-1] == ".parent" && ignoreParentDir {
+				continue
+			}
+			ListDirsRecursively(objectHash, prefix+objectName, false)
 		}
 	}
 }
