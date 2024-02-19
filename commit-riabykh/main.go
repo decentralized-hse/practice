@@ -3,10 +3,12 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/sha256"
 	"fmt"
 	"html/template"
 	"os"
-	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -26,20 +28,61 @@ func MustParseTemplate() *template.Template {
 	return tpl
 }
 
-func findRootDir(currentPath string, hashID string) (string, error) {
-	if currentPath == "/" || currentPath == "" {
-		return "", fmt.Errorf("root not found")
+func writeFile(data []byte) (string, error) {
+	h := sha256.New()
+	h.Write(data)
+	fn := fmt.Sprintf("%x", h.Sum(nil))
+	if err := os.WriteFile(fn, data, 0644); err != nil {
+		return "", err
 	}
-	entry, err := os.ReadDir(currentPath)
+	return fn, nil
+}
+
+func makeCommitText(rootHash string, comment string) (string, error) {
+	data := struct {
+		Hash        string
+		Date        string
+		Annotations string
+	}{rootHash, time.Now().Format("02 Jan 2006 15:04:05 MST"), comment}
+	var rendered bytes.Buffer
+	if err := commitTpl.Execute(&rendered, data); err != nil {
+		return "", err
+	}
+	return rendered.String(), nil
+}
+
+func readFile(fn string) ([]string, error) {
+	data, err := os.ReadFile(fn)
 	if err != nil {
-		return "", fmt.Errorf("failed to read dir %s: %v", currentPath, err)
+		return nil, err
 	}
-	for _, e := range entry {
-		if e.Name() == hashID {
-			return currentPath, nil
+	return strings.Split(string(data), "\n"), nil
+}
+
+func commit(prevRoot string, comment string) (string, error) {
+	lines, err := readFile(prevRoot)
+	if err != nil {
+		return "", err
+	}
+	var result []string
+	for _, line := range lines {
+		if !strings.HasPrefix(line, ".commit") && !strings.HasPrefix(line, ".parent") && line != "" {
+			result = append(result, line)
 		}
 	}
-	return findRootDir(filepath.Join(currentPath, ".."), hashID)
+	text, err := makeCommitText(prevRoot, comment)
+	if err != nil {
+		return "", err
+	}
+	commitFn, err := writeFile([]byte(text))
+	if err != nil {
+		return "", err
+	}
+	result = append(result, fmt.Sprintf(".parent:\t%s", prevRoot), fmt.Sprintf(".commit:\t%s", commitFn))
+	sort.Slice(result, func(i, j int) bool {
+		return result[i] < result[j]
+	})
+	return writeFile([]byte(strings.Join(result, "\n") + "\n"))
 }
 
 func main() {
@@ -48,34 +91,15 @@ func main() {
 	}
 	hash := os.Args[1]
 
-	currentPath, err := filepath.Abs(".")
-	if err != nil {
-		panic(fmt.Sprintf("failed to cast current path to abs: %v", err))
-	}
-	root, err := findRootDir(currentPath, hash)
-	if err != nil {
-		panic(fmt.Sprintf("failed to find project root: %v", err))
-	}
-
 	fmt.Printf("type your commit data:\n")
 	reader := bufio.NewReader(os.Stdin)
 	annotations, err := reader.ReadString('\n')
 	if err != nil {
 		panic(fmt.Sprintf("failed to read string from stdin: %v", err))
 	}
-
-	data := struct {
-		Hash        string
-		Date        string
-		Annotations string
-	}{hash, time.Now().Format("02 Jan 2006 15:04:05 MST"), annotations}
-	var rendered bytes.Buffer
-	if err = commitTpl.Execute(&rendered, data); err != nil {
-		panic(fmt.Sprintf("failed to execute template: %v", err))
+	newRootHash, err := commit(hash, annotations)
+	if err != nil {
+		panic(fmt.Sprintf("failed to commit: %v", err))
 	}
-
-	commitFilepath := filepath.Join(root, commitFileName)
-	if err = os.WriteFile(commitFilepath, rendered.Bytes(), 0644); err != nil {
-		panic(fmt.Sprintf("failed to write data to file %s: %v", commitFilepath, err))
-	}
+	fmt.Printf("new root: %s\n", newRootHash)
 }
