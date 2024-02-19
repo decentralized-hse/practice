@@ -3,7 +3,7 @@
 import argparse
 import os
 
-COMMIT_FILENAME = ".commit\t"
+COMMIT_FILENAME = ".commit:\t"
 PARENT_ROOT_FILENAME = ".parent/\t"
 COMMIT_START_PATTERN = "Root: "
 
