@@ -12,7 +12,7 @@
 
 std::string PATH = "./";
 std::string COMMIT_PREFIX = ".commit:\t";
-std::string PARENT_PREFIX = ".parent:\t";
+std::string PARENT_PREFIX = ".parent/\t";
 
 std::string TMP_COMMIT_FILE = "tmp_commit";
 std::string TMP_ROOT_FILE = "tmp_root";
