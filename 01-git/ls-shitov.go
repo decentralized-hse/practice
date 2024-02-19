@@ -64,7 +64,7 @@ func ListDirsRecursively(hash string, prefix string) {
 		if objectName[len(objectName)-1] == ':' {
 			fmt.Println(prefix + objectName[:len(objectName)-1])
 		} else {
-			fmt.Println(objectName)
+			fmt.Println(prefix + objectName)
 			ListDirsRecursively(objectHash, prefix+objectName)
 		}
 	}
