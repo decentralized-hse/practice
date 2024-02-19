@@ -119,7 +119,7 @@ std::optional<std::string> GitPut(const std::string& root_hash,
     auto dir = ParseDir(dir_hash);
     dir[new_filename] = new_file_hash;
     if (dir_hash == root_hash) {
-      dir.emplace(".parent/", root_hash);
+      dir[".parent/"] = root_hash;
     }
 
     new_filename = dir_name_by_hash.at(dir_hash);
