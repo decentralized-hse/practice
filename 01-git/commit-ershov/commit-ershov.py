@@ -39,20 +39,19 @@ def get_new_root_text(commit_hash: str, roothash: str):
                 continue
             if line.startswith(".parent"):
                 continue
-            new_root_lines.append(line)
+            new_root_lines.append(line.rstrip())
     new_root_lines.append(f".commit:\t{commit_hash}")
-    new_root_lines.append(f".parent:\t{roothash}")
+    new_root_lines.append(f".parent/\t{roothash}")
     new_root_lines = sorted(new_root_lines)
     return new_root_lines
 
-
 def save_lines_to_file(lines: list[str]):
-    tmp_file = NamedTemporaryFile(delete=False)
-    with open(tmp_file.name, "w") as f:
+    tmp = ".ershov-tmp"
+    with open(tmp, "w") as f:
         for line in lines:
             print(line, file=f)
-    hash_ = sha256sum(tmp_file.name)
-    os.rename(tmp_file.name, hash_)
+    hash_ = sha256sum(tmp)
+    os.rename(tmp, hash_)
     return hash_
 
 
