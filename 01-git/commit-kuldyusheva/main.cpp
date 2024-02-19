@@ -93,8 +93,7 @@ int main(int argc, char **argv) {
     }
 
     std::string comment;
-    std::cout << "Write comment for commit" << std::endl;
-    std::cin >> comment;
+    getline(std::cin, comment);
 
     std::string commitHash = CreateCommitFile(rootHash, comment);
 
