@@ -73,6 +73,9 @@ void dfsReading(const std::string& hash,
         std::string currentLine;
         while (std::getline(file, currentLine)) {
             ObjectInfo objectInfo = getObjectInfo(currentLine);
+            if (*objectInfo.Name.begin() == '.') {
+                continue;
+            }
             objectToHashes[prefix + objectInfo.Name].insert(objectInfo.Hash);
             hashesToObjects[objectInfo.Hash].insert(prefix + objectInfo.Name);
 
