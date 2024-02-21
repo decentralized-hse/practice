@@ -52,6 +52,5 @@ def create_blob(data):
 
 if __name__ == "__main__":
     root_hash, path = parse_arguments()
-    prefix = '.'
     new_root_hash = mkdir(path, root_hash)
     print("New root hash:", new_root_hash)
