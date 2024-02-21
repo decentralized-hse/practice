@@ -10,81 +10,86 @@
 
 #define MAX_DEPTH 16
 
-int rm(unsigned char *root_hash, unsigned char *dir_name, unsigned char *dir_hash) {
-	if (strcmp(dir_name, ".") == 0) {
-		strcpy(dir_hash, root_hash);
-		return 0;
-	}
 
-	uint32_t k = 0;
-	for (size_t i = 0; i < strlen(dir_name); i++) {
-		if (dir_name[i] == '/') {
-			k++;
-		}
-	}
-	uint32_t pos = 0, old_pos = 0, name_len = strlen(dir_name);
-	strcpy(dir_hash, root_hash);
+int real_rm(unsigned char* dir_hash, unsigned char *dir_name) {
 	dir_iter_t cur_dir;
 	dir_ent_t *dir_entry = NULL;
-	uint32_t i = 0;
 
-	while(pos < name_len && i < k) {
-		open_dir_obj_by_hash(dir_hash, &cur_dir);
-
-		old_pos = pos;
-		while (dir_name[pos] != '\0') {
-			if (dir_name[pos] == '/') {
-				dir_name[pos] = '\0';
-				pos += 1;
-				break;
-			}
-			pos += 1;
-		}
-
-		dir_entry = find_in_dir(&cur_dir, &dir_name[old_pos]);
-		if (dir_entry == NULL) {
-			printf("Wrong hash");
-			return -1;
-		}
-
-		strcpy(dir_hash, dir_entry->hash);
-		close_dir(&cur_dir);
-		i++;
-	}
+	uint32_t pos = 0;
 
 	open_dir_obj_by_hash(dir_hash, &cur_dir);
 
-	old_pos = pos;
+	bool is_dir = false;
 	while (dir_name[pos] != '\0') {
 		if (dir_name[pos] == '/') {
 			dir_name[pos] = '\0';
 			pos += 1;
+			is_dir = true;
 			break;
 		}
 		pos += 1;
 	}
 
-	dir_ent_t *ent = NULL;
+
   	uint32_t n_dir_entries = 0;
 	size_t  dir_obj_len = 1;
-	dirent_foreach(&cur_dir, ent) {
-		if (strncmp(&dir_name[old_pos], ent->name, strlen(ent->name) - 1) != 0) {
+	dir_ent_t* materialized_dir_view = NULL;
+	if (is_dir) {
+		dir_entry = find_in_dir(&cur_dir, &dir_name[0]);
+		if (dir_entry == NULL) {
+			printf("Wrong hash");
+			return -1;
+		}
+
+		if (real_rm(dir_entry->hash, &dir_name[pos]) == -1) {
+			printf("Something happens");
+			return -1;
+		}
+
+		unsigned char* real_hash = malloc(strlen(dir_entry->hash));
+		strcpy(real_hash, dir_entry->hash);
+
+		dir_ent_t *ent = NULL;
+		reset_dir_iter(&cur_dir);
+		dirent_foreach(&cur_dir, ent) {
 			++n_dir_entries;
 			dir_obj_len += strlen(ent->name) + HASH_LEN + 2;
 		}
-	}
 
- 	dir_ent_t* materialized_dir_view = malloc(n_dir_entries * sizeof(dir_ent_t));
-	reset_dir_iter(&cur_dir);
-  	uint32_t ent_idx = 0;
-	ent = NULL;
-	dirent_foreach(&cur_dir, ent) {
-		if (strncmp(&dir_name[old_pos], ent->name, strlen(ent->name) - 1) != 0) {
+		materialized_dir_view = malloc(n_dir_entries * sizeof(dir_ent_t));
+		reset_dir_iter(&cur_dir);
+		uint32_t ent_idx = 0;
+		ent = NULL;
+		dirent_foreach(&cur_dir, ent) {
+			if (strncmp(&dir_name[0], ent->name, strlen(ent->name) - 1) == 0) {
+				strcpy(ent->hash, real_hash);
+				free(real_hash);
+			}
 			materialized_dir_view[ent_idx] = *ent;
 			++ent_idx;
 		}
+		ent = NULL;
+	} else {
+		dir_ent_t *ent = NULL;
+		dirent_foreach(&cur_dir, ent) {
+			if (strncmp(&dir_name[0], ent->name, strlen(ent->name) - 1) != 0) {
+				++n_dir_entries;
+				dir_obj_len += strlen(ent->name) + HASH_LEN + 2;
+			}
+		}
+
+		materialized_dir_view = malloc(n_dir_entries * sizeof(dir_ent_t));
+		reset_dir_iter(&cur_dir);
+		uint32_t ent_idx = 0;
+		ent = NULL;
+		dirent_foreach(&cur_dir, ent) {
+			if (strncmp(&dir_name[0], ent->name, strlen(ent->name) - 1) != 0) {
+				materialized_dir_view[ent_idx] = *ent;
+				++ent_idx;
+			}
+		}
 	}
-	ent = NULL;
+
 	close_dir(&cur_dir);
 
 	unsigned char* buf = malloc(dir_obj_len + 1); /* +1 for final \0 */
@@ -101,6 +106,17 @@ int rm(unsigned char *root_hash, unsigned char *dir_name, unsigned char *dir_has
 	}
 
 	return res;
+}
+
+int rm(unsigned char *root_hash, unsigned char *dir_name, unsigned char *dir_hash) {
+	if (strcmp(dir_name, ".") == 0) {
+		strcpy(dir_hash, root_hash);
+		return 0;
+	}
+
+	strcpy(dir_hash, root_hash);
+
+	return real_rm(dir_hash, dir_name);
 }
 
 int main(int argc, char** argv) {
