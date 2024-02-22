@@ -7,6 +7,19 @@ from io import FileIO
 
 student_format = '<32s16s8s8B59sBf'
 
+def check_float(b):
+    val = int(0)
+    for i in range(0, 4):
+        val |= b[3 - i] << (3 - i) * 8
+    sign = val >> 31
+    exp = (val >> 23) & 0xff
+    frac = val & 0x7fffff
+    if exp == 0 and frac == 0 and sign != 0:
+        return False
+    if exp == 0xff and frac != 0 and frac != 1:
+        return False
+    return True
+
 def flat_to_bin(input_file: FileIO, output_file: FileIO):
     buf = input_file.read()
     buf = bytearray(buf)
@@ -44,6 +57,10 @@ def bin_to_flat(input_file: FileIO, output_file: FileIO):
         student_data = input_file.read(struct.calcsize(student_format))
         if not student_data:
             break
+
+        if not check_float(student_data[-4:]):
+            # add check for wierd float representaions
+            raise ValueError("Malformed input")
 
         name, login, group, *practice, repo, project_mark, mark = struct.unpack(student_format, student_data)
 
