@@ -1,0 +1,12 @@
+[package]
+name = "git1"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "executable"
+path = "src/main.rs"
+
+[dependencies]
+sha2 = "0.9.5"
+hex = "0.4.3"
