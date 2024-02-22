@@ -31,5 +31,15 @@ def test_one_input(data):
   bin_in = bytearray(data)
   check_roundtrip(bin_in)
 
-atheris.Setup(sys.argv, test_one_input)
-atheris.Fuzz()
+def fuzz():
+  atheris.Setup(sys.argv, test_one_input)
+  atheris.Fuzz()
+
+def debug_main():
+  input = ""
+  bin_in = bytearray.fromhex(input)
+  check_roundtrip(bin_in)
+
+if __name__ == "__main__":
+  #debug_main()
+  fuzz()
