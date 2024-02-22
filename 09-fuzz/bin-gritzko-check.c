@@ -61,7 +61,7 @@ int main(int argn, char **args) {
       check_str(student.project.repo, 59, "repo");
       if (student.project.mark < 0 || student.project.mark > 10)
         fail("project mark");
-      if (student.project.mark < 0 || student.project.mark > 10)
+      if (student.mark < 0 || student.mark > 10)
         fail("mark");
     }
     close(fd);
