@@ -1,6 +1,6 @@
 import os
 import flatbuffers
-from schema import Project, Root, Student
+from .schema import Project, Root, Student
 import struct
 import sys
 from io import FileIO
@@ -114,5 +114,5 @@ def main():
         print('Invalid file extension')
     input_file.close()
 
-
-main()
+if __name__ == "__main__":
+  main()

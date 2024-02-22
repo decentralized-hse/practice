@@ -77,7 +77,7 @@ class Student(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from schema.Project import Project
+            from .Project import Project
             obj = Project()
             obj.Init(self._tab.Bytes, x)
             return obj
