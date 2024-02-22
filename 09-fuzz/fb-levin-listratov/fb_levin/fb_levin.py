@@ -91,7 +91,13 @@ def bin_to_flat(input_file: FileIO, output_file: FileIO):
 
 
 def btos(s):
-    return s.decode('utf-8').rstrip('\0')
+    result = ""
+    # catch and raise exception if input bytes are not a valid unicode sequence
+    try:
+        result = s.decode('utf-8').rstrip('\0')
+    except UnicodeDecodeError as e:
+        raise ValueError("Malformed input")
+    return result
 
 
 def output(path):
@@ -105,7 +111,10 @@ def main():
     if input_file_extension == '.bin':
         output_path = os.path.splitext(sys.argv[1])[0] + '.flat'
         output_file = output(output_path)
-        bin_to_flat(input_file, output_file)
+        try:
+            bin_to_flat(input_file, output_file)
+        except ValueError as e:
+            return -1
     elif input_file_extension == '.flat':
         output_path = os.path.splitext(sys.argv[1])[0] + '.bin'
         output_file = output(output_path)

@@ -9,9 +9,12 @@ with atheris.instrument_imports():
 atheris.instrument_func
 def check_roundtrip(bin_in: bytearray):
   bin_f = io.BytesIO(bin_in)
-  flat_f = io.BytesIO()
   bin_f.seek(0)
-  bin_to_flat(bin_f, flat_f)
+  flat_f = io.BytesIO()
+  try:
+    bin_to_flat(bin_f, flat_f)
+  except ValueError as e:
+    return
   flat_f.seek(0)
   bin_f = io.BytesIO()
   flat_to_bin(flat_f, bin_f)
