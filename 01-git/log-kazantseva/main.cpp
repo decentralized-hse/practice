@@ -20,7 +20,7 @@ std::vector<std::string> readRootFile(std::string& path) {
             exit(1);
         }
 
-        if (item1 == ".commit") {
+        if (item1 == ".commit:") {
             commitFiles.push_back(item2);
         }
 
