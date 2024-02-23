@@ -3,6 +3,9 @@ import sys
 from hashlib import sha256
 
 NEW_LINE_SYMBOL = '\n'
+PARENT = '.parent/\t'
+
+
 class CommandPut:
     def __init__(self):
         self.path_to_file_from_input = sys.argv[1]
@@ -23,6 +26,16 @@ class CommandPut:
                 lines_list.append(f"{self.name_of_file}:\t{current_hash}")
             else:
                 lines_list[current_index_to_update] = lines_list[current_index_to_update][:-64] + current_hash
+
+            if i == 0:
+                flag_need_to_add_parent = True
+                for j in range(len(lines_list)):
+                    if lines_list[j].find(PARENT) == 0:
+                        lines_list[j] = PARENT + self.hash_value
+                        flag_need_to_add_parent = False
+                if flag_need_to_add_parent:
+                    lines_list.append(PARENT + self.hash_value)
+
             lines_list.sort()
             content_for_directory = NEW_LINE_SYMBOL.join(lines_list) + NEW_LINE_SYMBOL
             current_hash = self.get_current_hash_from_data_and_write_file(content_for_directory)
