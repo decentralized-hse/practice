@@ -12,7 +12,7 @@ type Args struct {
 
 func ParseArgs() (args Args, err error) {
 	if len(os.Args) < 2 {
-		return Args{}, fmt.Errorf("Argument parsing error. Message: \"The number of arguments is less than 1\".")
+		return Args{}, fmt.Errorf("Argument parsing error. The number of arguments is less than 1.")
 	}
 	return Args{RootHash: os.Args[1]}, nil
 }
@@ -36,7 +36,11 @@ func ReadCommit(rev string) (c Commit, err error) {
 	}
 
 	c.Revision = rev
-	lines := strings.Split(string(data), "\n")
+	lines := strings.SplitN(string(data), "\n", 3)
+
+	if len(lines) != 3 {
+		return Commit{}, fmt.Errorf("Invalid commit \"%s\". Сommit must contain at least 3 lines", rev)
+	}
 
 	ok := false
 	if c.Root, ok = strings.CutPrefix(lines[0], commitRootPrefix); !ok {
@@ -49,7 +53,7 @@ func ReadCommit(rev string) (c Commit, err error) {
 	}
 	c.Date = strings.TrimSpace(c.Date)
 
-	c.Message = strings.Join(lines[2:], "\n")
+	c.Message = lines[2]
 	return
 }
 
