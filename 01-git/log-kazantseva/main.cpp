@@ -4,7 +4,7 @@
 #include <sstream>
 #include <filesystem>
 #include <fstream>
-
+#include <vector>
 
 std::vector<std::string> readRootFile(std::string& path) {
     std::ifstream file(path);
