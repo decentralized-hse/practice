@@ -58,6 +58,7 @@ int ls(const unsigned char *dir_hash, uint32_t depth) {
 	}
 
 	dirent_foreach(&cur_dir, dir_entry) {
+		if (strcmp(dir_entry->name, ".parent/")==0) continue;
 		name_len = strlen(dir_entry->name) - 1;
 		for (uint32_t i = 0; i < name_len; i++) {
 			print_buf[depth + i] = dir_entry->name[i];
