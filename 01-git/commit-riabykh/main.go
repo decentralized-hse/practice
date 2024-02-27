@@ -78,7 +78,7 @@ func commit(prevRoot string, comment string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	result = append(result, fmt.Sprintf(".parent:\t%s", prevRoot), fmt.Sprintf(".commit:\t%s", commitFn))
+	result = append(result, fmt.Sprintf(".parent/\t%s", prevRoot), fmt.Sprintf(".commit:\t%s", commitFn))
 	sort.Slice(result, func(i, j int) bool {
 		return result[i] < result[j]
 	})
