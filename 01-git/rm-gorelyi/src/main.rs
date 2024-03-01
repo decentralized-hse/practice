@@ -9,7 +9,7 @@ struct Cli {
     hash: String,
 }
 
-fn iterate_and_remove(mut path_iter: Iter, cur_hash: String) -> Option<String> {
+fn iterate_and_remove(mut path_iter: Iter, cur_hash: String, is_root: bool) -> Option<String> {
     let next_path_iter = path_iter.next();
     if next_path_iter == None {
         return None;
@@ -21,16 +21,23 @@ fn iterate_and_remove(mut path_iter: Iter, cur_hash: String) -> Option<String> {
 
     let next_hash = lines.iter().find(|x: &&String| (&&x).starts_with(next_dir)).and_then(|x: &String| (&&x).split("\t").nth(1)).map(|x: &str| x.to_string());
 
-    let new_hash = iterate_and_remove(path_iter, next_hash.unwrap());
+    let new_hash = iterate_and_remove(path_iter, next_hash.unwrap(), false);
 
     let mut result = Vec::new();
     for line in &lines {
         if line.starts_with(next_dir) && new_hash != None {
             result.push(format!("{}/\t{}", next_dir, new_hash.clone().unwrap()))
-        } else if !line.starts_with(next_dir) {
+        } else if !line.starts_with(next_dir) && !line.starts_with(".parent") {
             result.push((&line).to_string())
         }
     }
+
+    if is_root {
+        result.push(format!(".parent/\t{}", cur_hash));
+    }
+
+    result.sort();
+
     result.push("".to_string());
 
     let binding = result.join("\n");
@@ -45,5 +52,5 @@ fn iterate_and_remove(mut path_iter: Iter, cur_hash: String) -> Option<String> {
 fn main() {
     let args = Cli::parse();
 
-    println!("{}", iterate_and_remove(args.path.iter(), args.hash).unwrap());
+    println!("{}", iterate_and_remove(args.path.iter(), args.hash, true).unwrap());
 }
