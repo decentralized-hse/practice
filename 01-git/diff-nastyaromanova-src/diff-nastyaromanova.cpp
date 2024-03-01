@@ -76,10 +76,11 @@ void dfsReading(const std::string& hash,
             if (*objectInfo.Name.begin() == '.') {
                 continue;
             }
-            objectToHashes[prefix + objectInfo.Name].insert(objectInfo.Hash);
-            hashesToObjects[objectInfo.Hash].insert(prefix + objectInfo.Name);
 
-            if (objectInfo.Type == ObjectType::dir) {
+            if (objectInfo.Type == ObjectType::file) {
+                objectToHashes[prefix + objectInfo.Name].insert(objectInfo.Hash);
+                hashesToObjects[objectInfo.Hash].insert(prefix + objectInfo.Name);
+            } else if (objectInfo.Type == ObjectType::dir) {
                 dfsReading(objectInfo.Hash, objectToHashes, hashesToObjects, objectInfo.Name);
             }
         }
