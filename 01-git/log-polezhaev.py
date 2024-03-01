@@ -5,7 +5,7 @@ import os
 
 COMMIT_FILENAME = ".commit:\t"
 PARENT_ROOT_FILENAME = ".parent/\t"
-COMMIT_START_PATTERN = "Root: "
+COMMIT_START_PATTERN = "Root:"
 
 def ParseArgs():
     parser = argparse.ArgumentParser(
