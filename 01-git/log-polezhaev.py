@@ -25,14 +25,14 @@ def GetPathsByName(content, filename):
             correct_files.append(file[len(filename):-1])
     return correct_files
 
-def PrintCommitsContent(commits, parent_root_hash):
+def PrintCommitsContent(commits):
     for commit in commits:
         if commit not in os.listdir('.'):
             print(f"Non-existing commit hash: {commit}")
             os._exit(1)
         with open(commit, 'r') as file:
             first_line = file.readline()
-            if first_line.startswith(COMMIT_START_PATTERN) and first_line[len(COMMIT_START_PATTERN):-1] == parent_root_hash:
+            if first_line.startswith(COMMIT_START_PATTERN):
                 print(first_line, file.read(), sep="")
 
 if __name__ == "__main__":
@@ -54,6 +54,6 @@ if __name__ == "__main__":
             os._exit(1)
 
         commits = GetPathsByName(root_content, COMMIT_FILENAME)
-        PrintCommitsContent(commits, now_root)
+        PrintCommitsContent(commits)
 
         
