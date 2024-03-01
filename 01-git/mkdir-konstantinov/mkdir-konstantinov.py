@@ -20,11 +20,11 @@ def mkdir(directory, prev_root_hash):
     parent = [s for s in prev_file_list if "./parent" in s]
     if len(parent) > 0:
         prev_file_list.remove([s for s in prev_file_list if "./parent" in s][0])
-    new_dir_hash = create_blob(directory)
+    new_dir_hash = create_blob('')
     new_file_list = prev_file_list + [directory + '/ ' + new_dir_hash] + ['.parent/ ' + prev_root_hash]
     new_file_list.sort()
 
-    new_directory_str = '\n'.join(new_file_list)
+    new_directory_str = '\n'.join(new_file_list) + '\n'
     new_root_hash = hashlib.sha256(new_directory_str.encode('utf-8')).hexdigest()
     new_directory_path = new_root_hash
     if not os.path.exists(new_directory_path):
