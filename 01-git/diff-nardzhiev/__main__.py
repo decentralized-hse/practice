@@ -63,7 +63,7 @@ def get_diff(path, old_hash, new_hash):
     prev_objects_hash, prev_is_dir = hash_info_to_map(old_hash)
     cur_objects_hash, cur_is_dir = hash_info_to_map(new_hash)
 
-    for prev_obj, prev_hash in prev_objects_hash.values():
+    for prev_obj, prev_hash in prev_objects_hash.items():
         if prev_is_dir[prev_obj]:
             continue
         if prev_obj in cur_objects_hash and cur_is_dir[prev_obj]:
