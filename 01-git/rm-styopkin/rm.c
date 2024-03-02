@@ -10,6 +10,7 @@
 
 #define MAX_DEPTH 16
 
+static const unsigned char parent[] = ".parent";
 
 int real_rm(unsigned char* dir_hash, unsigned char *dir_name) {
 	dir_iter_t cur_dir;
@@ -65,6 +66,9 @@ int real_rm(unsigned char* dir_hash, unsigned char *dir_name) {
 				strcpy(ent->hash, real_hash);
 				free(real_hash);
 			}
+			if (strncmp(parent, ent->name, strlen(ent->name) - 1) == 0) {
+				strcpy(ent->hash, dir_hash);
+			}
 			materialized_dir_view[ent_idx] = *ent;
 			++ent_idx;
 		}
@@ -83,6 +87,9 @@ int real_rm(unsigned char* dir_hash, unsigned char *dir_name) {
 		uint32_t ent_idx = 0;
 		ent = NULL;
 		dirent_foreach(&cur_dir, ent) {
+			if (strncmp(parent, ent->name, strlen(ent->name) - 1) == 0) {
+				strcpy(ent->hash, dir_hash);
+			}
 			if (strncmp(&dir_name[0], ent->name, strlen(ent->name) - 1) != 0) {
 				materialized_dir_view[ent_idx] = *ent;
 				++ent_idx;

@@ -42,14 +42,14 @@ int write_object(const unsigned char *obj, uint64_t len, unsigned char hash_out[
   unsigned char obj_dir[3];
   int fd = open(obj_path, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
   if (fd < 0) {
-    //fprintf(stderr, "failed to write object: %s: %s\n", obj_path, strerror(errno));
+    fprintf(stderr, "failed to write object: %s: %s\n", obj_path, strerror(errno));
     return 3;
   }
   FILE* stream = fdopen(fd, "w");
   ssize_t n_written = fprintf(stream, "%s", obj);
   fflush(stream);
   if (n_written != len) {
-    //fprintf(stderr, "failed to write object: %s: %s\n", obj_path, strerror(errno));
+    fprintf(stderr, "failed to write object: %s: %s\n", obj_path, strerror(errno));
     close(fd);
     remove(obj_path);
     return 3;
