@@ -4,12 +4,15 @@ import (
 	"database/sql"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"math"
 	"os"
 	"reflect"
 	"strings"
+
+	"github.com/spf13/afero"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -94,7 +97,7 @@ func (s *Student) insertIntoTable(db *sql.DB, id int) error {
 	return err
 }
 
-func loadFromTable(db *sql.DB) ([]Student, error) {
+func LoadFromTable(db *sql.DB) ([]Student, error) {
 	const SELECT_FROM_TABLE_SQL = "select * from Students;"
 	rows, err := db.Query(SELECT_FROM_TABLE_SQL)
 	if err != nil {
@@ -154,23 +157,7 @@ func loadFromTable(db *sql.DB) ([]Student, error) {
 	return students, nil
 }
 
-func LoadFromDatabase(path string) ([]Student, error) {
-	db, err := sql.Open("sqlite3", path)
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
-
-	return loadFromTable(db)
-}
-
-func SaveToDatabase(path string, students []Student) error {
-	db, err := sql.Open("sqlite3", path)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
+func SaveToTable(db *sql.DB, students []Student) error {
 	if err := createTable(db); err != nil {
 		return err
 	}
@@ -184,8 +171,8 @@ func SaveToDatabase(path string, students []Student) error {
 	return nil
 }
 
-func LoadFromBinary(path string) ([]Student, error) {
-	file, err := os.Open(path)
+func LoadFromBinary(fs afero.Fs, path string) ([]Student, error) {
+	file, err := fs.Open(path)
 	if err != nil {
 		return nil, err
 	}
@@ -208,8 +195,8 @@ func LoadFromBinary(path string) ([]Student, error) {
 	return students, nil
 }
 
-func SaveToBinary(path string, students []Student) error {
-	file, err := os.Create(path)
+func SaveToBinary(fs afero.Fs, path string, students []Student) error {
+	file, err := fs.Create(path)
 	if err != nil {
 		return err
 	}
@@ -224,33 +211,58 @@ func SaveToBinary(path string, students []Student) error {
 	return nil
 }
 
+func run(path string) error {
+	fs := afero.NewOsFs()
+
+	if strings.HasSuffix(path, ".bin") {
+		students, err := LoadFromBinary(fs, path)
+		if err != nil {
+			return err
+		}
+
+		db, err := sql.Open("sqlite3", strings.TrimSuffix(path, ".bin")+".sqlite")
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+
+		err = SaveToTable(db, students)
+		if err != nil {
+			return err
+		}
+
+	} else if strings.HasSuffix(path, ".sqlite") {
+		db, err := sql.Open("sqlite3", path)
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+
+		students, err := LoadFromTable(db)
+		if err != nil {
+			return err
+		}
+
+		err = SaveToBinary(fs, strings.TrimSuffix(path, ".sqlite")+".bin", students)
+		if err != nil {
+			return err
+		}
+
+	} else {
+		return fmt.Errorf("unknown file format")
+	}
+
+	return nil
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		log.Fatal("Arguments: <path to file>")
+		os.Exit(1)
 	}
 
-	path := os.Args[1]
-	if strings.HasSuffix(path, ".bin") {
-		students, err := LoadFromBinary(path)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = SaveToDatabase(strings.TrimSuffix(path, ".bin")+".sqlite", students)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else if strings.HasSuffix(path, ".sqlite") {
-		students, err := LoadFromDatabase(path)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = SaveToBinary(strings.TrimSuffix(path, ".sqlite")+".bin", students)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		log.Fatal("Unknown file format")
+	if err := run(os.Args[1]); err != nil {
+		log.Fatal(err)
+		os.Exit(1)
 	}
 }

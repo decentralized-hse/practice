@@ -3,7 +3,8 @@ package checker
 import (
 	"encoding/binary"
 	"fmt"
-	"os"
+
+	"github.com/spf13/afero"
 )
 
 type student struct {
@@ -78,7 +79,7 @@ func CheckStudent(student *student) error {
 	return nil
 }
 
-func CheckFile(file *os.File) error {
+func CheckFile(file afero.File) error {
 	var student student
 	for {
 		err := binary.Read(file, binary.LittleEndian, &student)
