@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package format04;
+
+message Student {
+    string name = 1;
+
+    string login = 2;
+    string group = 3;
+
+    uint32 practice = 4;
+
+    string project_repo = 5;
+    uint32 project_mark = 6;
+
+    repeated float mark = 7; // must be exactly one float
+    // Protobuf does not encode values that are equal to
+    // default type value, so -0.0 transfers into 0.0 after
+    // round trip
+    // link: https://github.com/protocolbuffers/protobuf/issues/7062#issuecomment-1860418747
+}
+
+message Students {
+    repeated Student student = 1;
+}
