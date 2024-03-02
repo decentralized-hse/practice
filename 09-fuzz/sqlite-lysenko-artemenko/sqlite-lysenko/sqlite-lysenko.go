@@ -11,6 +11,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/spf13/afero"
 
@@ -60,6 +61,54 @@ type Student struct {
 		Mark uint8
 	}
 	Mark float32
+}
+
+var IncorrectFormatError = errors.New("Malformed input")
+
+func checkStr(str []byte, name string) error {
+	if !utf8.Valid(str) {
+		return IncorrectFormatError
+	}
+
+	return nil
+}
+
+func CheckStudent(student *Student) error {
+	if err := checkStr(student.Name[:], "name"); err != nil {
+		return err
+	}
+
+	if err := checkStr(student.Login[:], "login"); err != nil {
+		return err
+	}
+
+	if err := checkStr(student.Group[:], "group"); err != nil {
+		return err
+	}
+
+	for _, p := range student.Practice[:] {
+		if p != 0 && p != 1 {
+			return IncorrectFormatError
+		}
+	}
+
+	if err := checkStr(student.Project.Repo[:], "repo"); err != nil {
+		return err
+	}
+
+	if student.Project.Mark > 10 {
+		return IncorrectFormatError
+	}
+
+	if math.IsNaN(float64(student.Mark)) {
+		return IncorrectFormatError
+	}
+
+	if student.Mark < 0 || student.Mark > 10 {
+		return IncorrectFormatError
+	}
+
+	return nil
 }
 
 func (s *Student) insertIntoTable(db *sql.DB, id int) error {
@@ -147,6 +196,10 @@ func LoadFromTable(db *sql.DB) ([]Student, error) {
 		student.Project.Mark = row.ProjectMark
 		student.Mark = math.Float32frombits(uint32(row.MarkBits))
 
+		if err := CheckStudent(&student); err != nil {
+			return nil, err
+		}
+
 		students = append(students, student)
 	}
 
@@ -186,6 +239,10 @@ func LoadFromBinary(fs afero.Fs, path string) ([]Student, error) {
 				break
 			}
 
+			return nil, err
+		}
+
+		if err := CheckStudent(&student); err != nil {
 			return nil, err
 		}
 

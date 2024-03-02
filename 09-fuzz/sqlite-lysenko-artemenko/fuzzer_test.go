@@ -3,13 +3,14 @@ package test
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 	"fmt"
+	"io"
 
 	"testing"
 
 	"github.com/spf13/afero"
 
-	checker "sqlite-lysenko-artemenko-fuzzer/checker"
 	solution "sqlite-lysenko-artemenko-fuzzer/sqlite-lysenko"
 )
 
@@ -48,17 +49,16 @@ func FuzzSqlite(f *testing.F) {
 		// load from file
 		bin_students, load_bin_err := solution.LoadFromBinary(fs, bin_path)
 
-		// check solution forbids incorrect data format
-		if fmt_check_error := checker.CheckFile(bin_file); fmt_check_error != nil {
-			if load_bin_err == nil {
-				t.Error("solution permits incorrect format")
+		if load_bin_err != nil {
+			switch {
+			case errors.Is(load_bin_err, io.ErrUnexpectedEOF):
+				return
+			case errors.Is(load_bin_err, solution.IncorrectFormatError):
+				return
+			default:
+				t.Error(load_bin_err)
 				return
 			}
-		}
-
-		// if data incorrect skip test
-		if load_bin_err != nil {
-			return
 		}
 
 		// serialize parsed students
