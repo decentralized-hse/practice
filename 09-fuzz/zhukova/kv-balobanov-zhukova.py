@@ -10,6 +10,7 @@ from typing import Final
 STRUCT_SIZE: Final[int] = 128
 # BUG-FIX: некоторые символы не парсились из-за стандарта utf-8.
 STANDART = "ISO-8859-1"
+ZERO_BYTE = b"\x00"
 
 @dataclass
 class Student:
@@ -37,8 +38,8 @@ class Student:
 
     def serialize_b(self) -> bytes:
         result = struct.pack("<32s16s8s8B59sBf", *self.get_tuple())
-        while b"\x00" in result:
-            result = result.replace(b"\x00", b"")
+        while ZERO_BYTE in result:
+            result = result.replace(ZERO_BYTE, b"")
         return result
 
     def serialize_kv(self) -> str:
@@ -106,43 +107,17 @@ class Student:
     @classmethod
     def deserialize_b(cls, student_struct: bytes, id: int) -> Student:
         # BUG-FIX: было ограничение на то, что в файл записано кратное STRUCT_SIZE число символов.
+        student_struct = student_struct + ZERO_BYTE * (STRUCT_SIZE - len(student_struct))
         
-        name_len = 32
-        login_delta = 48 - 32
-        group_delta = 56 - 48
-        practice_delta = 64 - 56
-        project_delta = 123 - 64
-        project_makr_delta = 124-123
-        mark_delta = 128-124
-        deltas = [name_len, login_delta, group_delta, practice_delta, project_delta, project_makr_delta, mark_delta]
-        student = student_struct[::]
-        data = []
-        for delta in deltas:
-            size = len(student)
-            if size == 0:
-                data.append(None)
-                continue
-            data.append(student[:min(delta, size)])
-            student = student[delta:]
-
-        s_id = id
-        s_name = data[0].decode(STANDART).rstrip("\0") if (data[0] is not None) else ""
-        s_login = data[1].decode(STANDART).rstrip("\0") if (data[1] is not None) else ""
-        s_group = data[2].decode(STANDART).rstrip("\0") if (data[2] is not None) else ""
-        s_practice = list(data[3]) if (data[3] is not None) else []
-        s_project_repo = data[4].decode(STANDART).rstrip("\0") if (data[4] is not None) else ""
-        s_project_mark = struct.unpack("<B", data[5])[0] if (data[5] is not None) else 0
-        s_mark = struct.unpack("<f", data[6])[0] if (data[6] is not None) else 0
         return cls(
-            _id=s_id,
-            name=s_name,
-            login=s_login,
-            group=s_group,
-            practice=s_practice,
-            project_repo=s_project_repo,
-            project_mark=s_project_mark,
-            mark=s_mark
-        )
+            _id=id,
+            name=student_struct[:32].decode(STANDART).rstrip("\0"),
+            login=student_struct[32:48].decode(STANDART).rstrip("\0"),
+            group=student_struct[48:56].decode(STANDART).rstrip("\0"),
+            practice=list(student_struct[56:64]),
+            project_repo=student_struct[64:123].decode(STANDART).rstrip("\0"),
+            project_mark=struct.unpack("<B", student_struct[123:124])[0],
+            mark=struct.unpack("<f", student_struct[124:128])[0])
 
 
 if __name__ == "__main__":
