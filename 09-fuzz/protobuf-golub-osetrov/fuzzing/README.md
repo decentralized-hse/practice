@@ -1,10 +1,12 @@
 ### Build
 ```shell
-$ clang++ -std=c++20 -g -fsanitize=fuzzer,address -o fuzz fuzz.cpp ../protobuf-golub-osetrov.cpp ../protobuf-golub-osetrov.pb.cc ../utils.cpp -lprotobuf
+$ mkdir build; cd build
+$ cmake ..; cmake --build .
 ```
 
 ### Run
 ```shell
+$ cd fuzz_dir
 $ mkdir MY_CORPUS
-$ ./fuzz MY_CORPUS/ valid-data/
+$ ../build/fuzz MY_CORPUS/ valid-data/
 ```
