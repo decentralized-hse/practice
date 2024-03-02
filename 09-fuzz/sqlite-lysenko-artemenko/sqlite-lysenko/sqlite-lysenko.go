@@ -1,11 +1,9 @@
-package main
+package solution
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"math"
@@ -54,16 +52,23 @@ type Student struct {
 
 func (s *Student) insertIntoTable(db *sql.DB, id int) error {
 	const INSERT_INTO_TABLE_SQL = `
-		insert into Students values (
-			%d, '%s', '%s', '%s', %d, %d, %d, %d, %d, %d, %d, %d, '%s', %d, %d
+		insert into Students (
+			id, name, login, group_, practice_1,
+			practice_2, practice_3, practice_4, practice_5, practice_6,
+			practice_7, practice_8, project_repo, project_mark, mark_bits)
+		values (
+			$1, $2, $3, $4, $5,
+			$6, $7, $8, $9, $10,
+			$11, $12, $13, $14, $15
 		);
 	`
-	query := fmt.Sprintf(
+
+	_, err := db.Exec(
 		INSERT_INTO_TABLE_SQL,
 		id,
-		strings.ReplaceAll(string(bytes.Trim(s.Name[:], "\x00")), "'", "''"),
-		strings.ReplaceAll(string(bytes.Trim(s.Login[:], "\x00")), "'", "''"),
-		strings.ReplaceAll(string(bytes.Trim(s.Group[:], "\x00")), "'", "''"),
+		s.Name[:],
+		s.Login[:],
+		s.Group[:],
 		s.Practice[0],
 		s.Practice[1],
 		s.Practice[2],
@@ -72,11 +77,11 @@ func (s *Student) insertIntoTable(db *sql.DB, id int) error {
 		s.Practice[5],
 		s.Practice[6],
 		s.Practice[7],
-		strings.ReplaceAll(string(bytes.Trim(s.Project.Repo[:], "\x00")), "'", "''"),
+		s.Project.Repo[:],
 		s.Project.Mark,
 		math.Float32bits(s.Mark),
 	)
-	_, err := db.Exec(query)
+
 	return err
 }
 
@@ -140,7 +145,7 @@ func loadFromTable(db *sql.DB) ([]Student, error) {
 	return students, nil
 }
 
-func loadFromDatabase(path string) ([]Student, error) {
+func LoadFromDatabase(path string) ([]Student, error) {
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
@@ -150,7 +155,7 @@ func loadFromDatabase(path string) ([]Student, error) {
 	return loadFromTable(db)
 }
 
-func saveToDatabase(path string, students []Student) error {
+func SaveToDatabase(path string, students []Student) error {
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return err
@@ -170,7 +175,7 @@ func saveToDatabase(path string, students []Student) error {
 	return nil
 }
 
-func loadFromBinary(path string) ([]Student, error) {
+func LoadFromBinary(path string) ([]Student, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -194,7 +199,7 @@ func loadFromBinary(path string) ([]Student, error) {
 	return students, nil
 }
 
-func saveToBinary(path string, students []Student) error {
+func SaveToBinary(path string, students []Student) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
@@ -217,22 +222,22 @@ func main() {
 
 	path := os.Args[1]
 	if strings.HasSuffix(path, ".bin") {
-		students, err := loadFromBinary(path)
+		students, err := LoadFromBinary(path)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		err = saveToDatabase(strings.TrimSuffix(path, ".bin")+".sqlite", students)
+		err = SaveToDatabase(strings.TrimSuffix(path, ".bin")+".sqlite", students)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else if strings.HasSuffix(path, ".sqlite") {
-		students, err := loadFromDatabase(path)
+		students, err := LoadFromDatabase(path)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		err = saveToBinary(strings.TrimSuffix(path, ".sqlite")+".bin", students)
+		err = SaveToBinary(strings.TrimSuffix(path, ".sqlite")+".bin", students)
 		if err != nil {
 			log.Fatal(err)
 		}
