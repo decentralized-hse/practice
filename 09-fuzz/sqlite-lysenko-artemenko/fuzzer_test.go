@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"sqlite-lysenko-artemenko-fuzzer/checker"
 	solution "sqlite-lysenko-artemenko-fuzzer/sqlite-lysenko"
@@ -66,10 +65,6 @@ func FuzzSqlite(f *testing.F) {
 		if err != nil {
 			t.Error(err)
 		}
-
-		fmt.Println(len(bin_students), len(db_students))
-		fmt.Println(bin_students)
-		fmt.Println(db_students)
 
 		// check round-trip
 		if len(db_students) != len(bin_students) {
