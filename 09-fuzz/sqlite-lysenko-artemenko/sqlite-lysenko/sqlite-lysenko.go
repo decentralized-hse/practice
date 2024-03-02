@@ -15,26 +15,35 @@ import (
 )
 
 func createTable(db *sql.DB) error {
+	const DROP_TABLE_SQL = `
+		DROP TABLE IF EXISTS Students
+	`
+	if _, err := db.Exec(DROP_TABLE_SQL); err != nil {
+		return err
+	}
+
 	const CREATE_TABLE_SQL = `
-		create table Students (
-			id           integer not null primary key,
-			name         varchar(32),
-			login        varchar(16),
-			group_       varchar(8),
-			practice_1   tinyint,
-			practice_2   tinyint,
-			practice_3   tinyint,
-			practice_4   tinyint,
-			practice_5   tinyint,
-			practice_6   tinyint,
-			practice_7   tinyint,
-			practice_8   tinyint,
-			project_repo varchar(59),
-			project_mark tinyint,
-			mark_bits    integer
+		CREATE TABLE Students (
+			id           INTEGER NOT NULL PRIMARY KEY,
+			name         VARCHAR(32),
+			login        VARCHAR(16),
+			group_       VARCHAR(8),
+			practice_1   TINYINT,
+			practice_2   TINYINT,
+			practice_3   TINYINT,
+			practice_4   TINYINT,
+			practice_5   TINYINT,
+			practice_6   TINYINT,
+			practice_7   TINYINT,
+			practice_8   TINYINT,
+			project_repo VARCHAR(59),
+			project_mark TINYINT,
+			mark_bits    INTEGER
 		);
 	`
+
 	_, err := db.Exec(CREATE_TABLE_SQL)
+
 	return err
 }
 
