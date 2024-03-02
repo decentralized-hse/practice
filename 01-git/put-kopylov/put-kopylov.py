@@ -23,7 +23,7 @@ class CommandPut:
             lines_list = [line for line in directories_to_update[i].split(NEW_LINE_SYMBOL) if len(line) > 1]
             current_index_to_update = indexes_to_update[i]
             if current_index_to_update == len(lines_list):
-                lines_list.append(f"{self.name_of_file}:\t{current_hash}")
+                lines_list.append(f"{self.filename}:\t{current_hash}")
             else:
                 lines_list[current_index_to_update] = lines_list[current_index_to_update][:-64] + current_hash
 
@@ -83,6 +83,7 @@ class CommandPut:
     def execute_command(self):
         self.parsed_path_from_input = os.path.splitext(self.path_to_file_from_input)
         self.name_of_file = self.parsed_path_from_input[0] + self.parsed_path_from_input[1]
+        self.filename = self.name_of_file.split(os.sep)[-1] 
         self.input_data = []
         for line in sys.stdin:
             self.input_data.append(line)
