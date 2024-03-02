@@ -45,23 +45,29 @@ bool CheckInput(const std::string& path) {
   ssize_t rd = 0;
   bool one = false;
   while (RECSIZE == (rd = read(fd, &student, RECSIZE))) {
-    if (!CheckStr(student.name, 32, "name"))
+    if (!CheckStr(student.name, 32, "name")) {
       return false;
-    if (!CheckStr(student.login, 16, "login"))
+    }
+    if (!CheckStr(student.login, 16, "login")) {
       return false;
-    if (!CheckStr(student.group, 8, "group"))
+    }
+    if (!CheckStr(student.group, 8, "group")) {
       return false;
+    }
     for (int p = 0; p < 8; p++) {
       if (student.practice[p] != 0 && student.practice[p] != 1) {
         return false;
       }
     }
-    if (!CheckStr(student.project.repo, 59, "repo"))
+    if (!CheckStr(student.project.repo, 59, "repo")) {
       return false;
-    if (student.project.mark < 0 || student.project.mark > 10)
+    }
+    if (student.project.mark < 0 || student.project.mark > 10) {
       return false;
-    if (student.mark < 0 || student.mark > 10)
+    }
+    if (student.mark < 0 || student.mark > 10) {
       return false;
+    }
     one = true;
   }
   close(fd);
@@ -83,7 +89,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   const std::string temp_bin =
       temp_proto.substr(0, temp_proto.size() - 9) + ".bin";
 
-  const auto clear = [&tmp_file, &temp_proto, &temp_bin] {
+  const auto clear = [temp_file, &tmp_file, &temp_proto, &temp_bin] {
+    close(temp_file);
     std::remove(tmp_file.data());
     std::remove(temp_proto.data());
     std::remove(temp_bin.data());
@@ -95,20 +102,29 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   SaveDataToFile(tmp_file, data, size);
 
-  if (!CheckInput(tmp_file)) {
+  const bool correct_input = CheckInput(tmp_file);
+  const auto err = SerializeToProtobuf(tmp_file);
+
+  if (!correct_input) {
+    if (err != Error::MALFORMED_INPUT) {
+      std::cerr << "Expected malformed input, got: " << ErrorToString(err)
+                << ", data size: " << size << std::endl;
+      show_files();
+      std::exit(1);
+    }
     clear();
     return 0;
   }
-
-  if (auto err = SerializeToProtobuf(tmp_file); err != Error::NO_ERROR) {
-    std::cerr << "Error: " << ErrorToString(err) << std::endl;
+  if (err != Error::NO_ERROR) {
+    std::cerr << "Expected no error, got: " << ErrorToString(err) << std::endl;
     show_files();
-    std::exit(1);
-  };
+    std::exit(2);
+  }
+
   if (auto err = SerializeToBin(temp_proto); err != Error::NO_ERROR) {
     std::cerr << "Error: " << ErrorToString(err) << std::endl;
     show_files();
-    std::exit(2);
+    std::exit(3);
   }
 
   const std::string round_trip_result = ReadFileToString(temp_bin);
@@ -117,7 +133,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     std::cerr << "size: " << round_trip_result.size()
               << ", expected size: " << size << std::endl;
     show_files();
-    std::exit(3);
+    std::exit(4);
   }
 
   if (std::memcmp(data, round_trip_result.data(), size) != 0) {
@@ -131,7 +147,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       }
     }
     show_files();
-    std::exit(4);
+    std::exit(5);
   }
 
   clear();

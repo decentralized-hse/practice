@@ -5,3 +5,4 @@ build
 MY_CORPUS
 .cache
 *.pb*
+crash-*

@@ -28,8 +28,9 @@ struct Student {
 
 enum class Error {
   NO_ERROR = 1,
-  FAILED_TO_SERIALIZE_TO_PROTO = 2,
-  FAILED_TO_PARSE_PROTO = 3,
+  MALFORMED_INPUT = 2,
+  FAILED_TO_SERIALIZE_TO_PROTO = 3,
+  FAILED_TO_PARSE_PROTO = 4,
 };
 std::string ErrorToString(Error error);
 

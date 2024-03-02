@@ -11,7 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 message(STATUS "C++ Standart: ${CMAKE_CXX_STANDARD}")
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 
-include(third_party/Utf8Range.cmake)
+include(../third_party/Utf8Range.cmake)
 
 find_package(Protobuf REQUIRED)
 

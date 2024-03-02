@@ -14,6 +14,7 @@ message Student {
     uint32 project_mark = 6;
 
     repeated float mark = 7; // must be exactly one float
+    // @bug 4
     // Protobuf does not encode values that are equal to
     // default type value, so -0.0 transfers into 0.0 after
     // round trip

@@ -1,5 +1,8 @@
 #include "protobuf-golub-osetrov.hpp"
 
+#include <fcntl.h>
+#include <utf8_validity.h>
+
 #include <bitset>
 #include <fstream>
 #include <iomanip>
@@ -21,12 +24,49 @@ std::string FloatToString(float f) {
   return (std::stringstream{} << b).str();
 }
 
+bool CheckStr(const char* str, int len, const char* name) {
+  int i = 0;
+  while (i < len && str[i] != 0) i++;
+  while (i < len && str[i] == 0) i++;
+  return i == len && str[len - 1] == '\0' &&
+         utf8_range::IsStructurallyValid(str);
+  /// @note libprotobuf uses utf8_range same way for parsing:
+  /// https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/wire_format_lite.cc#L608
+}
+
+bool IsValidStudent(const Student& student) {
+  if (!CheckStr(student.name, 32, "name"))
+    return false;
+  if (!CheckStr(student.login, 16, "login"))
+    return false;
+  if (!CheckStr(student.group, 8, "group"))
+    return false;
+
+  for (int p = 0; p < 8; p++) {
+    if (student.practice[p] != 0 && student.practice[p] != 1) {
+      return false;
+    }
+  }
+
+  if (!CheckStr(student.project.repo, 59, "repo"))
+    return false;
+
+  if (student.project.mark < 0 || student.project.mark > 10)
+    return false;
+  if (student.mark < 0 || student.mark > 10)
+    return false;
+
+  return true;
+}
+
 }  // namespace
 
 std::string ErrorToString(Error error) {
   switch (error) {
     case Error::NO_ERROR:
       return "No error";
+    case Error::MALFORMED_INPUT:
+      return "Malformed input";
     case Error::FAILED_TO_SERIALIZE_TO_PROTO:
       return "Failed to serialize to proto";
     case Error::FAILED_TO_PARSE_PROTO:
@@ -74,18 +114,36 @@ Error SerializeToProtobuf(const std::string& path) {
   std::cout << "Reading binary student data from " << path << std::endl;
 #endif
 
-  auto input = fopen(path.c_str(), "r");
+  int input = open(path.data(), O_RDONLY);
+  if (input < 0) {
+    return Error::MALFORMED_INPUT;
+  }
+
   Student data;
   std::vector<Student> students;
 
-  while (fread(&data, sizeof(Student), 1, input)) {
+  bool one = false;
+  ssize_t n_bytes{};
+  while ((n_bytes = read(input, &data, sizeof(data)))) {
+    /// @bug 2. No check for trailing not sizeof(Student) tail
+    if (n_bytes > 0 && n_bytes % sizeof(data) != 0) {
+      return Error::MALFORMED_INPUT;
+    }
+    one = true;
     students.push_back(std::move(data));
+    /// @bug 3. No check for student correctness
+    if (!IsValidStudent(students.back())) {
+      return Error::MALFORMED_INPUT;
+    }
 #ifndef FUZZING_ENABLED
     std::cout << "Student mark: " << std::fixed << std::setprecision(20)
               << FloatToString(students.back().mark) << std::endl;
 #endif
   }
-  fclose(input);
+  if (!one || (n_bytes > 0 && n_bytes % sizeof(data) != 0)) {
+    return Error::MALFORMED_INPUT;
+  }
+  close(input);
 #ifndef FUZZING_ENABLED
   std::cout << students.size() << " students read..." << std::endl;
 #endif

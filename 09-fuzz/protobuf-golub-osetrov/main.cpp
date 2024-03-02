@@ -12,12 +12,12 @@ int main(int argc, char* argv[]) {
   const std::string path = argv[1];
   if (ends_with(path, ".bin")) {
     if (auto err = SerializeToProtobuf(path); err != Error::NO_ERROR) {
-      std::cerr << "Malformed input" << std::endl;
+      std::cerr << ErrorToString(err) << std::endl;
       std::exit(-1);
     };
   } else if (ends_with(path, ".protobuf")) {
     if (auto err = SerializeToBin(path); err != Error::NO_ERROR) {
-      std::cerr << "Malformed input" << std::endl;
+      std::cerr << ErrorToString(err) << std::endl;
       std::exit(-1);
     };
   } else {

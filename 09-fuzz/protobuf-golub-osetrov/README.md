@@ -4,13 +4,14 @@
 Чтобы собрать:
 ```shell
 $ protoc -I=. --cpp_out=. ./protobuf-golub-osetrov.proto
-$ clang++ -std=c++20 -o protobuf-golub-osetrov main.cpp protobuf-golub-osetrov.cpp pro
-tobuf-golub-osetrov.pb.cc utils.cpp -lprotobuf
+$ mkdir build; cd build
+$ cmake ..; cmake --build .
 ```
 
 Запустить
 ```shell
-$ ./protobuf-golub-osetrov ivanov.bin
+$ ./build/protobuf-golub-osetrov ivanov.bin
+$ ./build/protobuf-golub-osetrov ivanov.protobuf
 ```
 
 ### Фаззинг
