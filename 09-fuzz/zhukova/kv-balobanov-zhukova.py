@@ -8,7 +8,8 @@ from dataclasses import dataclass, asdict
 from typing import Final
 
 STRUCT_SIZE: Final[int] = 128
-
+# BUG-FIX: некоторые символы не парсились из-за стандарта utf-8.
+STANDART = "ISO-8859-1"
 
 @dataclass
 class Student:
@@ -27,7 +28,7 @@ class Student:
             if attr_name == "_id":
                 continue
             if isinstance(attr_val, str):
-                attrs.append(attr_val.encode("utf-8"))
+                attrs.append(attr_val.encode(STANDART))
             elif isinstance(attr_val, list):
                 attrs.extend(attr_val)
             else:
@@ -35,7 +36,10 @@ class Student:
         return tuple(attrs)
 
     def serialize_b(self) -> bytes:
-        return struct.pack("<32s16s8s8B59sBf", *self.get_tuple())
+        result = struct.pack("<32s16s8s8B59sBf", *self.get_tuple())
+        while b"\x00" in result:
+            result = result.replace(b"\x00", b"")
+        return result
 
     def serialize_kv(self) -> str:
         lines = []
@@ -43,7 +47,10 @@ class Student:
             if attr_name == "_id":
                 continue
             if attr_name == "practice":
-                lines.extend([f"[{self._id}].{attr_name}.[{i}]: {attr_val[i]}" for i in range(len(attr_val))])
+                # BUG-FIX: не обрабатывался массив заполненный не полностью.
+                practice_marks = [f"[{self._id}].{attr_name}.[{i}]: {attr_val[i]}" for i in range(len(attr_val))]
+                practice_marks = practice_marks + [f"[{self._id}].{attr_name}.[{i}]: {0}" for i in range(len(practice_marks), 8)]
+                lines.extend(practice_marks)
             else:
                 lines.append("[{}].{}: {}".format(self._id, attr_name.replace('_', '.'), repr(attr_val)))
 
@@ -70,12 +77,20 @@ class Student:
 
     @classmethod
     def deserialize_kv(cls, student_struct: list[str]) -> Student:
+        print(student_struct)
         i = 0
         d = {}
         while i < len(student_struct):
             if "practice" in student_struct[i].split(":")[0]:
-                d["practice"] = cls.parse_practice(student_struct[i:i + 8])
-                i += 8
+                # BUG-FIX: не обрабатывался массив заполненный не полностью.
+                ind = 8
+                for j in range(i, i + 8):
+                    if "practice" not in student_struct[j].split(":")[0]:
+                        ind = j
+                        break
+                d["practice"] = cls.parse_practice(student_struct[i:ind])
+                d["practice"] = d["practice"] + [0] * (8 - len(d["practice"]))
+                i = ind
             else:
                 key, val = cls.parse_line(student_struct[i])
                 if key == "mark":
@@ -85,22 +100,48 @@ class Student:
                 else:
                     d[key] = ast.literal_eval(val)
                 i += 1
+
         return Student(_id=0, **d)
 
     @classmethod
     def deserialize_b(cls, student_struct: bytes, id: int) -> Student:
-        if len(student_struct) != STRUCT_SIZE:
-            raise Exception("File is corrupted")
+        # BUG-FIX: было ограничение на то, что в файл записано кратное STRUCT_SIZE число символов.
+        
+        name_len = 32
+        login_delta = 48 - 32
+        group_delta = 56 - 48
+        practice_delta = 64 - 56
+        project_delta = 123 - 64
+        project_makr_delta = 124-123
+        mark_delta = 128-124
+        deltas = [name_len, login_delta, group_delta, practice_delta, project_delta, project_makr_delta, mark_delta]
+        student = student_struct[::]
+        data = []
+        for delta in deltas:
+            size = len(student)
+            if size == 0:
+                data.append(None)
+                continue
+            data.append(student[:min(delta, size)])
+            student = student[delta:]
 
+        s_id = id
+        s_name = data[0].decode(STANDART).rstrip("\0") if (data[0] is not None) else ""
+        s_login = data[1].decode(STANDART).rstrip("\0") if (data[1] is not None) else ""
+        s_group = data[2].decode(STANDART).rstrip("\0") if (data[2] is not None) else ""
+        s_practice = list(data[3]) if (data[3] is not None) else []
+        s_project_repo = data[4].decode(STANDART).rstrip("\0") if (data[4] is not None) else ""
+        s_project_mark = struct.unpack("<B", data[5])[0] if (data[5] is not None) else 0
+        s_mark = struct.unpack("<f", data[6])[0] if (data[6] is not None) else 0
         return cls(
-            _id=id,
-            name=student_struct[:32].decode("utf-8").rstrip("\0"),
-            login=student_struct[32:48].decode("utf-8").rstrip("\0"),
-            group=student_struct[48:56].decode("utf-8").rstrip("\0"),
-            practice=list(student_struct[56:64]),
-            project_repo=student_struct[64:123].decode("utf-8").rstrip("\0"),
-            project_mark=struct.unpack("<B", student_struct[123:124])[0],
-            mark=struct.unpack("<f", student_struct[124:128])[0]
+            _id=s_id,
+            name=s_name,
+            login=s_login,
+            group=s_group,
+            practice=s_practice,
+            project_repo=s_project_repo,
+            project_mark=s_project_mark,
+            mark=s_mark
         )
 
 
@@ -129,6 +170,9 @@ if __name__ == "__main__":
                     out_file.write(Student.deserialize_kv(lines).serialize_b())
                     lines.clear()
                     counter += 1
+            if len(lines) > 0:
+                out_file.write(Student.deserialize_kv(lines).serialize_b())
+                counter += 1
             print(f"{counter} students read...")
             print(f"written to {filename[:-3]}.bin...")
     else:
