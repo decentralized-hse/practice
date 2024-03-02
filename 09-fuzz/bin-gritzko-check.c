@@ -64,6 +64,9 @@ int main(int argn, char **args) {
       if (student.mark < 0 || student.mark > 10)
         fail("mark");
     }
+    if (rd != 0) {
+        fail("student");
+    }
     close(fd);
   }
   fprintf(stderr, "OK\n");
