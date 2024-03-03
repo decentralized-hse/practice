@@ -6,6 +6,7 @@
 #include <array>
 #include <map>
 #include <regex>
+#include <set>
 #include <sstream>
 #include <vector>
 
@@ -96,11 +97,16 @@ void validateFile(const std::string& path, const std::string& hash) {
 
 }  // namespace
 
-void validateDirectory(const std::string& path, const std::string& hash) {
+void validateDirectory(const std::string& path, const std::string& hash,
+                       std::set<std::string>& checked_directories) {
+    if (checked_directories.count(hash)) {
+        return;
+    }
     validateHash(path, hash);
-    auto parsedDir = parseDir(path, hash);
+    checked_directories.insert(hash);
+    auto parsed_dir = parseDir(path, hash);
 
-    for (auto [name, subhash] : parsedDir) {
+    for (auto [name, subhash] : parsed_dir) {
         if (name[name.size() - 1] == '/') {
             validateDirectory(path, subhash);
         } else {
