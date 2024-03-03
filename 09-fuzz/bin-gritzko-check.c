@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <math.h>
 
 struct Student {
   // имя может быть и короче 32 байт, тогда в хвосте 000
@@ -61,7 +62,7 @@ int main(int argn, char **args) {
       check_str(student.project.repo, 59, "repo");
       if (student.project.mark < 0 || student.project.mark > 10)
         fail("project mark");
-      if (student.mark < 0 || student.mark > 10)
+      if (student.mark < 0 || student.mark > 10 || isnan(student.mark))
         fail("mark");
     }
     if (rd != 0) {
