@@ -5,7 +5,9 @@ use std::path::Path;
 use std::io::{BufRead, BufReader};
 use std::io::Read;
 
-const COMMIT_TEMPLATE: &str = "Root: ";
+const COMMIT_TEMPLATE: &str = "Root:";
+const COMMIT_HASH: &str = ".commit:";
+const PARENT_HASH: &str = ".parent/";
 
 fn get_line_by_prefix(content: &Vec<String>, prefix: &str) -> String {
     for line in content.iter() {
@@ -50,12 +52,12 @@ fn main() {
         let reader = BufReader::new(file);
         let content: Vec<String> = reader.lines().map(|line| line.unwrap()).collect();
 
-        let parent = get_line_by_prefix(&content, ".parent/\t");
+        let parent = get_line_by_prefix(&content, PARENT_HASH);
         if parent.len() == 0 {
             break;
         }
 
-        let commit = get_line_by_prefix(&content, ".commit:\t");
+        let commit = get_line_by_prefix(&content, COMMIT_HASH);
         if commit.len() != 0 {
             print_contents(&commit);
         }
