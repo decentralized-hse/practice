@@ -95,8 +95,6 @@ void validateFile(const std::string& path, const std::string& hash) {
     validateHash(path, hash);
 }
 
-}  // namespace
-
 void validateDirectory(const std::string& path, const std::string& hash,
                        std::set<std::string>& checked_directories) {
     if (checked_directories.count(hash)) {
@@ -108,9 +106,16 @@ void validateDirectory(const std::string& path, const std::string& hash,
 
     for (auto [name, subhash] : parsed_dir) {
         if (name[name.size() - 1] == '/') {
-            validateDirectory(path, subhash);
+            validateDirectory(path, subhash, checked_directories);
         } else {
             validateFile(path, subhash);
         }
     }
+}
+
+}  // namespace
+
+void validateDirectory(const std::string& path, const std::string& hash) {
+    std::set<std::string> checked_directories;
+    validateDirectory(path, hash, checked_directories);
 }
