@@ -118,14 +118,17 @@ func ReadCommits(rootHash string) ([]Commit, error) {
 
 	commits := []Commit{}
 
+	lastCommitRevision := ""
+
 	for {
 		commit, err := root.ReadCommit()
 		if err != nil {
 			return nil, err
 		}
 
-		if commit != nil {
+		if commit != nil && (commit.Revision != lastCommitRevision) {
 			commits = append(commits, *commit)
+			lastCommitRevision = commit.Revision
 		}
 
 		nextRoot, err := root.ReadNextRoot()
