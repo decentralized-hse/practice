@@ -1,0 +1,99 @@
+#include "validate.hpp"
+
+#include <unistd.h>
+
+#include <algorithm>
+#include <array>
+#include <map>
+#include <regex>
+#include <sstream>
+
+#include "fmt/core.h"
+#include "picosha2.h"
+
+namespace {
+
+std::string computeHash(const std::string& data) {
+    return picosha2::hash256_hex_string(data);
+}
+
+bool isValidSHA256(const std::string& data) {
+    if (data.size() != 2 * picosha2::k_digest_size) {
+        return false;
+    }
+
+    return std::ranges::all_of(data, [](char c) {
+        return std::isdigit(c) || ('a' <= c && c <= 'f');
+    });
+}
+
+void validateHash(const std::string& path, const std::string& hash) {
+    if (!isValidSHA256(hash)) {
+        throw ValidationError(
+            fmt::format("Directory or file hash is not valid: {}", hash));
+    }
+
+    std::ifstream f(path + hash);
+
+    if (!f.good()) {
+        throw ValidationError(
+            fmt::format("No such file or directory: {}", hash));
+    }
+
+    std::stringstream ss;
+    ss << f.rdbuf();
+    if (computeHash(ss.str()) != hash) {
+        throw ValidationError(
+            fmt::format("Hash of file or directory is not correct: {}", hash));
+    }
+}
+
+const std::regex DIRECTORY_LINE_REGEX(R"(^(\S+[:/])\t(\w+)$)");
+
+std::map<std::string, std::string> parseDir(const std::string& path,
+                                            const std::string& dir_hash) {
+    std::map<std::string, std::string> hash_by_name;
+
+    {
+        std::ifstream dir{path + dir_hash};
+
+        size_t line_num = 0;
+        for (std::string line; std::getline(dir, line); ++line_num) {
+            std::string name;
+            std::string hash;
+
+            if (!std::regex_match(line, DIRECTORY_LINE_REGEX)) {
+                throw ValidationError(
+                    fmt::format("line #{} don't match regex {} in directory {}",
+                                line_num, R"(^(\S+[:/])\t(\w+)$)", dir_hash));
+            }
+
+            std::istringstream ss{line};
+            ss >> name >> hash;
+
+            hash_by_name.emplace_hint(hash_by_name.end(), std::move(name),
+                                      std::move(hash));
+        }
+    }
+
+    return hash_by_name;
+}
+
+void validateFile(const std::string& path, const std::string& hash) {
+    validateHash(path, hash);
+}
+
+}  // namespace
+
+void validateDirectory(const std::string& path, const std::string& hash) {
+    validateHash(path, hash);
+    auto parsedDir = parseDir(path, hash);
+
+    for (auto [name, subhash] : parsedDir) {
+        if (name[name.size() - 1] == '/') {
+            validateDirectory(path, subhash);
+        } else {
+            validateFile(path, subhash);
+        }
+    }
+}
