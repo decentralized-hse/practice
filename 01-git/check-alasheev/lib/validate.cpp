@@ -7,6 +7,7 @@
 #include <map>
 #include <regex>
 #include <sstream>
+#include <vector>
 
 #include "fmt/core.h"
 #include "picosha2.h"
@@ -53,7 +54,7 @@ const std::regex DIRECTORY_LINE_REGEX(R"(^(\S+[:/])\t(\w+)$)");
 std::map<std::string, std::string> parseDir(const std::string& path,
                                             const std::string& dir_hash) {
     std::map<std::string, std::string> hash_by_name;
-
+    std::vector<std::string> lines;
     {
         std::ifstream dir{path + dir_hash};
 
@@ -68,11 +69,21 @@ std::map<std::string, std::string> parseDir(const std::string& path,
                                 line_num, R"(^(\S+[:/])\t(\w+)$)", dir_hash));
             }
 
+            lines.push_back(line);
             std::istringstream ss{line};
             ss >> name >> hash;
 
             hash_by_name.emplace_hint(hash_by_name.end(), std::move(name),
                                       std::move(hash));
+        }
+    }
+
+    auto sorted_lines = lines;
+    sort(sorted_lines.begin(), sorted_lines.end());
+    for (int i = 0; i < lines.size(); ++i) {
+        if (lines[i] != sorted_lines[i]) {
+            throw ValidationError(
+                fmt::format("List is not sorted in directory {}", dir_hash));
         }
     }
 
