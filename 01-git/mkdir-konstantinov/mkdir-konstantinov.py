@@ -19,11 +19,29 @@ def mkdir(directory, prev_root_hash):
     prev_file_list.remove('')
     parent = [s for s in prev_file_list if "./parent" in s]
     if len(parent) > 0:
-        prev_file_list.remove([s for s in prev_file_list if "./parent" in s][0])
+        prev_file_list.remove(parent[0])
     new_dir_hash = create_blob('')
-    new_file_list = prev_file_list + [directory + '/ ' + new_dir_hash] + ['.parent/ ' + prev_root_hash]
-    new_file_list.sort()
+    new_file_list = prev_file_list + ['.parent/\t' + prev_root_hash]
 
+    if '/' in directory:
+        dir_list = directory.split('/')
+        parent_dir = prev_root_hash
+        for i in range(len(dir_list)):
+            if i == len(dir_list) - 1:
+                with open(parent_dir,'a') as prev_dir:
+                    prev_dir.write(dir_list[i] + '/\t' + new_dir_hash + '\n')
+            else:
+                with open(parent_dir,'r') as dir:
+                    dir_read = dir.read()
+                    if dir_list[i] in dir_read:
+                        prev_dir_list = get_file_list(parent_dir)
+                        parent_dir = [s for s in prev_dir_list if dir_list[i] in s][0].split('\t')[1]
+                    else:
+                        print(f"{dir_list[i]}: No such file or directory")
+                        os._exit(1)
+    else:
+        new_file_list += [directory + '/\t' + new_dir_hash]
+    new_file_list.sort()
     new_directory_str = '\n'.join(new_file_list) + '\n'
     new_root_hash = hashlib.sha256(new_directory_str.encode('utf-8')).hexdigest()
     new_directory_path = new_root_hash
@@ -37,7 +55,9 @@ def mkdir(directory, prev_root_hash):
 def get_file_list(root_hash):
     directory_path = root_hash
     with open(directory_path, 'r') as file:
-        file_list = file.read().split('\n')
+        file_read = file.read()
+        file_list = file_read.split('\n')
+    print(file_list[0].split('\t'))
     return file_list
 
 
