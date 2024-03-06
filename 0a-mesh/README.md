@@ -25,15 +25,17 @@ fact the sender has that data and everything prior, according to
 the consistency requirements. The announce also serves as a
 query: once we see a peer lacks some data, we broadcast it.
 An announce is either a [version vector][v] or a fragment of it.
-[v]: https://en.wikipedia.org/wiki/Version_vector
 
-Differently from the Meshtastic's receive-and-relay logic, we
-avoid relaying full packets. Instead, we broadcast announces as
-those are more compact. A peer that did not receive the packet,
-but received our announce, responds with its announce, so we can
-relay the packet knowing there is an interested party.
+Differently from the [Meshtastic][m]'s receive-and-relay logic,
+we avoid relaying full packets. Instead, we broadcast announces
+as those are more compact. A peer that did not receive the
+packet, but received our announce, responds with its announce,
+so we can relay the packet knowing there is an interested party.
 
 An implementation can read and write packets into some storage
-(think Chotki, use a stub), the storage can also notify it of
-packets received elsewhere.
+(think [Chotki][c], use a stub), the storage can also notify it
+of packets received elsewhere.
 
+[c]: https://github.com/learn-decentralized-systems/Chotki
+[v]: https://en.wikipedia.org/wiki/Version_vector
+[m]: https://meshtastic.org/
