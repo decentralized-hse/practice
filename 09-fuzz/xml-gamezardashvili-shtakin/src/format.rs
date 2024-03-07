@@ -139,7 +139,7 @@ impl Student {
         }
         s.project.repo = from_c_string(&student.project.repo)?;
         // [dkshtakin] validate project mark
-        if student.project.mark < 0 || student.project.mark > 10 {
+        if student.project.mark > 10 {
             return Err(io::Error::new(io::ErrorKind::InvalidData,format!("invalid project mark")));
         }
         s.project.mark = student.project.mark;

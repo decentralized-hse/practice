@@ -4,7 +4,7 @@ use libfuzzer_sys::fuzz_target;
 
 use std::fs;
 use std::fs::File;
-use std::io::{self, Read, Error};
+use std::io::{Read, Error};
 
 use xml_gamezardashvili::format::formats_impl;
 
@@ -33,21 +33,19 @@ fuzz_target!(|data: &[u8]| {
 
     let mut path : String = "test.bin".to_string();
     let filename = & mut path;
-    fs::write("test.bin", data);
+    match fs::write("test.bin", data) { Ok(_) => {}, Err(_) => { return; } };
     match formats_impl(filename) {
-        Ok(_) => {
-        }
-        Err(e) => {
+        Ok(_) => {}
+        Err(_) => {
             // println!("Error: {}", e);
             return;
         }
     }
-    fs::rename("test.xml", "out.xml");
+    match fs::rename("test.xml", "out.xml") { Ok(_) => {}, Err(_) => { return; } };
     let mut xml_path : String = "out.xml".to_string();
     let xml_filename = & mut xml_path;
     match formats_impl(xml_filename) {
-        Ok(_) => {
-        }
+        Ok(_) => {}
         Err(e) => {
             panic!("Error: {}", e);
         }
