@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Validation result:\n";
     try {
-        validateDirectory(argv[1], argv[2]);
+        validateDirectory(path, argv[2]);
     } catch (ValidationError& err) {
         std::cout << err.what() << '\n';
         return 0;

@@ -39,7 +39,7 @@ void validateHash(const std::string& path, const std::string& hash) {
 
     if (!f.good()) {
         throw ValidationError(
-            fmt::format("No such file or directory: {}", hash));
+            fmt::format("No such file or directory: {}{}", path, hash));
     }
 
     std::stringstream ss;
