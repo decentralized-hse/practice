@@ -74,6 +74,12 @@ std::map<std::string, std::string> parseDir(const std::string& path,
             std::istringstream ss{line};
             ss >> name >> hash;
 
+            if (hash_by_name.count(name)) {
+                throw ValidationError(fmt::format(
+                    "line #{} contains duplicate name \"{}\" in directory {}",
+                    line_num, name, dir_hash));
+            }
+
             hash_by_name.emplace_hint(hash_by_name.end(), std::move(name),
                                       std::move(hash));
         }
