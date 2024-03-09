@@ -17,7 +17,7 @@ def mkdir(directory, prev_root_hash):
     prev_file_list = get_file_list(prev_root_hash)
 
     prev_file_list.remove('')
-    parent = [s for s in prev_file_list if "./parent" in s]
+    parent = [s for s in prev_file_list if ".parent/" in s]
     if len(parent) > 0:
         prev_file_list.remove(parent[0])
     new_dir_hash = create_blob('')
