@@ -26,7 +26,7 @@ public class GitGet {
                         System.out.println("Failed to find " + token);
                         System.exit(1);
                     }
-                    System.out.println(new String(Files.readAllBytes(Paths.get(rootHash))));
+                    System.out.print(new String(Files.readAllBytes(Paths.get(rootHash))));
                     break;
                 }
                 rootHash = findNewRootHash(data, token, DIR_SEPARATOR);
