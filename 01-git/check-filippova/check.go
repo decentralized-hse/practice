@@ -130,6 +130,16 @@ func ValidateDir(dirHashName string) (bool, error) {
 
 func ValidateTree(args *Args) error {
 	hash := args.Hash
+	if len(args.Path) == 1 && args.Path[0] == "." {
+		fl, valErr := ValidateDir(hash)
+		if valErr != nil {
+			return valErr
+		}
+		if fl {
+			fmt.Println("Tree is correct")
+		}
+		return nil
+	} 
 	for i := 0; i < len(args.Path); i++ {
 		file, err := ioutil.ReadFile(hash)
 		if err != nil {
