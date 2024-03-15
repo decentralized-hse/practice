@@ -275,33 +275,130 @@ func (f Student_Project_Future) Struct() (Student_Project, error) {
 	return Student_Project(p.Struct()), err
 }
 
-const schema_85d3acc39d94e0f8 = "x\xda\\\x90\xbf\x8a\x13Q\x18\xc5\xcf\xf9\xeeL\"a" +
-	"5\xb9\xbb\x03\xbb\xd8\xd8X\xa8\xb0\xeb\x9fXYIJ" +
-	"\xab|X\xd8\x09\xc3d\x0cQ33\x8ew\xb4L\x11" +
-	"|\x83\x80\x0a\x06\x0cF\xb1\xf0\x01,\x14\x94XXY" +
-	"(\x82\xa5/`a\xa5\x0822\x84$\xb2\xdd=\x07" +
-	"\xeew\xce\xf9\xb5\xbe^\xf6\xce\x1f\xdd\x15\x88\xee\xf9\xb5" +
-	"\xf2\xe1l\xfc\xedO\xe3\xc73\xe86Y\xfe\xfe>\x99" +
-	".^}y\x00\xdf\xaf\x03\xf6\xe7g\xfbw\x17h\xfb" +
-	"\xbcF\xb0\xbc\xd7\xbe\xfeb\xbc\xf8\xf4\x0bz\x9c\xdc\xfc" +
-	"\xf4Y\x07\xda\xb1ls\xa7\x90:\xb0sG\xeec\xbf" +
-	"\xbc\x91\xa6g\xef\xba\xa2'q\xe2\x0e\xa20K\xb2K" +
-	"W]\xd1\x8b\x13:\xf5\xf8\xdf5\xcb\xce\xa8\x9b\xa77" +
-	"\xe3\xc8\xe9\x9e\xf1\x00\x8f\x80}|\x06\xd0\x89\xa1>\x15" +
-	"Z2`eN/\x00\xfa\xc8P\xe7B+\x12P\x00" +
-	";\xab\xcc'\x86\xfaRh\x8d\x09h\x00\xfb\xfc\x0a\xa0" +
-	"sC}'\xb4\x9e\x17\xd0\x03\xec\xdb\x0e\xa0\xaf\x0d\xf5" +
-	"\x83\x90~@\x1f\xb0\xef\xab\x9c7\x86\xfaQ\xd8L\xc2" +
-	"a\xcc-\x08\xb7\xc0\x13\xb7\xd3\xfe Y\xab~\x9e\x16" +
-	"\xd9J\x95Y\x1eFn\x10\xc5\x00x\x0c\xec\x1a\xb2\x06" +
-	"\xa9\x9e\xa3l9\x85\xad\xcdB\x90-\xb09\x0c\xf3[" +
-	"l@\xd8\x00\xd7x\xcca<\xee`\x09\x83\xaeK\xea" +
-	"\x915\x90\xd3U\xd1\x93\x86zN\xb8\xe2\xb1_y\xa7" +
-	"\x0c\xf5\xa2\xb0\x99\xc7Y\xba*\xb8\xcc\xaa*\xd5\xc0\x7f" +
-	"\x01\x00\x00\xff\xffR\xd0t\xe1"
+type Students capnp.Struct
 
-func init() {
-	schemas.Register(schema_85d3acc39d94e0f8,
-		0xa3ed0afad883a197,
-		0xf7cec383a65e3376)
+// Students_TypeID is the unique identifier for the type Students.
+const Students_TypeID = 0xad1e002d5f02f680
+
+func NewStudents(s *capnp.Segment) (Students, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	return Students(st), err
+}
+
+func NewRootStudents(s *capnp.Segment) (Students, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	return Students(st), err
+}
+
+func ReadRootStudents(msg *capnp.Message) (Students, error) {
+	root, err := msg.Root()
+	return Students(root.Struct()), err
+}
+
+func (s Students) String() string {
+	str, _ := text.Marshal(0xad1e002d5f02f680, capnp.Struct(s))
+	return str
+}
+
+func (s Students) EncodeAsPtr(seg *capnp.Segment) capnp.Ptr {
+	return capnp.Struct(s).EncodeAsPtr(seg)
+}
+
+func (Students) DecodeFromPtr(p capnp.Ptr) Students {
+	return Students(capnp.Struct{}.DecodeFromPtr(p))
+}
+
+func (s Students) ToPtr() capnp.Ptr {
+	return capnp.Struct(s).ToPtr()
+}
+func (s Students) IsValid() bool {
+	return capnp.Struct(s).IsValid()
+}
+
+func (s Students) Message() *capnp.Message {
+	return capnp.Struct(s).Message()
+}
+
+func (s Students) Segment() *capnp.Segment {
+	return capnp.Struct(s).Segment()
+}
+func (s Students) List() (Student_List, error) {
+	p, err := capnp.Struct(s).Ptr(0)
+	return Student_List(p.List()), err
+}
+
+func (s Students) HasList() bool {
+	return capnp.Struct(s).HasPtr(0)
+}
+
+func (s Students) SetList(v Student_List) error {
+	return capnp.Struct(s).SetPtr(0, v.ToPtr())
+}
+
+// NewList sets the list field to a newly
+// allocated Student_List, preferring placement in s's segment.
+func (s Students) NewList(n int32) (Student_List, error) {
+	l, err := NewStudent_List(capnp.Struct(s).Segment(), n)
+	if err != nil {
+		return Student_List{}, err
+	}
+	err = capnp.Struct(s).SetPtr(0, l.ToPtr())
+	return l, err
+}
+
+// Students_List is a list of Students.
+type Students_List = capnp.StructList[Students]
+
+// NewStudents creates a new list of Students.
+func NewStudents_List(s *capnp.Segment, sz int32) (Students_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1}, sz)
+	return capnp.StructList[Students](l), err
+}
+
+// Students_Future is a wrapper for a Students promised by a client call.
+type Students_Future struct{ *capnp.Future }
+
+func (f Students_Future) Struct() (Students, error) {
+	p, err := f.Future.Ptr()
+	return Students(p.Struct()), err
+}
+
+const schema_85d3acc39d94e0f8 = "x\xdatP=k\x14Q\x14=\xe7\xbe7kX\x12" +
+	"g\x1f;\x10\x0b?\x9a\x08*lPce\xb3\x92\xd2" +
+	"j/\x16v\xca\xb2\x0ea5\xd9\x19f'ZF\x08" +
+	"\x96\x16BD\x05\x03\x06\xa3Xh/\xa2`\x8c\x85\x16" +
+	"\xda\xd8\xd8\xe9\x1f\xb0\x8d\x92f\xe49\xcen\x9at\xf7" +
+	"\x1e\x0e\xe7\xab\xb1s\xc1\x9e\x99J\x04\xa2\x87\x83Z\xf1" +
+	"`c\xf5\xfbn\xfd\xd7ShH\x16\x7f~\xae\xado" +
+	"\xbf\xfcv\x07Ap\x00h\x1e\xe1\x9b\xe6qN\x03s" +
+	"-^&\xf8\xe3\xf6\x8e\\m\x1d}\xe5\xc2\xbdTz" +
+	"\xea]\xf9\xd0\xbc/\xfe\xba'm\xb0\xb89w\xe5\xf9" +
+	"\xea\xf6\xd7\xdf\xd0ir\xecR\x92\xb7d\xb7\xf9\xe5\x1f" +
+	"\xf9\xb3\xdcB\xab\x18\xe6\xcb\xd7\xe2A>\xe4l\xaf\x9b" +
+	"\x0e\xd2\xf3\x97\xda%\xa0\x96{\x94\x1c\xe7W:Yr" +
+	"=\xee\xe5z\xc8X\xc0\x12p\x8fN\x01\xbaf\xa8O" +
+	"\x84\x8e\x8c\xe8\xc1\xf5\xb3\x80>4\xd4M\xa1\x13\x89(" +
+	"\x80\xdb\xf0\xe0cC}!t\xc6D4\x80{v\x11" +
+	"\xd0MC}/t\xd6F\xb4\x80{7\x0f\xe8kC" +
+	"\xfd(d\x101\x00\xdc\x96\xf7yk\xa8\x9f\x84\xe1\xa0" +
+	"\xbb\x14s\x12\xc2I\xf0\xd8b\xb2\xd0\x1f\x8c\xbe\x85," +
+	"YN\xab\xafH\xb3n/\xef\xf7b\x00<\x08v\x0c" +
+	"Y\x83\xf8s%-\xab\xb01n\x08\xb2\x01\x86K\xdd" +
+	"\xec\x06\xeb\x10\xd6\xc1\xd16Rm\xf3\xffG\x87T;" +
+	"\x9aa\xca\xc7\x9b0\xd4\x19a\xb8\xd8\x1f\xe6\x95]c" +
+	"<>\xe8\xc1\xfd\x14g;\xed2\x91\x17\x9e\x18\x09\x9f" +
+	"\xf4\xc23\x86zZX\xcd\xdb\xf2\xd8\x09C='\x0c" +
+	"\xb38M\xaa\xbeet\xdf\xb0\x06\xfe\x0d\x00\x00\xff\xff" +
+	"\xde>\x96K"
+
+func RegisterSchema(reg *schemas.Registry) {
+	reg.Register(&schemas.Schema{
+		String: schema_85d3acc39d94e0f8,
+		Nodes: []uint64{
+			0xa3ed0afad883a197,
+			0xad1e002d5f02f680,
+			0xf7cec383a65e3376,
+		},
+		Compressed: true,
+	})
 }

@@ -6,14 +6,11 @@ import (
 	"fmt"
 	student "fuzz_capnp/capnp-trenin"
 	"io"
-
-	// "log"
-	// "path"
-
-	// "log"
+	"log"
 	"os"
-	// "path"
-	"strings"
+	"path"
+
+	"github.com/spf13/afero"
 
 	"capnproto.org/go/capnp/v3"
 )
@@ -49,55 +46,6 @@ func listToArray(list capnp.UInt8List) [8]byte {
 	return res
 }
 
-func (s *Student) UnmarshalCapnproto(b []byte) error {
-	msg, err := capnp.Unmarshal(b)
-	if err != nil {
-		return err
-	}
-	cs, err := student.ReadRootStudent(msg)
-	if err != nil {
-		return err
-	}
-	proj, err := cs.Project()
-	if err != nil {
-		return err
-	}
-	prac, err := cs.Practice()
-	if err != nil {
-		return err
-	}
-	name, err := cs.Name()
-	if err != nil {
-		return err
-	}
-	login, err := cs.Login()
-	if err != nil {
-		return err
-	}
-	group, err := cs.Group()
-	if err != nil {
-		return err
-	}
-	repo, err := proj.Repo()
-	if err != nil {
-		return err
-	}
-	*s = Student{
-		Practice: listToArray(prac),
-		Project: Project{
-			Mark: proj.Mark(),
-		},
-		Mark: cs.Mark(),
-	}
-
-	copy(s.Name[:], name[:])
-	copy(s.Login[:], login[:])
-	copy(s.Group[:], group[:])
-	copy(s.Project.Repo[:], repo[:])
-
-	return nil
-}
-
 func byteToString(b []byte) string {
 	var zeroSuff = len(b)
 	for zeroSuff > 0 && b[zeroSuff-1] == 0 {
@@ -110,45 +58,54 @@ func byteToString(b []byte) string {
 	return string(b[:zeroSuff])
 }
 
-func (s Student) MarshalCapnproto() ([]byte, error) {
-	arena := capnp.SingleSegment(nil)
-	msg, seg, err := capnp.NewMessage(arena)
+func MarshalCapnproto(studentsSlice []Student) ([]byte, error) {
+	msg, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
 	if err != nil {
 		return nil, err
 	}
 
-	cs, err := student.NewRootStudent(seg)
+	capnpStudents, err := student.NewRootStudents(seg)
 	if err != nil {
 		return nil, err
 	}
 
-	cs.SetName(byteToString(s.Name[:]))
-	cs.SetLogin(byteToString(s.Login[:]))
-	cs.SetGroup(byteToString(s.Group[:]))
-	prac, err := capnp.NewData(seg, s.Practice[:])
-	if err != nil {
-		return nil, err
-	}
-	cs.SetPractice(prac)
-	proj, err := student.NewStudent_Project(seg)
-	if err != nil {
-		return nil, err
-	}
-	proj.SetRepo(byteToString(s.Project.Repo[:]))
-	proj.SetMark(s.Project.Mark)
-	cs.SetProject(proj)
-	cs.SetMark(s.Mark)
-
-	b, err := msg.Marshal()
+	list, err := capnpStudents.NewList(int32(len(studentsSlice)))
 	if err != nil {
 		return nil, err
 	}
 
-	return b, nil
+	for i, s := range studentsSlice {
+		capnpStudent := list.At(i)
+		if err != nil {
+			return nil, err
+		}
+
+		capnpStudent.SetName(byteToString(s.Name[:]))
+		capnpStudent.SetLogin(byteToString(s.Login[:]))
+		capnpStudent.SetGroup(byteToString(s.Group[:]))
+		practiceList, err := capnpStudent.NewPractice(int32(len(s.Practice)))
+		if err != nil {
+			return nil, err
+		}
+		for i, p := range s.Practice {
+			practiceList.Set(i, p)
+		}
+
+		project, err := capnpStudent.NewProject()
+		if err != nil {
+			return nil, err
+		}
+		project.SetRepo(byteToString(s.Project.Repo[:]))
+		project.SetMark(s.Project.Mark)
+
+		capnpStudent.SetMark(s.Mark)
+	}
+
+	return msg.Marshal()
 }
 
-func readBinary(filename string) ([]Student, error) {
-	file, err := os.Open(filename)
+func readBinary(fs afero.Fs, filename string) ([]Student, error) {
+	file, err := fs.Open(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +118,12 @@ func readBinary(filename string) ([]Student, error) {
 		if errors.Is(err, io.EOF) {
 			break
 		}
+
 		if err != nil {
+			return nil, err
+		}
+
+		if err := validateStudent(st); err != nil {
 			return nil, err
 		}
 
@@ -171,8 +133,8 @@ func readBinary(filename string) ([]Student, error) {
 	return students, nil
 }
 
-func writeBinary(students []Student, filename string) error {
-	file, err := os.Create(filename)
+func writeBinary(fs afero.Fs, students []Student, filename string) error {
+	file, err := fs.Create(filename)
 	if err != nil {
 		return err
 	}
@@ -188,80 +150,134 @@ func writeBinary(students []Student, filename string) error {
 	return nil
 }
 
-func readCapnproto(filename string) ([]Student, error) {
-	data, err := os.ReadFile(filename)
+func readCapnproto(fs afero.Fs, filename string) ([]Student, error) {
+	file, err := fs.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	data, err := afero.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
 
-	ss := strings.Split(string(data), ", ")
+	msg, err := capnp.Unmarshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	capnpStudents, err := student.ReadRootStudents(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	list, err := capnpStudents.List()
+	if err != nil {
+		return nil, err
+	}
 
 	var students []Student
-	for _, s := range ss {
-		var ns Student
-		err := ns.UnmarshalCapnproto([]byte(s))
+	fmt.Println("aaaaaaaaaaa", list.Len())
+	for i := 0; i < list.Len(); i++ {
+		cs := list.At(i)
+		var student Student
+
+		proj, err := cs.Project()
 		if err != nil {
 			return nil, err
 		}
-		students = append(students, ns)
+		prac, err := cs.Practice()
+		if err != nil {
+			return nil, err
+		}
+		name, err := cs.Name()
+		if err != nil {
+			return nil, err
+		}
+		login, err := cs.Login()
+		if err != nil {
+			return nil, err
+		}
+		group, err := cs.Group()
+		if err != nil {
+			return nil, err
+		}
+		repo, err := proj.Repo()
+		if err != nil {
+			return nil, err
+		}
+		student = Student{
+			Practice: listToArray(prac),
+			Project: Project{
+				Mark: proj.Mark(),
+			},
+			Mark: cs.Mark(),
+		}
+
+		copy(student.Name[:], name[:])
+		copy(student.Login[:], login[:])
+		copy(student.Group[:], group[:])
+		copy(student.Project.Repo[:], repo[:])
+
+		students = append(students, student)
 	}
 
 	return students, nil
 }
 
-func writeCapnproto(students []Student, filename string) error {
-	file, err := os.Create(filename)
+func writeCapnproto(fs afero.Fs, students []Student, filename string) error {
+	file, err := fs.Create(filename)
 	if err != nil {
 		return fmt.Errorf("failed to open file '%s': %w", filename, err)
 	}
 	defer file.Close()
+	fmt.Printf("Students count %v", len(students))
 
-	for i, s := range students {
-		b, err := s.MarshalCapnproto()
-		if err != nil {
-			return err
-		}
-		file.Write(b)
-		if i != len(students)-1 {
-			file.Write([]byte(", "))
-		}
+	b, err := MarshalCapnproto(students)
+	if err != nil {
+		return err
+	}
+	n, err := file.Write(b)
+	if err != nil || n != len(b) {
+		return err
 	}
 
 	return nil
 }
 
-// func main() {
-// 	filename := os.Args[len(os.Args)-1]
+func main() {
+	filename := os.Args[len(os.Args)-1]
 
-// 	givenExt := path.Ext(filename)
-// 	var resultExt string
-// 	var read func(filename string) ([]Student, error)
-// 	var write func(students []Student, filename string) error
+	givenExt := path.Ext(filename)
+	var resultExt string
+	var read func(fs afero.Fs, filename string) ([]Student, error)
+	var write func(gs afero.Fs, students []Student, filename string) error
+	fs := afero.NewOsFs()
+	switch givenExt {
+	case ".bin":
+		resultExt = ".capnproto"
+		read, write = readBinary, writeCapnproto
 
-// 	switch givenExt {
-// 	case ".bin":
-// 		resultExt = ".capnproto"
-// 		read, write = readBinary, writeCapnproto
+	case ".capnproto":
+		resultExt = ".bin"
+		read, write = readCapnproto, writeBinary
 
-// 	case ".capnproto":
-// 		resultExt = ".bin"
-// 		read, write = readCapnproto, writeBinary
+	default:
+		log.Fatalf("Invalid extension '%s'", givenExt)
+	}
 
-// 	default:
-// 		log.Fatalf("Invalid extension '%s'", givenExt)
-// 	}
+	givenFilename := filename
+	resultFilename := filename[:len(filename)-len(givenExt)] + resultExt
 
-// 	givenFilename := filename
-// 	resultFilename := filename[:len(filename)-len(givenExt)] + resultExt
+	students, err := read(fs, givenFilename)
+	if err != nil {
+		log.Fatalf("Failed to read data: %s", err)
+	}
+	fmt.Printf("Writing into %s...\n", resultFilename)
+	err = write(fs, students, resultFilename)
+	if err != nil {
+		log.Fatalf("Failed to write data: %s", err)
+	}
 
-// 	students, err := read(givenFilename)
-// 	if err != nil {
-// 		log.Fatalf("Failed to read data: %s", err)
-// 	}
-// 	fmt.Printf("Writing into %s...\n", resultFilename)
-// 	err = write(students, resultFilename)
-// 	if err != nil {
-// 		log.Fatalf("Failed to write data: %s", err)
-// 	}
-
-// }
+}

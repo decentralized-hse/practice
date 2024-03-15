@@ -13,16 +13,18 @@ func isValidStr(str []byte, size int) (int, error) {
 		i++
 	}
 	len := i
-	for i < len && str[i] == 0 {
+	for i < size && str[i] == 0 {
 		i++
 	}
-	if i != len {
+	if i != size {
 		return len, errors.New("invalid string")
 	}
 	return len, nil
 }
 
 func validateStudent(s Student) error {
+	fmt.Println(len(s.Name), len(s.Login), len(s.Project.Repo))
+	fmt.Println(len(s.Group), s.Mark, s.Project.Mark)
 	if len, err := isValidStr(s.Name[:], len(s.Name)); err != nil || !utf8.Valid(s.Name[:len]) {
 		return errors.New("invalid UTF-8 in name")
 	}

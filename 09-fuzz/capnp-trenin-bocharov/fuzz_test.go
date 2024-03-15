@@ -1,53 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"io"
-	"os"
 	"testing"
-	"bytes"
-	"fmt"
+
+	"github.com/spf13/afero"
 )
 
-func compareFiles(file1Path, file2Path string) (bool, error) {
-    file1, err := os.Open(file1Path)
-    if err != nil {
-        return false, err
-    }
-    defer file1.Close()
-
-    file2, err := os.Open(file2Path)
-    if err != nil {
-        return false, err
-    }
-    defer file2.Close()
-
-    for {
-        b1 := make([]byte, 1024)
-        _, err1 := file1.Read(b1)
-
-        b2 := make([]byte, 1024)
-        _, err2 := file2.Read(b2)
-
-        if err1 != nil || err2 != nil {
-            if err1 == io.EOF && err2 == io.EOF {
-                return true, nil // оба файла закончились, и до сих пор они идентичны
-            }
-            if err1 == io.EOF || err2 == io.EOF {
-                return false, nil // один файл закончился раньше другого
-            }
-            return false, fmt.Errorf("files read error: %v, %v", err1, err2)
-        }
-
-        if !bytes.Equal(b1, b2) {
-            return false, nil
-        }
-    }
-}
-
-func ReadStudentsFromFile(filename string) ([]Student, error) {
-	file, err := os.Open(filename)
+func ReadStudentsFromFile(fs afero.Fs, filename string) ([]Student, error) {
+	file, err := fs.Open(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -80,68 +44,73 @@ func FuzzProcessData(f *testing.F) {
 		fuzzing_fname := "fuzzing.bin"
 		capnproto_fname := "result.capnproto"
 		result_fname := "result.bin"
-		fuzzingFile, err := os.CreateTemp("", fuzzing_fname)
+		fs := afero.NewMemMapFs()
+
+		fuzzingFile, err := fs.Create(fuzzing_fname)
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer os.Remove(fuzzingFile.Name())
 
-		resultCapnProtoFile, err := os.CreateTemp("", capnproto_fname)
-		if err != nil {
-			t.Fatal(err)
+		defer fs.Remove(fuzzing_fname)
+		defer fs.Remove(capnproto_fname)
+		defer fs.Remove(result_fname)
+
+		n, err := fuzzingFile.Write(data)
+		t.Log(len(data))
+		if err != nil || n != len(data) {
+			fuzzingFile.Close()
+			t.Error("cannot create test file")
+			return
 		}
-		defer os.Remove(resultCapnProtoFile.Name())
-
-		_, err = fuzzingFile.Write(data)
-		if err != nil {
-			t.Fatal(err)
+		if err := fuzzingFile.Close(); err != nil {
+			t.Log("error closing file:", err)
 		}
-		_ = fuzzingFile.Close()
-
-		resultBinFile, err := os.CreateTemp("", result_fname)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer os.Remove(resultBinFile.Name())
-
 		// ----------------
-		_, err = ReadStudentsFromFile(fuzzing_fname)
+		_, err = ReadStudentsFromFile(fs, fuzzing_fname)
 		correct_data := true
 		if err != nil {
 			correct_data = false
 		}
 		t.Logf("Data status %v, err : %v\n", correct_data, err)
 
-		students, err := readBinary(fuzzing_fname)
+		students, rerr := readBinary(fs, fuzzing_fname)
 		if !correct_data {
-			if err == nil {
-				t.Fatalf("Target incorrectly validated the data; Data err %v", err)
+			if rerr == nil {
+				t.Fatalf("Target incorrectly validated the data; Data err %v", rerr)
 			}
 			return
 		}
-		err = writeCapnproto(students, capnproto_fname)
+		err = writeCapnproto(fs, students, capnproto_fname)
 		if err != nil {
 			t.Fatalf("writeCapnproto error occured %v", err)
 		}
 
-		students, err = readCapnproto(capnproto_fname)
+		students, err = readCapnproto(fs, capnproto_fname)
 		if err != nil {
-			t.Fatalf("writeCapnproto error occured %v", err)
+			t.Fatalf("readCapnproto error occured %v", err)
 		}
 
-		err = writeBinary(students, result_fname)
+		err = writeBinary(fs, students, result_fname)
 
 		if err != nil {
 			t.Fatalf("writeBinary error occured %v", err)
 		}
 
-		result, err := compareFiles(fuzzing_fname, result_fname)
+		out_file, err := fs.Open(result_fname)
 		if err != nil {
-			t.Fatalf("compareFiles error occured %v", err)
+			t.Error(err)
+			return
 		}
 
-		if !result {
-			t.Fatalf("initial and result files not equal %v", err)
+		out_bytes, err := io.ReadAll(out_file)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		if !bytes.Equal(data, out_bytes) {
+			t.Error("serialzed bytes does not equal to test data")
+			return
 		}
 	})
 }
@@ -155,4 +124,40 @@ func FuzzProcessData(f *testing.F) {
 // 	for _, value := range students {
 // 		fmt.Println(value.Name)
 // 	}
+// }
+
+// func compareFiles(file1Path, file2Path string) (bool, error) {
+//     file1, err := os.Open(file1Path)
+//     if err != nil {
+//         return false, err
+//     }
+//     defer file1.Close()
+
+//     file2, err := os.Open(file2Path)
+//     if err != nil {
+//         return false, err
+//     }
+//     defer file2.Close()
+
+//     for {
+//         b1 := make([]byte, 1024)
+//         _, err1 := file1.Read(b1)
+
+//         b2 := make([]byte, 1024)
+//         _, err2 := file2.Read(b2)
+
+//         if err1 != nil || err2 != nil {
+//             if err1 == io.EOF && err2 == io.EOF {
+//                 return true, nil // оба файла закончились, и до сих пор они идентичны
+//             }
+//             if err1 == io.EOF || err2 == io.EOF {
+//                 return false, nil // один файл закончился раньше другого
+//             }
+//             return false, fmt.Errorf("files read error: %v, %v", err1, err2)
+//         }
+
+//         if !bytes.Equal(b1, b2) {
+//             return false, nil
+//         }
+//     }
 // }
