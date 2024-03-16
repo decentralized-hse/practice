@@ -81,7 +81,7 @@ def get_diff(path, old_hash, new_hash):
     for prev_obj in prev_objects_hash.keys():
         if not prev_is_dir[prev_obj]:
             continue
-        if not cur_is_dir[prev_obj]:
+        if prev_obj not in cur_is_dir or not cur_is_dir[prev_obj]:
             continue
         nested_diff = get_diff(os.path.join(path, prev_obj), prev_objects_hash[prev_obj], cur_objects_hash[prev_obj])
         if len(nested_diff) == 0:
