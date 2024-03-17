@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import atheris
 import io
 import sys
