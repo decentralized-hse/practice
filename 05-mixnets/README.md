@@ -3,7 +3,7 @@
 Here we propose an uber-paranoid message-passing mixnet where
 participants are not aware of senders or recipients of messages
 (which is commonplace), but also of the network's topology. The
-only indormation a participant has is the following:
+only information a participant has is the following:
 
  1. entry points to connect to the network,
  2. public keys of their contacts.
