@@ -2,7 +2,7 @@
 
 Our goal here is to create a format and a library for data
 replication using state-of-the-art Replicated Data Types.
-Replicated Data interchange format ([RDX][j]). That is like
+Replicated Data interchange format ([RDX][j]) is like
 protobuf, but CRDT. Apart from [RPC][p] applications, one can
 use it for data storage, distributed or asynchronous data
 exchange and in other similar applications. RDX is able of
@@ -25,7 +25,7 @@ workings of VV and VC are not identical)
 
 There are seven assignments. For each data type one has to
 create 10 functions implementing it. The 7th assignment is to
-make a code generator, very much like `protoc`, using those 10
+make a code generator, very much like `protoc`, using those
 functions, to load object from a database or store the changes
 back. See the [Chotki][c] document section "Formal model" for
 the general understanding of objects and fields, packets and
@@ -89,6 +89,18 @@ Merge rules for LWW are straighforward:
 ### `L`
 
 ### `V`
+
+Version vector is a way to track dataset versions in a causally ordered system.
+It is a vector of `seq` numbers, where each `seq` is the number of sequential
+updates produced by each respective replica. Alternatively, that is a map 
+`{src: seq}`, where `src` is the replica `id`. It is assumed, that we received
+updates from replica `src` all the way up to `seq`.
+
+Bare TLV for a version vector is a sequence of `V` records each containing
+one id64 as a zipped seq-src pair (see ZipUint64Pair).
+
+The merge algorithm for version vectors is simple: take the maximum `seq` for
+each `src`. Note that `seq=0` is distinct from having no record.
 
 ##  Data type implementation
 
