@@ -17,11 +17,14 @@ Cassandra, you name it) one can effectively have a CRDT database
 
 We will implement *unified* CRDTs able to synchronize using
 operations, full states or deltas. Some types rely on [causal
-consistency][x], others don't. The syncing protocol (not
-described here) generally relies on [version vectors][v]. Not to
-confuse with [vector clocks][r] used by Amazon Dynamo and
-similar systems. (While there are strong parallels, inner
-workings of VV and VC are not identical)
+consistency][x] of updates, assuming correct ordering and
+idempotence (lack of repeats) are all provided by the outer
+system. Others don't make optimistic assumptions, ready for any
+environment. The syncing protocol (not described here) generally
+relies on [version vectors][v]. Do not confuse that with [vector
+clocks][r] used by Amazon Dynamo and similar systems. (While
+there are strong parallels, inner workings of VV and VC are not
+identical)
 
 There are seven assignments. For each data type one has to
 create 10 functions implementing it. The 7th assignment is to
@@ -46,10 +49,10 @@ Permitted languages are:
 Our objects can have fields of the following CRDT types. Each
 type is named by a letter. 
 
- 1. last-write-wins variables (`I` int64, `S` string, `F`
-    float64, `R` id64)
- 2. counters, `C` those requiring causally consistent update and
-    `U` those unkillable (int64 in both cases)
+ 1. last-write-wins variables (`I` for int64, `S` for string, `F`
+    is float64, and `R` is [id64][i])
+ 2. counters, `C` for those requiring causally consistent updates
+    and for `U` those unkillable (int64 and uint64 respectively)
  3. maps (M), like key-value maps, where keys and values are `ISFR`
  4. sets (E), contain arbitrary `ISFR` elements
  5. arrays (L) of arbitrary `ISFR` elements
@@ -63,12 +66,15 @@ The format and the merge rules are as follows.
 The last-write-wins register is the simplest data type to
 implement. For a field, we only need a logical timestamp and the
 value per se. A logical timestamp is a pair `{v, src}` where `v`
-is the number of the version and `src` is the id of the author.
-For example, a bare (no envelope) int `-11`, the 4th revision by
-replica N5, would look in TLV like: `32 04 05 15` where `0x15`
-is a [zig-zag][g] encoded and zipped `-11`, while `32 04 05` is
-a tiny ToyTLV record for a zipped pair of ints, 4 and 5.
-If we add a ToyTLV envelope, that becomes `69 34 32 04 05 15`.
+is the revision number and `src` is the id of the author. For
+example, let's see how a bare (no TLV envelope) `I` int64 `-11`
+would look like, assuming it is the 4th revision of the register
+autored by replica #5. The TLV would look like: `32 08 05 15`
+(hex) where `0x15` is a [zig-zag][g] encoded and zipped `-11`,
+while `32 08 05` is a *tiny* ToyTLV record for a zipped pair of
+ints, 4 (signed, zig-zagged, so `08`) and 5 (unsigned, so `05`).
+If we add a ToyTLV envelope, that becomes `69 04 32 08 05 15`
+(type of record `I`, length 4, then the bare part).
 
 String values are simply UTF-8 strings; int64, float64 and id64
 values get compressed using [`zip_int`][z] routines. Overlong
@@ -82,30 +88,69 @@ Merge rules for LWW are straighforward:
 
 ### `CU`
 
-### `M`
+`C` are "easy" counters that require causally-consistent updates.
+Their bare TLV state is a zipped int64. Their merge operation
+is simple arithmetic addition.
+
+`U` are unkillable increment-only counters. Their TLV state is a
+sequence of `U` records containing zipped uint64 pairs {val,src},
+the counter value and source replica id. Their merge operator is
+per-replica `max` (as later versions are greater). Their native
+value is the sum of all replica values.
 
 ### `E`
 
+Generic sets containing any `ISFR` elements. The TLV format is a
+sequence of enveloped ISFR records. It can contain records with
+negative version numbers. Those are tombstones (deleted
+entries). For example, `-11` from the previous example would go
+as `69 04 32 08 05 15`. Then, if replica #9 would remove that
+entry, it will change to `69 04 32 07 09 15`. Here, the version
+number changes `08` to `07` or 4 to -4, the author changes to 9.
+
+### `M`
+
+Generic maps, mapping any `ISFR` value to any other `ISFR`
+value. The TLV format is a sequence of `ISFR` records, as
+described in the `ISFR` section. Records go in key-value pairs,
+except for tombstones (deleted entries) which go as keys, no
+values. Tombstones have negative revision number, same as `E`.
+
+Pairs are sorted in the ascending byte-order of their key
+records (like `bytes.Compare()`). 
+
+The merge strategy is last-writer-wins, in regard to values.
+
 ### `L`
+
+Generic arrays store any `ISFR` elements. The TLV format is a
+sequence of enveloped ISFR records. The order of the sequence is
+`weave`-like, i.e. records and tombstones go as they appear(ed)
+in the array. Deleted records change to tombstones, same as E.
 
 ### `V`
 
-Version vector is a way to track dataset versions in a causally ordered system.
-It is a vector of `seq` numbers, where each `seq` is the number of sequential
-updates produced by each respective replica. Alternatively, that is a map 
-`{src: seq}`, where `src` is the replica `id`. It is assumed, that we received
+[Version vector][v] is a way to track dataset versions in a
+causally ordered system. It is a vector of `seq` numbers, where
+each `seq` is the number of sequential updates produced by each
+respective replica. Alternatively, that is a map `{src: seq}`,
+where `src` is the replica `id`. It is assumed, that we received
 updates from replica `src` all the way up to `seq`.
 
-Bare TLV for a version vector is a sequence of `V` records each containing
-one id64 as a zipped seq-src pair (see ZipUint64Pair).
+Bare TLV for a version vector is a sequence of `V` records each
+containing one id64 as a zipped seq-src pair (see
+ZipUint64Pair). The sequence is sorted in the ascenting order of
+record bytes, like `bytes.Compare()`.
 
-The merge algorithm for version vectors is simple: take the maximum `seq` for
-each `src`. Note that `seq=0` is distinct from having no record.
+The merge algorithm for version vectors is simple: take the
+maximum `seq` for each `src`. Note that `seq=0` is distinct from
+having no record.
 
 ##  Data type implementation
 
-To fully implement an RDT one has to implement these 10 functions. The function
-name starts with the type name letter, here we imply `I` last-write-wins int64.
+To fully implement an RDT one has to implement these 10
+functions. The function name starts with the type name letter,
+here we imply `I` last-write-wins int64.
 
 ````go
     // Xvalid verifies validity of a bare TLV record.
@@ -113,7 +158,7 @@ name starts with the type name letter, here we imply `I` last-write-wins int64.
     func Ivalid(tlv []byte) bool 
 
 
-    // Xstring converts a bare TLV representation into a string.
+    // Xstring converts a TLV representation into a string.
     func Istring(tlv []byte) (txt string) 
 
     // Xparse converts a string back into bare TLV.
@@ -121,15 +166,15 @@ name starts with the type name letter, here we imply `I` last-write-wins int64.
     func Iparse(txt string) (tlv []byte) 
 
 
-    // Xtlv converts the native type into a bare TLV, zero metadata.
+    // Xtlv converts the native type into a TLV, zero metadata.
     func Itlv(i int64) (tlv []byte)
 
-    // Xplain converts bare TLV into the native value.
+    // Xplain converts TLV into the native value.
     // Must round-trip with Xtlv.
     func Iplain(tlv []byte) int64 
 
 
-    // Xdelta produces a bare TLV value that, once merged with
+    // Xdelta produces a TLV value that, once merged with
     // the old TLV value using Xmerge, will produce the new
     // native value using Xplain. Returns nil if none needed.
     // This function we need to *save changes* from a native
@@ -149,19 +194,22 @@ name starts with the type name letter, here we imply `I` last-write-wins int64.
 
 ##  Serialization format
 
-In general, we use the [ToyTLV][t] format for all data. A special note on
-number compression. From the fact that protobuf has about a dozen integer
-types, one can guess that things can be complicated here. We use [ZipInt][z]
-routines to produce efficient varints in a TLV format (differently from
-protobuf which has a separate [LEB128][b] coding for ints). 
+In general, we use the [ToyTLV][t] format for all data. A
+special note on number compression. From the fact that protobuf
+has about a dozen integer types, one can guess that things can
+be complicated here. We use [ZipInt][z] routines to produce
+efficient varints in a TLV format (differently from protobuf
+which has a separate [LEB128][b] coding for ints). 
 
   - ZipUint64 packs an integer skipping all leading zeroes
-  - ZipUint64Pair packs a pair of ints, each one taking 1,2,4 or 8 bytes
+  - ZipUint64Pair packs a pair of ints, each one taking 1,2,4 or
+    8 bytes
   - ZipZagInt64 packs a signed integer using the zig-zag coding
-  - ZipFloat64 packs a float (integers and binary fractions pack well)
+  - ZipFloat64 packs a float (integers and binary fractions pack
+    well)
 
-id64 and logical timestamps get packed as pairs of uint64s.
-All zip codings are little-endian.
+id64 and logical timestamps get packed as pairs of uint64s. All
+zip codings are little-endian.
 
 [c]: https://github.com/learn-decentralized-systems/Chotki/blob/main/ARCHITECTURE.md
 [x]: https://en.wikipedia.org/wiki/Causal_consistency
@@ -173,3 +221,4 @@ All zip codings are little-endian.
 [g]: https://protobuf.dev/programming-guides/encoding/
 [t]: https://github.com/learn-decentralized-systems/toytlv
 [b]: https://en.wikipedia.org/wiki/LEB128
+[i]: https://github.com/learn-decentralized-systems/Chotki/blob/main/id.go#L12
