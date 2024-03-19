@@ -8,8 +8,8 @@ from dataclasses import dataclass, asdict
 from typing import Final
 
 STRUCT_SIZE: Final[int] = 128
-# BUG-FIX: некоторые символы не парсились из-за стандарта utf-8.
-STANDART = "ISO-8859-1"
+# BUG-FIX: некоторые символы не парсились из-за стандарта utf-8 и программа падала, добавила в таких местах errors="ignore".
+STANDART = "utf-8"
 ZERO_BYTE = b"\x00"
 
 @dataclass
@@ -29,7 +29,7 @@ class Student:
             if attr_name == "_id":
                 continue
             if isinstance(attr_val, str):
-                attrs.append(attr_val.encode(STANDART))
+                attrs.append(attr_val.encode(STANDART, errors="ignore"))
             elif isinstance(attr_val, list):
                 attrs.extend(attr_val)
             else:
@@ -111,11 +111,11 @@ class Student:
         
         return cls(
             _id=id,
-            name=student_struct[:32].decode(STANDART).rstrip("\0"),
-            login=student_struct[32:48].decode(STANDART).rstrip("\0"),
-            group=student_struct[48:56].decode(STANDART).rstrip("\0"),
+            name=student_struct[:32].decode(STANDART, errors="ignore").rstrip("\0"),
+            login=student_struct[32:48].decode(STANDART, errors="ignore").rstrip("\0"),
+            group=student_struct[48:56].decode(STANDART, errors="ignore").rstrip("\0"),
             practice=list(student_struct[56:64]),
-            project_repo=student_struct[64:123].decode(STANDART).rstrip("\0"),
+            project_repo=student_struct[64:123].decode(STANDART, errors="ignore").rstrip("\0"),
             project_mark=struct.unpack("<B", student_struct[123:124])[0],
             mark=struct.unpack("<f", student_struct[124:128])[0])
 
@@ -166,18 +166,10 @@ def validate_input(file_name: str):
     return exit_status == 0
 
 def encode_data(file_name: str):
-    print('! encoding: .kv -> .bin', file=sys.stderr)
-    code = os.system(f"python3 {PROG} serializer -f {file_name} > {LOG_FILE}")
-    exit_status = os.WEXITSTATUS(code)
-    if exit_status != 0:
-        os._exit(1)
+    proceed_file(file_name)
 
 def decode_data(file_name: str):
-    print('! decoding: .bin -> .kv', file=sys.stderr)
-    code = os.system(f"python3 {PROG} serializer -f {file_name} > {LOG_FILE}")
-    exit_status = os.WEXITSTATUS(code)
-    if exit_status != 0:
-        os._exit(1)
+    proceed_file(file_name)
 
 def kv_parser_round_trip_executor(data):
     bin_fname = f"{FILE_NAME}.bin"
@@ -189,7 +181,7 @@ def kv_parser_round_trip_executor(data):
     try:
         decode_data(bin_fname)
         encode_data(kv_fname)
-    except:
+    except Exception as e:
         os._exit(1)
     with open(bin_fname, "r") as f:
         if f.read() != data:
@@ -199,10 +191,14 @@ def kv_parser_round_trip_executor(data):
 
 
 def run_fuzzer():
-    prapare()
-    input = frelatage.Input(value="initial_value")
-    f = frelatage.Fuzzer(kv_parser_round_trip_executor, [[input]])
-    f.fuzz()
+    try:
+        prapare()
+        input = frelatage.Input(value="initial_value")
+        f = frelatage.Fuzzer(kv_parser_round_trip_executor, [[input]])
+        f.fuzz()
+    except Exception as e:
+        print(e)
+        os._exit(1)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
