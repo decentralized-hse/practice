@@ -2,29 +2,28 @@
 
 Our goal here is to create a format and a library for data
 replication using state-of-the-art Replicated Data Types.
-Replicated Data interchange format ([RDX][j]) is like
-protobuf, but CRDT. Apart from [RPC][p] applications, one can
-use it for data storage, distributed or asynchronous data
-exchange and in other similar applications. RDX is able of
-peer-to-peer replication, with no central server, as any two
-replicas can merge their data. Whether *any* two versions of an
-object can be merged still depends on the data type. Some RDTs
-require causal consistency. Others are completely unkillable and
-can merge in any conditions. By installing these data types as
-merge operators in an LSM database (leveldb, RocksDB, pebble,
-Cassandra, you name it) one can effectively have a CRDT database
-(which [Chotki][c] basically is).
+Replicated Data interchange format ([RDX][j]) is like protobuf,
+but CRDT. Apart from [RPC][p] applications, one can use it for
+data storage, distributed and asynchronous data exchange and in
+other similar applications. RDX fully supports local-first,
+offline-first and peer-to-peer replication, with no central
+server required, as any two *replicas* can merge their data. By
+installing RDX data types as merge operators in an LSM database
+(leveldb, RocksDB, pebble, Cassandra, etc) one can effectively
+have a CRDT database (which [Chotki][c] basically is).
 
 We will implement *unified* CRDTs able to synchronize using
-operations, full states or deltas. Some types rely on [causal
-consistency][x] of updates, assuming correct ordering and
-idempotence (lack of repeats) are all provided by the outer
-system. Others don't make optimistic assumptions, ready for any
-environment. The syncing protocol (not described here) generally
+operations, full states or deltas. Types may imply [causal
+consistency][x] of updates in matters of performance, but their
+correctness does not depend on that. RDX data types are fully
+commutative, associative and idempotent. Hence, immune to
+reordering or duplication of updates.
+
+The default syncing protocol (not described here) generally
 relies on [version vectors][v]. Do not confuse that with [vector
-clocks][r] used by Amazon Dynamo and similar systems. (While
+clocks][r] used by Amazon Dynamo and similar systems. While
 there are strong parallels, inner workings of VV and VC are not
-identical)
+identical.
 
 There are seven assignments. For each data type one has to
 create 10 functions implementing it. The 7th assignment is to
@@ -51,8 +50,7 @@ type is named by a letter.
 
  1. last-write-wins variables (`I` for int64, `S` for string, `F`
     is float64, and `R` is [id64][i])
- 2. counters, `C` for those requiring causally consistent updates
-    and for `U` those unkillable (int64 and uint64 respectively)
+ 2. counters `C`, increment-only uint64
  3. maps (M), like key-value maps, where keys and values are `ISFR`
  4. sets (E), contain arbitrary `ISFR` elements
  5. arrays (L) of arbitrary `ISFR` elements
@@ -86,15 +84,11 @@ Merge rules for LWW are straighforward:
  2. in case of a tie, higher value wins (like bytes.Compare())
  3. in case of a tie, who cares, but higher replica id wins
 
-### `CU`
+### `C`
 
-`C` are "easy" counters that require causally-consistent updates.
-Their bare TLV state is a zipped int64. Their merge operation
-is simple arithmetic addition.
-
-`U` are unkillable increment-only counters. Their TLV state is a
-sequence of `U` records containing zipped uint64 pairs {val,src},
-the counter value and source replica id. Their merge operator is
+`C` are increment-only counters. Their TLV state is a sequence
+of `N` records containing zipped uint64 pairs {val,src}, the
+counter value and source replica id. Their merge operator is
 per-replica `max` (as later versions are greater). Their native
 value is the sum of all replica values.
 
@@ -107,6 +101,7 @@ entries). For example, `-11` from the previous example would go
 as `69 04 32 08 05 15`. Then, if replica #9 would remove that
 entry, it will change to `69 04 32 07 09 15`. Here, the version
 number changes `08` to `07` or 4 to -4, the author changes to 9.
+The entries are sorted asc lexicographically (bytes.Compare).
 
 ### `M`
 
@@ -137,10 +132,10 @@ respective replica. Alternatively, that is a map `{src: seq}`,
 where `src` is the replica `id`. It is assumed, that we received
 updates from replica `src` all the way up to `seq`.
 
-Bare TLV for a version vector is a sequence of `V` records each
-containing one id64 as a zipped seq-src pair (see
-ZipUint64Pair). The sequence is sorted in the ascenting order of
-record bytes, like `bytes.Compare()`.
+Bare TLV for a version vector is a sequence of `V` records (yes,
+`V` nested in `V`) each containing one id64 as a zipped seq-src
+pair (see ZipUint64Pair). The sequence is sorted in the
+ascenting order of record bytes, like `bytes.Compare()`.
 
 The merge algorithm for version vectors is simple: take the
 maximum `seq` for each `src`. Note that `seq=0` is distinct from
@@ -196,7 +191,7 @@ here we imply `I` last-write-wins int64.
 
 In general, we use the [ToyTLV][t] format for all data. A
 special note on number compression. From the fact that protobuf
-has about a dozen integer types, one can guess that things can
+has about ten integer types, one can guess that things can
 be complicated here. We use [ZipInt][z] routines to produce
 efficient varints in a TLV format (differently from protobuf
 which has a separate [LEB128][b] coding for ints). 
