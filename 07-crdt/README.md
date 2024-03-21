@@ -164,14 +164,14 @@ here we imply `I` last-write-wins int64.
     // Xtlv converts the native type into a TLV, zero metadata.
     func Itlv(i int64) (tlv []byte)
 
-    // Xplain converts TLV into the native value.
+    // Xnative converts TLV into the native value.
     // Must round-trip with Xtlv.
-    func Iplain(tlv []byte) int64 
+    func Inative(tlv []byte) int64
 
 
     // Xdelta produces a TLV value that, once merged with
     // the old TLV value using Xmerge, will produce the new
-    // native value using Xplain. Returns nil if none needed.
+    // native value using Xnative. Returns nil if none needed.
     // This function we need to *save changes* from a native
     // object/struct into RDX.
     func Idelta(tlv []byte, new_val int64) (tlv_delta []byte) 
