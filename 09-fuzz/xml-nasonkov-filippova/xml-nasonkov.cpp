@@ -1,5 +1,5 @@
 #include "tinyxml2.h"
-#include "xml-nasonkov.h" 
+#include "xml-nasonkov.h"
 
 #include <iostream>
 #include <cstring>
@@ -46,6 +46,22 @@ bool check_str(const char *str, int len, const char *name) {
     return i == len;
 }
 
+bool check_double(float a) {
+    if ((float)((int)(a * 10)) / 10.0 == a) {
+        return false;
+    }
+    return true;
+}
+
+bool check_special_symbols(char* str, int sz) {
+    for (int i = 0; i < sz; i++) {
+        if (str[i] == 10 || str[i] == 9 || str[i] == 13 || str[i] == 32) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool validate_input(const char *file_name) {
     struct Student student;
     int fd = open(file_name, O_RDONLY);
@@ -54,30 +70,37 @@ bool validate_input(const char *file_name) {
     }
     ssize_t rd = 0;
     while (RECSIZE == (rd = read(fd, &student, RECSIZE))) {
-        if (!check_str(student.name, 32, "name")) {
+        if (!check_str(student.name, 32, "name") || check_special_symbols(student.name, 32)) {
+             close(fd);
             return false;
         }
-        if (!check_str(student.login, 16, "login")) {
+        if (!check_str(student.login, 16, "login") || check_special_symbols(student.name, 16)) {
+             close(fd);
              return false;
         }
-        if (!check_str(student.group, 8, "group")) {
+        if (!check_str(student.group, 8, "group") || check_special_symbols(student.name, 8)) {
+             close(fd);
              return false;
         }
         for (int p = 0; p < 8; p++) {
         if (student.practice[p] != 0 && student.practice[p] != 1) {
+             close(fd);
              return false;
         }
         }
-        if (!check_str(student.project.repo, 59, "repo")) {
+        if (!check_str(student.project.repo, 59, "repo") || check_special_symbols(student.name, 59)) {
+             close(fd);
             return false;
         }
-        if (student.mark < 0 || student.mark > 10 || isnan(student.mark)) {
+        if (student.mark < 0 || student.mark > 10 || isnan(student.mark) || check_double(student.mark)) {
+             close(fd);
             return false;
         }
 
         // if (student.project.mark < 0 || student.project.mark > 10)
         // goto cleanup;
         if (student.mark < 0 || student.mark > 10) {
+             close(fd);
          return false;
         }
     }
@@ -142,7 +165,7 @@ bool fromBinToXML(const char* filename_) {
         if (!input.read(reinterpret_cast<char*>(&student), sizeof student)) {
             break;
         }
-        //pretty_print(student);
+       // pretty_print(student);
         ++cnt_students;
 
         XMLElement* cur_student = xmlDoc.NewElement("student");
@@ -207,6 +230,8 @@ bool fromBinToXML(const char* filename_) {
 
         XMLElement* cur_student_mark = xmlDoc.NewElement("mark");
         //std::cout << "double " << (double)student.mark << std::endl;
+
+        //auto str5 = make_c_string((char*)&student.mark, 4);
         cur_student_mark->SetText(student.mark);
         cur_student->InsertEndChild(cur_student_mark);
 
@@ -336,7 +361,7 @@ void fromXMLToBin(const char* filename_) {
         // double a;
         // XMLUtil::ToDouble(cur_student->FirstChildElement("mark")->GetText(), &a);
         // student.mark = a;
-        
+
         output.write(reinterpret_cast<char*>(&student), sizeof student);
 
         cur_student = cur_student->NextSiblingElement("student");
