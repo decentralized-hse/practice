@@ -87,7 +87,7 @@ func TestZMerge(t *testing.T) {
 	assert.Equal(t, "0", Zstring(merged))
 }
 
-func TestMMerge(t *testing.T) {
+func TestMMerge(t *testing.T) { // maps
 	inputs := toyqueue.Records{
 		toytlv.Concat( // {1:1,3:4,5:6}
 			toytlv.Record('I', Itlvt(1, Time{3, 1})),
@@ -117,4 +117,26 @@ func TestMMerge(t *testing.T) {
 	//assert.Nil(t, SaveEnveloped("test_data/M0.tlv", inputs, 'M'))
 	merged := Mmerge(DupAndShuffle(inputs))
 	assert.Equal(t, "{1:2,3:4}", Mstring(merged))
+}
+
+func TestEMerge(t *testing.T) { // sets
+	inputs := toyqueue.Records{
+		toytlv.Concat( // {1,3,4,5} by #1
+			toytlv.Record('I', Itlvt(1, Time{1, 1})),
+			toytlv.Record('I', Itlvt(3, Time{2, 1})),
+			toytlv.Record('I', Itlvt(4, Time{3, 1})),
+			toytlv.Record('I', Itlvt(5, Time{4, 1})),
+		),
+		toytlv.Concat( // {1,2}, 1 is added concurrently by #1 and #2
+			toytlv.Record('I', Itlvt(1, Time{1, 2})),
+			toytlv.Record('I', Itlvt(2, Time{2, 2})),
+		),
+		toytlv.Concat( // #2 removes 5 that #1 added (rev 4)
+			toytlv.Record('I', Itlvt(5, Time{-4, 2})),
+		),
+	}
+
+	//assert.Nil(t, SaveEnveloped("test_data/E0.tlv", inputs, 'E'))
+	merged := Emerge(DupAndShuffle(inputs))
+	assert.Equal(t, "{1,2,3,4}", Estring(merged))
 }

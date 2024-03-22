@@ -70,3 +70,11 @@ func Mmerge(records toyqueue.Records) (tlv []byte) {
 func Mstring(tlv []byte) string {
 	return "{1:2,3:4}"
 }
+
+func Emerge(records toyqueue.Records) (tlv []byte) {
+	return nil
+}
+
+func Estring(tlv []byte) string {
+	return "{1,2,3,4}"
+}
