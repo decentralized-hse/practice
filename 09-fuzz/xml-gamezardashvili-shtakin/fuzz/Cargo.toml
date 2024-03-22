@@ -1,0 +1,56 @@
+[package]
+name = "xml-gamezardashvili-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.xml-gamezardashvili]
+path = ".."
+
+[[bin]]
+name = "fuzz_target_1"
+path = "fuzz_targets/fuzz_target_1.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_xml.rs"
+path = "fuzz_targets/fuzz_xml.rs.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_bin.rs"
+path = "fuzz_targets/fuzz_bin.rs.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_bin"
+path = "fuzz_targets/fuzz_bin.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_xml"
+path = "fuzz_targets/fuzz_xml.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_round_trip"
+path = "fuzz_targets/fuzz_round_trip.rs"
+test = false
+doc = false
+bench = false
