@@ -38,8 +38,8 @@ struct TaskAux {
 
 std::vector<Student> readBinaryStudents(const TaskAux& taskAux) {
     auto in = fopen(taskAux.inputFilename.c_str(), "r");
-    std::cout << "Reading binary students data from "
-              << taskAux.inputFilename << std::endl;
+    //std::cout << "Reading binary students data from "
+ //              << taskAux.inputFilename << std::endl;
 
     Student student;
     std::vector<Student> result;
@@ -48,7 +48,7 @@ std::vector<Student> readBinaryStudents(const TaskAux& taskAux) {
         result.emplace_back(student);
     }
 
-    std::cout << result.size() << " students read..." << std::endl;
+    //std::cout << result.size() << " students read..." << std::endl;
 
     fclose(in);  // fix
 
@@ -82,7 +82,7 @@ void writeStudentsIntoJson(const std::vector<Student>& students, const TaskAux& 
 
     out << result;
 
-    std::cout << "Written to " << taskAux.outputFilename;
+    //std::cout << "Written to " << taskAux.outputFilename;
 }
 
 void covertBinaryToJson(const TaskAux& taskAux) {
@@ -95,8 +95,8 @@ void parseString(const std::string& str, char out[]) {
 }
 
 std::vector<Student> readJsonStudents(const TaskAux& taskAux) {
-    std::cout << "Reading json students data from "
-              << taskAux.inputFilename << std::endl;
+    //std::cout << "Reading json students data from "
+    //            << taskAux.inputFilename << std::endl;
 
     std::ifstream in(taskAux.inputFilename);
     json j = json::parse(in);
@@ -121,7 +121,7 @@ std::vector<Student> readJsonStudents(const TaskAux& taskAux) {
         student = Student{};
     }
 
-    std::cout << result.size() << " students read..." << std::endl;
+    //std::cout << result.size() << " students read..." << std::endl;
     return result;
 }
 
@@ -132,7 +132,7 @@ void writeStudentsIntoBin(const std::vector<Student>& students, const TaskAux& t
     }
     fclose(out);  // fix
 
-    std::cout << "Written to " << taskAux.outputFilename;
+    //std::cout << "Written to " << taskAux.outputFilename;
 }
 
 void convertJsonToBinary(const TaskAux& taskAux) {
