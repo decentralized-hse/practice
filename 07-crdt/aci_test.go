@@ -140,3 +140,28 @@ func TestEMerge(t *testing.T) { // sets
 	merged := Emerge(DupAndShuffle(inputs))
 	assert.Equal(t, "{1,2,3,4}", Estring(merged))
 }
+
+func TestLMerge(t *testing.T) { // sets
+	inputs := toyqueue.Records{
+		toytlv.Concat( // [1,2,3,4] by #1
+			toytlv.Record('I', Itlvt(1, Time{1, 1})),
+			toytlv.Record('I', Itlvt(2, Time{2, 1})),
+			toytlv.Record('I', Itlvt(3, Time{3, 1})),
+			toytlv.Record('I', Itlvt(4, Time{4, 1})),
+		),
+		toytlv.Concat( // 12 and 5 are inserted by #2, [1,12,2,3,4,5]
+			toytlv.Record('R', ZipIntUint64Pair(1, 1)),
+			toytlv.Record('I', Itlvt(12, Time{5, 2})),
+			toytlv.Record('R', ZipIntUint64Pair(4, 1)),
+			toytlv.Record('I', Itlvt(5, Time{6, 2})),
+		),
+		toytlv.Concat( // #1 removes 12
+			toytlv.Record('R', ZipIntUint64Pair(5, 2)),
+			toytlv.Record('I', Itlvt(12, Time{-5, 1})),
+		),
+	}
+
+	assert.Nil(t, SaveEnveloped("test_data/L0.tlv", inputs, 'L'))
+	merged := Lmerge(DupAndShuffle(inputs))
+	assert.Equal(t, "[1,2,3,4,5]", Lstring(merged))
+}

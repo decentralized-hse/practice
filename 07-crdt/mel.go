@@ -78,3 +78,11 @@ func Emerge(records toyqueue.Records) (tlv []byte) {
 func Estring(tlv []byte) string {
 	return "{1,2,3,4}"
 }
+
+func Lmerge(records toyqueue.Records) (tlv []byte) {
+	return nil
+}
+
+func Lstring(tlv []byte) string {
+	return "[1,2,3,4,5]"
+}
