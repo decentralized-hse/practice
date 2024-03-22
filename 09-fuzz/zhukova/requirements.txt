@@ -1,0 +1,4 @@
+frelatage==0.1.7
+numpy==1.26.4
+Pympler==1.0.1
+timeout-decorator==0.5.0
