@@ -1,0 +1,18 @@
+syntax="proto3";
+package protobuf;
+
+option go_package = ".";
+
+message ProjectProto {
+  string repo = 1;
+  uint32 mark = 2;
+}
+
+message StudentProto {
+  string name = 1;
+  string login = 2;
+  string group = 3;
+  repeated uint32 practice = 4;
+  ProjectProto project = 5;
+  float mark = 6;
+}
