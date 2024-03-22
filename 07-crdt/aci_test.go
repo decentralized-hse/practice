@@ -69,7 +69,7 @@ func TestNMerge(t *testing.T) {
 }
 
 func TestZMerge(t *testing.T) {
-	// winning versions: 1 by #1 = -1, 2 by #2 = -2, 3 by #3 = -3
+	// winning versions: 1 by #1 = -1, 2 by #2 = -2, 3 by #3 = 3
 	inputs := toyqueue.Records{
 		toytlv.Concat(
 			toytlv.Record('I', Itlvt(-1, Time{1, 1})),
@@ -85,4 +85,36 @@ func TestZMerge(t *testing.T) {
 	//assert.Nil(t, SaveEnveloped("test_data/Z0.tlv", inputs, 'Z'))
 	merged := Zmerge(DupAndShuffle(inputs))
 	assert.Equal(t, "0", Zstring(merged))
+}
+
+func TestMMerge(t *testing.T) {
+	inputs := toyqueue.Records{
+		toytlv.Concat( // {1:1,3:4,5:6}
+			toytlv.Record('I', Itlvt(1, Time{3, 1})),
+			toytlv.Record('I', Itlvt(1, Time{3, 1})),
+
+			toytlv.Record('I', Itlvt(3, Time{2, 1})),
+			toytlv.Record('I', Itlvt(4, Time{2, 1})),
+
+			toytlv.Record('I', Itlvt(5, Time{1, 1})),
+			toytlv.Record('I', Itlvt(6, Time{1, 1})),
+		),
+		toytlv.Concat( // {1:2,3:4,5:6}
+			toytlv.Record('I', Itlvt(1, Time{3, 1})),
+			toytlv.Record('I', Itlvt(2, Time{4, 1})),
+
+			toytlv.Record('I', Itlvt(3, Time{2, 1})),
+			toytlv.Record('I', Itlvt(4, Time{2, 1})),
+
+			toytlv.Record('I', Itlvt(5, Time{1, 1})),
+			toytlv.Record('I', Itlvt(6, Time{1, 1})),
+		),
+		toytlv.Concat( // remove 5:6
+			toytlv.Record('I', Itlvt(5, Time{-1, 1})),
+		),
+	}
+
+	//assert.Nil(t, SaveEnveloped("test_data/M0.tlv", inputs, 'M'))
+	merged := Mmerge(DupAndShuffle(inputs))
+	assert.Equal(t, "{1:2,3:4}", Mstring(merged))
 }

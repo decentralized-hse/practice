@@ -1,6 +1,9 @@
 package rdx
 
-import "github.com/learn-decentralized-systems/toytlv"
+import (
+	"github.com/learn-decentralized-systems/toyqueue"
+	"github.com/learn-decentralized-systems/toytlv"
+)
 
 // Parses an enveloped ISFR record
 func MelParse(data []byte) (lit byte, t Time, value, rest []byte, err error) {
@@ -58,4 +61,12 @@ func MelReSource(isfr []byte, src uint64) (ret []byte, err error) {
 		lit, time, body, rest, err = MelParse(rest)
 	}
 	return
+}
+
+func Mmerge(records toyqueue.Records) (tlv []byte) {
+	return nil
+}
+
+func Mstring(tlv []byte) string {
+	return "{1:2,3:4}"
 }
