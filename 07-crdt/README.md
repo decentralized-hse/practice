@@ -63,16 +63,17 @@ The format and the merge rules are as follows.
 
 The last-write-wins register is the simplest data type to
 implement. For a field, we only need a logical timestamp and the
-value per se. A logical timestamp is a pair `{v, src}` where `v`
-is the revision number and `src` is the id of the author. For
-example, let's see how a bare (no TLV envelope) `I` int64 `-11`
-would look like, assuming it is the 4th revision of the register
-autored by replica #5. The TLV would look like: `32 08 05 15`
-(hex) where `0x15` is a [zig-zag][g] encoded and zipped `-11`,
-while `32 08 05` is a *tiny* ToyTLV record for a zipped pair of
-ints, 4 (signed, zig-zagged, so `08`) and 5 (unsigned, so `05`).
-If we add a ToyTLV envelope, that becomes `69 04 32 08 05 15`
-(type of record `I`, length 4, then the bare part).
+value per se. A logical timestamp is a pair `{rev, src}` where
+`rev` is the revision number and `src` is the id of the author.
+For example, let's see how a bare (no TLV envelope) `I` int64
+`-11` would look like, assuming it is the 4th revision of the
+register autored by replica #5. The TLV would look like: `32 08
+05 15` (hex) where `0x15` is a [zig-zag][g] encoded and zipped
+`-11`, while `32 08 05` is a tiny [ToyTLV][t] record for a
+zipped pair of ints, 4 (signed, zig-zagged, so `08`) and 5
+(unsigned, so `05`). If we add a ToyTLV envelope, that becomes
+`69 04 32 08 05 15` (type of record `I`, length 4, then the bare
+part).
 
 String values are simply UTF-8 strings; int64, float64 and id64
 values get compressed using [`zip_int`][z] routines. Overlong
@@ -127,7 +128,7 @@ in the array. Deleted records change to tombstones, same as E.
 
 [Version vector][v] is a way to track dataset versions in a
 causally ordered system. It is a vector of `seq` numbers, where
-each `seq` is the number of sequential updates produced by each
+each `seq` is the version of the state as seen by each
 respective replica. Alternatively, that is a map `{src: seq}`,
 where `src` is the replica `id`. It is assumed, that we received
 updates from replica `src` all the way up to `seq`.
@@ -189,12 +190,18 @@ here we imply `I` last-write-wins int64.
 
 ##  Serialization format
 
-In general, we use the [ToyTLV][t] format for all data. A
-special note on number compression. From the fact that protobuf
+We use the [ToyTLV][t] format for enveloping/nesting all data.
+That is a bare-bones type-length-value format with zero
+semantics. What we put into ToyTLV envelopes is integers,
+strings, and floats. Strings are UTF-8, no surprises. Floats are
+taken as raw bits and treated same as integers. id64 is stored
+as a compressed pair of integers.
+
+A note on integer compression. From the fact that protobuf
 has about ten integer types, one can guess that things can
 be complicated here. We use [ZipInt][z] routines to produce
 efficient varints in a TLV format (differently from protobuf
-which has a separate [LEB128][b] coding for ints). 
+which has a separate bit-level [LEB128][b] coding for ints). 
 
   - ZipUint64 packs an integer skipping all leading zeroes
   - ZipUint64Pair packs a pair of ints, each one taking 1,2,4 or
@@ -205,6 +212,16 @@ which has a separate [LEB128][b] coding for ints).
 
 id64 and logical timestamps get packed as pairs of uint64s. All
 zip codings are little-endian.
+
+##  Tests
+
+The testing system for implementations is as follows: given a
+stream of TLV records (stdin), merge them and output the result
+as a string (stdout). Any permutation of records (including
+duplication) must produce the same result. This test only
+requires `Xmerge` and `Xstring` to be implemented. It is highly
+recommended to share [ToyTLV][t] implementations. It also
+recommended to check the inputs for correctness.
 
 [c]: https://github.com/learn-decentralized-systems/Chotki/blob/main/ARCHITECTURE.md
 [x]: https://en.wikipedia.org/wiki/Causal_consistency
