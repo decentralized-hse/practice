@@ -2,7 +2,7 @@ import sqlite3
 import struct
 import sys
 
-# Добавил проверку что 0 != -0 
+
 def check_float(value):
     bits = ''.join('{:0>8b}'.format(c) for c in struct.pack('!f', value))
     if bits[0] == '1' and bits[1:] == '0' * 31:
@@ -19,20 +19,22 @@ def BinToSqlite(filename):
     for i in range(0, len(bin_data), struct_size):
         data = []
         student = struct.unpack(fmt, bin_data[i:i+struct_size])
-        name = student[0].decode('utf-8').strip('\x00')
+        name = student[0].decode('utf8').rstrip('\0')
         name += '\x00' * (32 - len(name))
-        login = student[1].decode('utf-8').strip('\x00')
-        group = student[2].decode('utf-8').strip('\x00')
+        login = student[1].decode('utf-8').rstrip('\0')
+        group = student[2].decode('utf-8').rstrip('\0')
         practice = ''
         for i in student[3]:
             practice += str(i)
             practice += ','
         practice = practice[0:-1]
-        repo = student[4].decode('utf-8').strip('\x00')
+        repo = student[4].decode('utf-8').rstrip('\0')
         mark = student[5]
         mark_float = student[6]
+        # Добавил проверку для фаззера, чтобы он не ругался на разницу 0 и -0
         if not check_float(mark_float):
             raise ValueError("Wrong input")
+        
         project = {
             'repo': repo,
             'mark': mark
@@ -46,7 +48,7 @@ def BinToSqlite(filename):
             'mark': mark_float
         })
         conn = sqlite3.connect(filename[:-3] + 'db')
-        cursor = conn.cursor() 
+        cursor = conn.cursor()
         cursor.execute('CREATE TABLE IF NOT EXISTS students ('
                     'id INTEGER PRIMARY KEY AUTOINCREMENT, '
                     'name TEXT, '
@@ -55,7 +57,7 @@ def BinToSqlite(filename):
                     'practice BLOB, '
                     'repo TEXT, '
                     'mark INTEGER, '
-                    'mark_float REAL)')
+                    'mark_float FLOAT)')
 
         for student in data:
             cursor.execute('INSERT INTO students (name, login, "group", practice, repo, mark, mark_float) '
