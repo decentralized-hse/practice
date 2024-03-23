@@ -50,7 +50,7 @@ type is named by a letter.
 
  1. last-write-wins variables (`I` for int64, `S` for string, `F`
     is float64, and `R` is [id64][i])
- 2. counters `C`, increment-only uint64
+ 2. counters, `N` increment-only uint64 and `Z` two-way int64
  3. maps (M), like key-value maps, where keys and values are `ISFR`
  4. sets (E), contain arbitrary `ISFR` elements
  5. arrays (L) of arbitrary `ISFR` elements
@@ -85,13 +85,19 @@ Merge rules for LWW are straighforward:
  2. in case of a tie, higher value wins (like bytes.Compare())
  3. in case of a tie, who cares, but higher replica id wins
 
-### `C`
+### `NZ`
 
-`C` are increment-only counters. Their TLV state is a sequence
-of `N` records containing zipped uint64 pairs {val,src}, the
+`N` are increment-only counters. Their TLV state is a sequence
+of `U` records containing zipped uint64 pairs {val,src}, the
 counter value and source replica id. Their merge operator is
 per-replica `max` (as later versions are greater). Their native
 value is the sum of all replica values.
+
+`Z` are two-way counters (inc/dec). Their TLV format is a
+sequence of `I` records each having `{rev,src}` metadata as
+described in the `ISFR` section. One record corresponds to one
+source, per-source merge rules are same as LWW. The native value
+is the sum of all `I` values.
 
 ### `E`
 
