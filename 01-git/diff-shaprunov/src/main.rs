@@ -74,9 +74,6 @@ fn diff(path: &PathBuf, old_hash: &str, new_hash: &str, inside: bool) -> io::Res
     let (name_to_hash_old, directory_marker_old) = read_file_full(old_hash)?;
     let (mut name_to_hash_new, directory_marker) = read_file_full(new_hash)?;
     for (object_old, hash_old) in name_to_hash_old.iter() {
-        if check_system_file(object_old) {
-            continue;
-        }
         if *directory_marker_old.get(object_old).unwrap_or(&false) {
             continue;
         }
@@ -92,9 +89,6 @@ fn diff(path: &PathBuf, old_hash: &str, new_hash: &str, inside: bool) -> io::Res
     }
 
     for (object_old, hash_old) in name_to_hash_old.iter() {
-        if check_system_file(object_old) {
-            continue;
-        }
         if !*directory_marker_old.get(object_old).unwrap_or(&true) {
             continue;
         }
@@ -112,9 +106,6 @@ fn diff(path: &PathBuf, old_hash: &str, new_hash: &str, inside: bool) -> io::Res
     }
 
     for (object_new, hash_new) in name_to_hash_new.iter() {
-        if check_system_file(&object_new) {
-            continue;
-        }
         if !directory_marker.get(object_new).unwrap_or(&false) {
             diff_str += &format!("+\t{}\n", path.join(object_new).display());
         }
