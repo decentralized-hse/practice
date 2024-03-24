@@ -51,7 +51,7 @@ class Tree:
                 lines.append(f"{entry.name}:\t{entry.hash}\n")
             else:
                 lines.append(f"{entry.name}/\t{entry.hash}\n")
-        return "".join(lines)
+        return "".join(sorted(lines))
 
     @staticmethod
     def from_hash(hash):
