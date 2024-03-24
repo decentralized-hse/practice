@@ -1,5 +1,6 @@
 use std::cmp::min;
 
+use std::process::exit;
 use std::vec;
 
 use capnp::message::Builder;
@@ -87,6 +88,10 @@ pub fn validate_input(input: &[u8]) -> bool {
 }
 
 pub fn bin_to_capnproto(input: &[u8]) -> Vec<u8> {
+    if !validate_input(input) {
+        println!("Invalid input");
+        exit(0);
+    }
     assert!(
         input.len() % TOTAL_LEN == 0,
         "Corrupt file, length is not divisible by size of one Student"
