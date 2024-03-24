@@ -46,12 +46,17 @@ def hash_info_to_map(hash):
     # name -> (0 - if dir, 1 else)
     objects_types = dict()
 
+    if hash is None:
+        return objects_hash, objects_types
+
     with open(hash, 'r') as f:
         lines = [line.strip() for line in f]
         for line in lines:
             if len(line) == 0:
                 continue
             obj_name, obj_hash, is_dir = line_to_name_n_hash(line)
+            if obj_name == ".commit" or obj_name == '.parent':
+                continue
             objects_hash[obj_name] = obj_hash
             objects_types[obj_name] = is_dir
 
@@ -77,6 +82,28 @@ def get_diff(path, old_hash, new_hash):
         if cur_is_dir[cur_obj]:
             continue
         diff += f"+ {os.path.join(path, cur_obj)}\n"
+
+    for prev_obj in prev_objects_hash.keys():
+        if not prev_is_dir[prev_obj]:
+            continue
+        if prev_obj in cur_is_dir and cur_is_dir[prev_obj]:
+            continue
+        nested_diff = get_diff(os.path.join(path, prev_obj), prev_objects_hash[prev_obj], None )
+        if len(nested_diff) == 0:
+            continue
+        diff += f"d {os.path.join(path, prev_obj)}\n"
+        diff += nested_diff
+
+    for cur_obj in cur_objects_hash.keys():
+        if not cur_is_dir[cur_obj]:
+            continue
+        if cur_obj in prev_is_dir and prev_is_dir[cur_obj]:
+            continue
+        nested_diff = get_diff(os.path.join(path, cur_obj), None, cur_objects_hash[cur_obj])
+        if len(nested_diff) == 0:
+            continue
+        diff += f"d {os.path.join(path, cur_obj)}\n"
+        diff += nested_diff
 
     for prev_obj in prev_objects_hash.keys():
         if not prev_is_dir[prev_obj]:
