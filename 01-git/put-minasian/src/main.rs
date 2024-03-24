@@ -26,10 +26,15 @@ fn main() {
 
 fn validate_path(file_path_str: &str) -> Result<LinkedList<String>, String> {
     let path_vec: LinkedList<String> = file_path_str.split(std::path::MAIN_SEPARATOR).map(|s| String::from(s)).collect();
+    for dir in &path_vec {
+        if dir == ".parent" { // is it weak?
+            return Err(String::from("I caught you. The incident will be submitted to your parents.")); // won't be printed ((
+        }
+    }
     return Ok(path_vec);
 }
 
-fn verify_path_in_fs_snapshot(path: &str, fs_hash: &str) -> LinkedList<String> {
+fn verify_path_in_fs_snapshot(path: &str, fs_hash: &str) -> (LinkedList<String>, String) {
     let Ok(mut dirs_to_update) = validate_path(path) else {
         panic!("Invalid file path passed");
     };
@@ -60,55 +65,69 @@ fn verify_path_in_fs_snapshot(path: &str, fs_hash: &str) -> LinkedList<String> {
         cur_hash_str = dir_entry.unwrap().hash;
     }
 
-    let mut file_entry = None;
     let Ok(entries) = read_dir_by_hash(cur_hash_str.as_str()) else {
         panic!("Corrupted directory {}", cur_hash_str.as_str());
     };
     for entry in entries {
         if entry.name == filename {
             if entry.is_dir {
-                panic!("Expected '{}' to be dir", entry.name);
+                panic!("Expected '{}' to be file", entry.name);
             }
-            file_entry = Some(entry);
         }
     }
-    if file_entry.is_none() {
-        panic!("Could not found entry '{}'", filename);
-    }
 
-    let mut path_list: LinkedList<String> = dirs_to_update;
-    path_list.push_back(String::from(filename));
-    
-    path_list
+    (dirs_to_update, filename) 
 }
 
 fn put(opts: Opts) {
-    let path_list = verify_path_in_fs_snapshot(opts.file_path_string.as_str(), opts.parent_hash.as_str());
-    let Ok(hash) = write_file_to_fs_from_stdin(path_list, opts.parent_hash.as_str()) else {
+    let (dirs_to_update, filename) = verify_path_in_fs_snapshot(opts.file_path_string.as_str(), opts.parent_hash.as_str());
+    let Ok(hash) = write_file_to_fs_from_stdin(dirs_to_update, filename.as_str(), opts.parent_hash.as_str()) else {
         panic!("Unexpected error");
     };
     println!("{}", hash);
 }
 
-fn write_file_to_fs_from_stdin(filepath_list: LinkedList<String>, fs_hash: &str) -> std::io::Result<String> {
-    write_file_to_dir(filepath_list, fs_hash)
+fn write_file_to_fs_from_stdin(dirs_to_update: LinkedList<String>, filename: &str, fs_hash: &str) -> std::io::Result<String> {
+    write_file_to_dir(dirs_to_update, filename, fs_hash, true)
 }
 
-fn write_file_to_dir(mut filepath_list: LinkedList<String>, dir_old_hash: &str) -> std::io::Result<String> {
+fn write_file_to_dir(mut dirs_to_update: LinkedList<String>, filename: &str, dir_old_hash: &str, add_parent: bool) -> std::io::Result<String> { 
     let mut dir_entries = read_dir_by_hash(dir_old_hash)?;
-    for entry in &mut dir_entries {
-        if entry.name.as_str() == filepath_list.front().unwrap() {
-            filepath_list.pop_front();
-            let new_hash = if filepath_list.is_empty() {
-                write_blob_from_stdin()
-            } else {
-                write_file_to_dir(filepath_list, entry.hash.as_str())
-            };
-            entry.hash = new_hash?;
-            break;
+    if dirs_to_update.is_empty() {
+        let file_hash = write_blob_from_stdin()?;
+        let mut found_entry = false;
+        for entry in &mut dir_entries {
+            if entry.name.as_str() == filename {
+                found_entry = true; 
+                entry.hash = file_hash.clone();
+            }
+        }
+        if !found_entry {
+            dir_entries.push(DirEntry{name: filename.to_string(), is_dir: false, hash: file_hash});
+        }
+    } else {
+        for entry in &mut dir_entries {
+            if entry.name.as_str() == dirs_to_update.front().unwrap() {
+                dirs_to_update.pop_front();
+                let new_hash = write_file_to_dir(dirs_to_update, filename, entry.hash.as_str(), false)?;
+                entry.hash = new_hash;
+                break;
+            }
         }
     }
 
+    if add_parent {
+        let mut parent_found = false;
+        for entry in &mut dir_entries {
+            if entry.name == ".parent" {
+                entry.hash = String::from(dir_old_hash);
+                parent_found = true;
+            }
+        }
+        if !parent_found {
+            dir_entries.push(DirEntry{name: String::from(".parent"), is_dir: true, hash: String::from(dir_old_hash)});
+        }
+    }
     write_new_dir(dir_entries)
 }
 
@@ -173,13 +192,13 @@ fn write_blob_from_stdin() -> std::io::Result<String> {
     let mut reader = std::io::stdin();
     let mut context = Context::new(&SHA256);
     let mut buf = [0 as u8; 0x1000];
-    let mut len = reader.read(&mut buf)?;
     
     let f = File::create("temporary")?;
     let mut writer = BufWriter::new(f);
+    let mut len = usize::MAX;
     while len != 0 {
-        context.update(&buf[..len]);
         len = reader.read(&mut buf)?;
+        context.update(&buf[..len]);
         writer.write(&buf[..len])?;
     }
     writer.flush()?;
