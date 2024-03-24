@@ -63,6 +63,13 @@ class Tree:
 
         return Tree(entries)
 
+    def update_parent(self, hash):
+        for entry in self.entries:
+            if entry.name == ".parent":
+                entry.hash = hash
+                return
+        self.entries.append(Entry(".parent", hash, EntryType.Tree))
+
     def find_entry(self, name):
         return self.find_it(name)
 
@@ -110,6 +117,7 @@ def run_remove(path_parts, root_hash):
     trees.reverse()
     path_parts.reverse()
 
+    trees[-1].update_parent(root_hash)
     trees[0].remove_entry(path_parts[0])
     trees[0].write_to_file()
 
