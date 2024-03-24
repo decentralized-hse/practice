@@ -92,6 +92,13 @@ fn find_dir_hash(file_content: &str, dir_name: &str) -> Result<String, ArgsError
 
 pub fn validate_tree(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let mut hash = args.hash.clone();
+    if args.path[0].to_str() == Some(".") {
+        let is_valid = validate_file_or_dir(Path::new(&hash), true)?;
+        if is_valid {
+            println!("Tree is valid");
+        }
+        return Ok(());
+    }
 
     for (i, path_element) in args.path.iter().enumerate() {
         let file_content = read_file_content(&hash)?;
