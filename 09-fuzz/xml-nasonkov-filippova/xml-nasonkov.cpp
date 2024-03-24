@@ -74,11 +74,11 @@ bool validate_input(const char *file_name) {
              close(fd);
             return false;
         }
-        if (!check_str(student.login, 16, "login") || check_special_symbols(student.name, 16)) {
+        if (!check_str(student.login, 16, "login") || check_special_symbols(student.login, 16)) {
              close(fd);
              return false;
         }
-        if (!check_str(student.group, 8, "group") || check_special_symbols(student.name, 8)) {
+        if (!check_str(student.group, 8, "group") || check_special_symbols(student.group, 8)) {
              close(fd);
              return false;
         }
@@ -88,7 +88,7 @@ bool validate_input(const char *file_name) {
              return false;
         }
         }
-        if (!check_str(student.project.repo, 59, "repo") || check_special_symbols(student.name, 59)) {
+        if (!check_str(student.project.repo, 59, "repo") || check_special_symbols(student.project.repo, 59)) {
              close(fd);
             return false;
         }
@@ -165,7 +165,7 @@ bool fromBinToXML(const char* filename_) {
         if (!input.read(reinterpret_cast<char*>(&student), sizeof student)) {
             break;
         }
-       // pretty_print(student);
+        //pretty_print(student);
         ++cnt_students;
 
         XMLElement* cur_student = xmlDoc.NewElement("student");
@@ -254,10 +254,6 @@ bool fromBinToXML(const char* filename_) {
 
     if (saving_result == XMLError::XML_SUCCESS) {
         //std::cout << "XML successfully generated and saved as " << filename << "\n";
-        // free(str1);
-        // free(str2);
-        // free(str3);
-        // free(str4);
 
         free(filename);
         return true;
