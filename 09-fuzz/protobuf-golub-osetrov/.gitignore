@@ -1,0 +1,8 @@
+.vscode
+build
+*.bin
+*.protobuf
+MY_CORPUS
+.cache
+*.pb*
+crash-*

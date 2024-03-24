@@ -1,0 +1,20 @@
+namespace StudentFormat;
+
+struct StudentProject {
+   repo:[ubyte:59];
+   mark:uint8;
+}
+
+struct Student {
+    name:[ubyte:32];
+    login:[ubyte:16];
+    group:[ubyte:8];
+    practice:[uint8:8];
+    project:StudentProject;
+    mark:float32;
+}
+
+table StudentMessage {
+    studentimpl:[Student];
+}
+root_type StudentMessage;

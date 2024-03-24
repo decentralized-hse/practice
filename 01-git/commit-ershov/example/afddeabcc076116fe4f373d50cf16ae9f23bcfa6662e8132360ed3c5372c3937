@@ -1,0 +1,18 @@
+Root: e21d3a526d08ae5fac7bd69455022e2fec66b051641a1bcbbee7744e32095b02
+Date: 19 Feb 2024 02:10:58 MSK
+
+# git commit by Ershov Ivan
+
+Изначально в папке examples лежит файл `e21d3a526d08ae5fac7bd69455022e2fec66b051641a1bcbbee7744e32095b02`, в котором написано:
+```
+Just a text file
+
+```
+
+Пример запуска из папки examples:
+```bash
+python3 ./../commit-ershov.py e21d3a526d08ae5fac7bd69455022e2fec66b051641a1bcbbee7744e32095b02 < ../README.md 
+```
+
+В результате создается два файла, в одном записаны .commit и .parent, а во втором написан текст коммита, время и хеш корня
+

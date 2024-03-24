@@ -18,7 +18,12 @@ function main(){
         throw new Error("Directory name shouldn`t contains symbols \\t : /")
     }
 
-    const newRootHash = addNewFolder(hash, ['root'].concat(parsedPath.dir.split('/')).concat(newDirName))
+	pp = ['root']
+	if (parsedPath.dir) {
+		pp = pp.concat(parsedPath.dir.split('/'));
+	}
+	pp = pp.concat(newDirName)
+    const newRootHash = addNewFolder(hash, pp)
     console.log('New version root hash: ' + newRootHash)
 }
 
