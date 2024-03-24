@@ -1,0 +1,2 @@
+frelatage==0.1.7
+atheris==2.3.0
