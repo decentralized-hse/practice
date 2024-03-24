@@ -60,7 +60,7 @@ fn read_bytes<'a>(bytes: &'a [u8], offset: &mut usize, length: usize) -> &'a [u8
 fn try_to_read(input: &[u8]) -> Result<(), &'static str> {
     let count = input.len() / TOTAL_LEN;
 
-    for (i, input_offset) in (0..count * TOTAL_LEN).step_by(TOTAL_LEN).enumerate() {
+    for (_i, input_offset) in (0..count * TOTAL_LEN).step_by(TOTAL_LEN).enumerate() {
         let bytes = &input[input_offset..input_offset + TOTAL_LEN];
         let mut offset = 0;
 
@@ -172,15 +172,3 @@ pub fn capnproto_to_bin(input: &[u8]) -> Vec<u8> {
 
     res
 }
-
-
-// fn some_func(data: &[u8]) {
-//     if !validate_input(data) {
-//         return;
-//     }
-//     let old = bin_to_capnproto(data);
-
-//     let new = capnproto_to_bin(old.clone().as_slice());
-
-//     assert!(old == new);
-// }
