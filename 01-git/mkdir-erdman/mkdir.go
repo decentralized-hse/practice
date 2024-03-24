@@ -30,15 +30,18 @@ func MakeDir(path string, hash string) string {
 	newDirHash := WriteBlob("")
 	list = append(list, fmt.Sprintf(".parent/\t%s", hash))
 
+	fullPath := []string{}
+	dirList := strings.Split(path, "/")
+
 	if strings.Contains(path, "/") {
-		dirList := strings.Split(path, "/")
 		parentDir := hash
 		for i := range dirList {
+			fullPath = append(fullPath, parentDir)
 			if i+1 == len(dirList) {
 				f, err := os.OpenFile(parentDir, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 				CheckError(err)
 				defer f.Close()
-				f.WriteString(fmt.Sprintf("%s/\t%s\n", dirList[i], newDirHash))
+				//f.WriteString(fmt.Sprintf("%s/\t%s\n", dirList[i], newDirHash))
 			} else {
 				data, err := os.ReadFile(parentDir)
 				CheckError(err)
@@ -66,6 +69,43 @@ func MakeDir(path string, hash string) string {
 	} else {
 		list = append(list, fmt.Sprintf("%s/\t%s", path, newDirHash))
 	}
+
+	if len(fullPath) > 1 {
+		updHash := newDirHash
+		updDirIndex := len(dirList) - 1
+		updDir := dirList[updDirIndex]
+		for i := len(fullPath) - 1; i >= 0; i-- {
+			prevList := GetFileList(fullPath[i])
+			updated := false
+			for j := range prevList {
+				if strings.Contains(prevList[j], updDir) {
+					updated = true
+					prevList[j] = fmt.Sprintf("%s/\t%s", updDir, updHash)
+				}
+				if i == 0 && strings.Contains(prevList[j], ".parent/") {
+					prevList[j] = fmt.Sprintf(".parent/\t%s", hash)
+				}
+			}
+			if !updated {
+				prevList = append(prevList, fmt.Sprintf("%s/\t%s", updDir, updHash))
+			}
+
+			sort.Strings(prevList)
+			resStr := ""
+			for _, el := range prevList {
+				resStr += el
+				resStr += "\n"
+			}
+			updHash = WriteBlob(resStr)
+
+			updDirIndex--
+			if updDirIndex >= 0 {
+				updDir = dirList[updDirIndex]
+			}
+		}
+		return updHash
+	}
+
 	sort.Strings(list)
 	newDirData := strings.Join(list, "\n") + "\n"
 	newRootHash := Sha256(newDirData)
@@ -78,7 +118,13 @@ func GetFileList(path string) []string {
 	data, err := os.ReadFile(path)
 	CheckError(err)
 	list := strings.Split(string(data), "\n")
-	return list
+	resList := []string{}
+	for _, el := range list {
+		if el != "" {
+			resList = append(resList, el)
+		}
+	}
+	return resList
 }
 
 func Sha256(s string) string {
@@ -89,7 +135,7 @@ func Sha256(s string) string {
 
 func WriteBlob(data string) string {
 	hash := Sha256(data)
-	err := os.WriteFile(hash, []byte(""), 0666)
+	err := os.WriteFile(hash, []byte(data), 0666)
 	CheckError(err)
 	return hash
 }
