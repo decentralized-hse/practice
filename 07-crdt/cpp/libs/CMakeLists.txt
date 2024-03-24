@@ -1,5 +1,5 @@
-add_subdirectory(tlv)
 add_subdirectory(utils)
+add_subdirectory(tlv)
 
 # combine
 add_library(libs INTERFACE)

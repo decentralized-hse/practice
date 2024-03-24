@@ -14,3 +14,11 @@ file(GLOB_RECURSE LIB_HEADERS ${LIB_PATH}/*.hpp)
 
 add_library(${LIB_TARGET} STATIC ${LIB_CXX_SOURCES} ${LIB_HEADERS})
 target_include_directories(${LIB_TARGET} PUBLIC ${LIB_INCLUDE_PATH})
+
+# --------------------------------------------------------------------
+
+# Dependencies
+
+set(LIB_DEPENDENCIES utils)
+
+target_link_libraries(${LIB_TARGET} PUBLIC ${LIB_DEPENDENCIES})

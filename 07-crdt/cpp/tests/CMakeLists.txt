@@ -10,3 +10,4 @@ endfunction()
 message(STATUS "Configuring tests")
 
 MakeTest(test_zip)
+MakeTest(test_tlv)

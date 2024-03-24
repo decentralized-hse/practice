@@ -1,10 +1,11 @@
-#include <gtest/gtest.h>
-
 #include <cstddef>
 #include <cstdint>
 #include <map>
-#include <utils/zipint.hpp>
 #include <vector>
+
+#include <gtest/gtest.h>
+
+#include <utils/zipint.hpp>
 
 TEST(ZipInt, TestZigInt64) {
   std::vector<int64_t> tests = {
