@@ -55,7 +55,7 @@ bool check_double(float a) {
 
 bool check_special_symbols(char* str, int sz) {
     for (int i = 0; i < sz; i++) {
-        if (str[i] == 10 || str[i] == 9 || str[i] == 13 || str[i] == 32 || str[i] == 12) {
+        if (str[i] == 10 || str[i] == 9 || str[i] == 13 || str[i] == 32 || str[i] == 12 || (str[i] < 20 && str[i] != 0)) {
             return true;
         }
     }
