@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ll/bytes.hpp>
 
 namespace tlv {
