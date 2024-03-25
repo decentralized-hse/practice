@@ -29,6 +29,8 @@ class RecordReader {
 
   Record ReadNext();
 
+  ll::Bytes Extract();
+
  private:
   Header ReadHeader();
 

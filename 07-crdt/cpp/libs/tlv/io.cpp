@@ -56,9 +56,7 @@ RecordWriter& RecordWriter::WriteRecord(char literal, const ll::Bytes& body,
 }
 
 ll::Bytes RecordWriter::Extract() {
-  ll::Bytes empty;
-  std::swap(bytes_, empty);
-  return empty;
+  return std::move(bytes_);
 }
 
 void RecordWriter::WriteHeader(char literal, size_t body_len) {
@@ -94,6 +92,10 @@ Record RecordReader::ReadNext() {
   ll::Bytes body = bytes_.Read(header.body_size);
 
   return {std::move(header), std::move(body)};
+}
+
+ll::Bytes RecordReader::Extract() {
+  return std::move(bytes_);
 }
 
 Header RecordReader::ReadHeader() {

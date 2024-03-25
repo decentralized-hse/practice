@@ -8,9 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(third_party)
-
 add_subdirectory(libs)
 
-# TODO: add other crdt-types
+add_subdirectory(lwwv-isfr-artemenko)
 
 add_subdirectory(tests)
