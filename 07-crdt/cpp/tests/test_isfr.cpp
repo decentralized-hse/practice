@@ -3,6 +3,7 @@
 #include <isfr/types.hpp>
 #include <ll/zipint.hpp>
 #include <ll/bytes.hpp>
+#include <cmn/id.hpp>
 
 TEST(ISFR, TestTLV) {
   ll::Bytes body = {'t', 'e', 's', 't'};
@@ -53,6 +54,18 @@ TEST(ISFR, TestF) {
   ll::Bytes delta = isfr::Fdelta(tlv1, isfr::Fnative(tlv2));
   ll::Bytes merged = isfr::Fmerge({tlv1, delta});
   ASSERT_EQ("3.141592", isfr::Fstring(merged));
+}
+
+TEST(ISFR, TestR) {
+  ll::Bytes tlv1 = isfr::Rparse("ae-32");
+  cmn::Id id1 = cmn::Id{0, 0x32, 0xae};
+  cmn::Id id2 = isfr::Rnative(tlv1);
+  ASSERT_EQ(id1, id2);
+
+  ll::Bytes tlv2 = isfr::Rparse("ae-33");
+  ll::Bytes delta = isfr::Rdelta(tlv1, isfr::Rnative(tlv2));
+  ll::Bytes merged = isfr::Rmerge({tlv1, delta});
+  ASSERT_EQ("ae-33", isfr::Rstring(merged));
 }
 
 TEST(ISFR, TestIMerge) {

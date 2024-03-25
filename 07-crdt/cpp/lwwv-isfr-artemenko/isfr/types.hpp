@@ -1,9 +1,10 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include <ll/bytes.hpp>
-#include <vector>
+#include <cmn/id.hpp>
 
 namespace isfr {
 
@@ -42,5 +43,14 @@ ll::Bytes Ftlv(double value, Time time = {});
 ll::Bytes Fmerge(std::vector<ll::Bytes> tlvs);
 ll::Bytes Fdelta(ll::Bytes tlv, double new_value);
 bool Fvalid(ll::Bytes tlv);
+
+// R
+cmn::Id Rnative(ll::Bytes tlv);
+std::string Rstring(ll::Bytes tlv);
+ll::Bytes Rparse(std::string text);
+ll::Bytes Rtlv(cmn::Id id, Time time = {});
+ll::Bytes Rmerge(std::vector<ll::Bytes> tlvs);
+ll::Bytes Rdelta(ll::Bytes tlv, cmn::Id new_value);
+bool Rvalid(ll::Bytes tlv);
 
 }  // namespace isfr

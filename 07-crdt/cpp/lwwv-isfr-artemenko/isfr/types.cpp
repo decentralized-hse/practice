@@ -9,6 +9,7 @@
 #include <ll/zipint.hpp>
 #include <ll/bytes.hpp>
 #include <tlv/io.hpp>
+#include <cmn/id.hpp>
 
 #include <isfr/types.hpp>
 
@@ -255,6 +256,40 @@ ll::Bytes Fdelta(ll::Bytes tlv, double new_value) {
 bool Fvalid(ll::Bytes tlv) {
   auto [time, value] = Parse(std::move(tlv));
   return 0 <= value.size() && value.size() <= 8;
+}
+
+cmn::Id Rnative(ll::Bytes tlv) {
+  auto [time, value] = Parse(std::move(tlv));
+  return cmn::UnzipID(std::move(value));
+}
+
+std::string Rstring(ll::Bytes tlv) {
+  return cmn::ToString(Rnative(std::move(tlv)));
+}
+
+ll::Bytes Rparse(std::string text) {
+  cmn::Id id = cmn::FromString(text);
+  return Rtlv(id);
+}
+
+ll::Bytes Rtlv(cmn::Id id, Time time) {
+  return Tlvt(cmn::Zip(id), std::move(time));
+}
+
+ll::Bytes Rmerge(std::vector<ll::Bytes> tlvs) {
+  return ISFRmerge(std::move(tlvs));
+}
+
+ll::Bytes Rdelta(ll::Bytes tlv, cmn::Id new_value) {
+  auto [time, value] = Parse(std::move(tlv));
+  time.revision = std::abs(time.revision);
+
+  return Tlvt(cmn::Zip(new_value), {time.revision + 1, 0});
+}
+
+bool Rvalid(ll::Bytes tlv) {
+  auto [time, value] = Parse(std::move(tlv));
+  return !value.empty();
 }
 
 }  // namespace isfr
