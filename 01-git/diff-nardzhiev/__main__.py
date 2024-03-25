@@ -89,8 +89,6 @@ def get_diff(path, old_hash, new_hash):
         if prev_obj in cur_is_dir and cur_is_dir[prev_obj]:
             continue
         nested_diff = get_diff(os.path.join(path, prev_obj), prev_objects_hash[prev_obj], None )
-        if len(nested_diff) == 0:
-            continue
         diff += f"d {os.path.join(path, prev_obj)}\n"
         diff += nested_diff
 
@@ -100,8 +98,6 @@ def get_diff(path, old_hash, new_hash):
         if cur_obj in prev_is_dir and prev_is_dir[cur_obj]:
             continue
         nested_diff = get_diff(os.path.join(path, cur_obj), None, cur_objects_hash[cur_obj])
-        if len(nested_diff) == 0:
-            continue
         diff += f"d {os.path.join(path, cur_obj)}\n"
         diff += nested_diff
 
