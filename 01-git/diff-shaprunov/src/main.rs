@@ -40,6 +40,9 @@ fn read_file_full(hash_file_path: &str) -> io::Result<(HashMap<String, String>, 
     let mut name_to_hash = HashMap::new();
     let mut name_to_type = HashMap::new();
 
+    if hash_file_path.is_empty() {
+        return Ok((name_to_hash, name_to_type))
+    }
     let path = Path::new(hash_file_path);
     println!("Reading hash file: {:?}", path);
     let file = File::open(path)?;
@@ -53,6 +56,9 @@ fn read_file_full(hash_file_path: &str) -> io::Result<(HashMap<String, String>, 
 
         match read_file_hash(&line) {
             Ok((obj_name, obj_hash, is_dir)) => {
+                if check_system_file(obj_name) {
+                    continue;
+                }
                 name_to_hash.insert(obj_name.to_string(), obj_hash.to_string());
                 name_to_type.insert(obj_name.to_string(), is_dir);
             },
@@ -66,7 +72,7 @@ fn read_file_full(hash_file_path: &str) -> io::Result<(HashMap<String, String>, 
 }
 
 fn check_system_file(file: &str) -> bool {
-    file.starts_with(".")
+    file.starts_with(".") && file.len() > 2
 }
 
 fn diff(path: &PathBuf, old_hash: &str, new_hash: &str, inside: bool) -> io::Result<String> {
@@ -74,9 +80,6 @@ fn diff(path: &PathBuf, old_hash: &str, new_hash: &str, inside: bool) -> io::Res
     let (name_to_hash_old, directory_marker_old) = read_file_full(old_hash)?;
     let (mut name_to_hash_new, directory_marker) = read_file_full(new_hash)?;
     for (object_old, hash_old) in name_to_hash_old.iter() {
-        if check_system_file(object_old) {
-            continue;
-        }
         if *directory_marker_old.get(object_old).unwrap_or(&false) {
             continue;
         }
@@ -92,9 +95,6 @@ fn diff(path: &PathBuf, old_hash: &str, new_hash: &str, inside: bool) -> io::Res
     }
 
     for (object_old, hash_old) in name_to_hash_old.iter() {
-        if check_system_file(object_old) {
-            continue;
-        }
         if !*directory_marker_old.get(object_old).unwrap_or(&true) {
             continue;
         }
@@ -111,14 +111,39 @@ fn diff(path: &PathBuf, old_hash: &str, new_hash: &str, inside: bool) -> io::Res
         }
     }
 
-    for (object_new, hash_new) in name_to_hash_new.iter() {
-        if check_system_file(objectnew) {
-            continue;
-        }
+    for (object_new, _hash_new) in name_to_hash_new.iter() {
         if !directory_marker.get(object_new).unwrap_or(&false) {
             diff_str += &format!("+\t{}\n", path.join(object_new).display());
         }
     }
+
+    for (object_new, hash_new) in name_to_hash_new.iter() {
+        if !directory_marker.get(object_new).unwrap_or(&false) {
+            continue;
+        }
+        if !*directory_marker_old.get(object_new).unwrap_or(&true) {
+            continue;
+        }
+        let nested_diff = diff(&path.join(object_new), &String::new(),hash_new, inside)?;
+        diff_str.push_str(&format!("d\t{}\n", path.join(object_new).display()));
+        diff_str.push_str(&nested_diff);
+    }
+
+    for (object_old, hash_old) in name_to_hash_old.iter() {
+        if !directory_marker_old.get(object_old).unwrap_or(&false) {
+            continue;
+        }
+        if !directory_marker.get(object_old).unwrap_or(&false) {
+            continue;
+        }
+        let nested_diff = diff(&path.join(object_old), hash_old, &name_to_hash_new[object_old], inside)?;
+        if nested_diff.is_empty() {
+            continue;
+        }
+        diff_str.push_str(&format!("d\t{}\n", path.join(object_old).display()));
+        diff_str.push_str(&nested_diff);
+    }
+
 
     Ok(diff_str)
 }
