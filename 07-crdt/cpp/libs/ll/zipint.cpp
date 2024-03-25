@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <iostream>
 
-#include <utils/zipint.hpp>
+#include <ll/zipint.hpp>
 
-namespace utils {
+namespace ll {
 
 namespace {
 
@@ -257,4 +257,4 @@ std::pair<int64_t, uint64_t> UnzipIU64Pair(const Bytes& bytes) {
   return {ZagZig(z), u};
 }
 
-}  // namespace utils
+}  // namespace ll

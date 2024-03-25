@@ -10,11 +10,11 @@ TEST(Tlv, TestWriteRecord) {
   writer.WriteRecord('A', {'A'});
   writer.WriteRecord('b', {'B', 'B'});
 
-  utils::Bytes buf = writer.Extract();
-  utils::Bytes correct = {'a', 1, 'A', '2', 'B', 'B'};
+  ll::Bytes buf = writer.Extract();
+  ll::Bytes correct = {'a', 1, 'A', '2', 'B', 'B'};
   ASSERT_EQ(buf, correct);
 
-  utils::Bytes c256(256, 'C');
+  ll::Bytes c256(256, 'C');
   ASSERT_EQ(c256.size(), 256);
 
   writer = tlv::RecordWriter(std::move(buf));
@@ -28,11 +28,11 @@ TEST(Tlv, TestWriteRecord) {
   tlv::RecordReader reader(std::move(buf));
   tlv::Record record = reader.ReadNext();
   ASSERT_EQ(record.header.literal, 'A');
-  ASSERT_EQ(record.body, utils::Bytes{'A'});
+  ASSERT_EQ(record.body, ll::Bytes{'A'});
 
   tlv::Record record2 = reader.ReadNext();
   ASSERT_EQ(record2.header.literal, '0');
-  ASSERT_EQ(record2.body, (utils::Bytes{'B', 'B'}));
+  ASSERT_EQ(record2.body, (ll::Bytes{'B', 'B'}));
 
   tlv::Record record3 = reader.ReadNext();
   ASSERT_EQ(record3.header.literal, 'C');

@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include <utils/zipint.hpp>
+#include <ll/zipint.hpp>
 
 TEST(ZipInt, TestZigInt64) {
   std::vector<int64_t> tests = {
@@ -13,8 +13,8 @@ TEST(ZipInt, TestZigInt64) {
   };
 
   for (auto i : tests) {
-    utils::Bytes bin = utils::Zip(i);
-    ASSERT_EQ(i, utils::UnzipI64(bin));
+    ll::Bytes bin = ll::Zip(i);
+    ASSERT_EQ(i, ll::UnzipI64(bin));
   }
 }
 
@@ -27,9 +27,9 @@ TEST(ZipInt, TestZigFloat) {
   };
 
   for (auto [d, len] : tests) {
-    utils::Bytes bin = utils::Zip(d);
+    ll::Bytes bin = ll::Zip(d);
     ASSERT_EQ(bin.size(), len);
-    ASSERT_EQ(d, utils::UnzipDouble(bin));
+    ASSERT_EQ(d, ll::UnzipDouble(bin));
   }
 }
 
@@ -43,8 +43,8 @@ TEST(ZipInt, TestZipU64Pair) {
 
   for (size_t i = 0; i < nums.size(); ++i) {
     for (size_t j = 0; j < nums.size(); ++j) {
-      utils::Bytes bin = utils::Zip(nums[i], nums[j]);
-      auto [ri, rj] = utils::UnzipU64Pair(bin);
+      ll::Bytes bin = ll::Zip(nums[i], nums[j]);
+      auto [ri, rj] = ll::UnzipU64Pair(bin);
       ASSERT_EQ(ri, nums[i]);
       ASSERT_EQ(rj, nums[j]);
     }
@@ -55,8 +55,8 @@ TEST(ZipInt, TestZipIU64Pair) {
   int64_t a = -7;
   uint64_t b = 15;
 
-  utils::Bytes bin = utils::Zip(a, b);
-  auto [i, u] = utils::UnzipIU64Pair(bin);
+  ll::Bytes bin = ll::Zip(a, b);
+  auto [i, u] = ll::UnzipIU64Pair(bin);
 
   ASSERT_EQ(a, i);
   ASSERT_EQ(b, u);

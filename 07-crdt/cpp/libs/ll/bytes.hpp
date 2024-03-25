@@ -2,7 +2,7 @@
 #include <deque>
 #include <cstddef>
 
-namespace utils {
+namespace ll {
 
 class Bytes : public std::deque<uint8_t> {
  public:
@@ -15,4 +15,4 @@ class Bytes : public std::deque<uint8_t> {
   void WriteLittleEndian(uint64_t value, uint8_t min_bytes = 0);
 };
 
-}  // namespace utils
+}  // namespace ll

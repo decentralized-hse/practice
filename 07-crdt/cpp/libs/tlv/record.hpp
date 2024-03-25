@@ -1,4 +1,4 @@
-#include <utils/bytes.hpp>
+#include <ll/bytes.hpp>
 
 namespace tlv {
 
@@ -10,7 +10,7 @@ struct Header {
 
 struct Record {
   Header header;
-  utils::Bytes body;
+  ll::Bytes body;
 };
 
 }  // namespace tlv

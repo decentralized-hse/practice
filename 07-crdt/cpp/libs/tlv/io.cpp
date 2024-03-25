@@ -38,11 +38,11 @@ char LowerCaseTransfer(char literal) {
 
 }  // namespace
 
-RecordWriter::RecordWriter(utils::Bytes bytes)
+RecordWriter::RecordWriter(ll::Bytes bytes)
     : bytes_{std::move(bytes)} {
 }
 
-RecordWriter& RecordWriter::WriteRecord(char literal, const utils::Bytes& body,
+RecordWriter& RecordWriter::WriteRecord(char literal, const ll::Bytes& body,
                                         bool tiny) {
   if (tiny && body.size() <= 9) {
     bytes_.WriteLittleEndian('0' + body.size(), 1);
@@ -55,8 +55,8 @@ RecordWriter& RecordWriter::WriteRecord(char literal, const utils::Bytes& body,
   return *this;
 }
 
-utils::Bytes RecordWriter::Extract() {
-  utils::Bytes empty;
+ll::Bytes RecordWriter::Extract() {
+  ll::Bytes empty;
   std::swap(bytes_, empty);
   return empty;
 }
@@ -80,7 +80,7 @@ void RecordWriter::WriteHeader(char literal, size_t body_len) {
   }
 }
 
-RecordReader::RecordReader(utils::Bytes bytes)
+RecordReader::RecordReader(ll::Bytes bytes)
     : bytes_(std::move(bytes)) {
 }
 
@@ -91,7 +91,7 @@ Record RecordReader::ReadNext() {
     throw std::runtime_error("Invalid record");
   }
 
-  utils::Bytes body = bytes_.Read(header.body_size);
+  ll::Bytes body = bytes_.Read(header.body_size);
 
   return {std::move(header), std::move(body)};
 }

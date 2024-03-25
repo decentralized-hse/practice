@@ -19,6 +19,6 @@ target_include_directories(${LIB_TARGET} PUBLIC ${LIB_INCLUDE_PATH})
 
 # Dependencies
 
-set(LIB_DEPENDENCIES utils)
+set(LIB_DEPENDENCIES ll)
 
 target_link_libraries(${LIB_TARGET} PUBLIC ${LIB_DEPENDENCIES})

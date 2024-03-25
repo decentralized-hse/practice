@@ -7,23 +7,23 @@ namespace tlv {
 class RecordWriter {
  public:
   RecordWriter() = default;
-  explicit RecordWriter(utils::Bytes bytes);
+  explicit RecordWriter(ll::Bytes bytes);
 
-  RecordWriter& WriteRecord(char literal, const utils::Bytes& body,
+  RecordWriter& WriteRecord(char literal, const ll::Bytes& body,
                             bool tiny = false);
 
-  utils::Bytes Extract();
+  ll::Bytes Extract();
 
  private:
   void WriteHeader(char literal, size_t body_len);
 
  private:
-  utils::Bytes bytes_;
+  ll::Bytes bytes_;
 };
 
 class RecordReader {
  public:
-  explicit RecordReader(utils::Bytes bytes);
+  explicit RecordReader(ll::Bytes bytes);
 
   Record ReadNext();
 
@@ -31,7 +31,7 @@ class RecordReader {
   Header ReadHeader();
 
  private:
-  utils::Bytes bytes_;
+  ll::Bytes bytes_;
 };
 
 }  // namespace tlv

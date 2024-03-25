@@ -1,9 +1,9 @@
 #include <cassert>
 #include <cstddef>
 #include <deque>
-#include <utils/bytes.hpp>
+#include <ll/bytes.hpp>
 
-namespace utils {
+namespace ll {
 
 Bytes Bytes::Read(uint64_t count) {
   Bytes front(begin(), begin() + count);
@@ -37,4 +37,4 @@ void Bytes::Append(Bytes bytes) {
   insert(end(), bytes.begin(), bytes.end());
 }
 
-}  // namespace utils
+}  // namespace ll
