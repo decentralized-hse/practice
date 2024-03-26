@@ -9,6 +9,11 @@
 
 struct Bytes LWWvalue(const struct Bytes tlv);
 
+struct Bytes LWWdelta(const struct Bytes old_tlv, const struct Bytes new_tlv);
+
+const struct Bytes LWWmerge(char lit, const struct Bytes tlvs[],
+                            size_t tlvs_len);
+
 //////////////////// INT64 ////////////////////
 
 bool Ivalid(const struct Bytes tlv);
