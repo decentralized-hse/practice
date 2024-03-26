@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package protobuf.kogan;
+
+message Project {
+    string repo = 1;
+    bytes mark = 2;
+}
+
+message Student {
+    string name = 1;
+    string login = 2;
+    string group = 3;
+    bytes practice = 4;
+
+    Project project = 5;
+    float mark = 6;
+}
+
+message Students {
+    repeated Student students = 1;
+}
