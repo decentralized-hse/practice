@@ -6,6 +6,7 @@
 #include <fstream>
 #include <cctype>
 #include <cstdlib>
+#include <cstdint>
 
 struct Student {
     // имя может быть и короче 32 байт, тогда в хвосте 000
