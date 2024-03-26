@@ -1,2 +1,2 @@
-add_executable(isfr-demo main.cpp)
-target_link_libraries(isfr-demo isfr)
+add_executable(isfr_demo main.cpp)
+target_link_libraries(isfr_demo isfr)
