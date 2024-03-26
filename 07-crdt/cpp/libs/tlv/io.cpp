@@ -82,6 +82,14 @@ RecordReader::RecordReader(ll::Bytes bytes)
     : bytes_(std::move(bytes)) {
 }
 
+bool RecordReader::IsEmpty() const {
+  return bytes_.empty();
+}
+
+bool RecordReader::HasSome() const {
+  return !IsEmpty();
+}
+
 Record RecordReader::ReadNext() {
   Header header = ReadHeader();
 

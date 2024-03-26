@@ -27,6 +27,9 @@ class RecordReader {
  public:
   explicit RecordReader(ll::Bytes bytes);
 
+  bool IsEmpty() const;
+  bool HasSome() const;
+
   Record ReadNext();
 
   ll::Bytes Extract();
