@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("XmlFmt")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d6abda1b64301f6d97cd4a3108e5e3523dee72da")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+38095b0d631b19f3a59a6f9fd916c5d17a50d8e0")]
 [assembly: System.Reflection.AssemblyProductAttribute("XmlFmt")]
 [assembly: System.Reflection.AssemblyTitleAttribute("XmlFmt")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
