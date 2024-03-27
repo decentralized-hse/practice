@@ -14,6 +14,8 @@
 #define INVALID_ROOT_HASH   3
 #define INVALID_PATH        4
 #define ALREADY_EXISTS      5
+#define MALFORMED           6
+#define CANNOT_OPEN_FILE    7
 
 
 typedef struct {
@@ -57,7 +59,7 @@ void calculate_hash(char* record, char* new_hash) {
     }
 }
 
-void write_to_buffer(char* smth, char** buffer, int is_hash) {
+void write_to_buffer(char* smth, char** buffer, int is_hash, int append_slash) {
     unsigned int buffer_len = *buffer == NULL ? 0 : strlen(*buffer);
     unsigned int size = buffer_len + strlen(smth) + (is_hash ? 1 : 2) + 1;
 
@@ -71,15 +73,18 @@ void write_to_buffer(char* smth, char** buffer, int is_hash) {
 
     if (is_hash) {
         sprintf(new_buffer + buffer_len, "%s\n", smth);
-    } else {
+    } else if (append_slash) {
         sprintf(new_buffer + buffer_len, "%s/\t", smth);
+    } else {
+        sprintf(new_buffer + buffer_len, "%s\t", smth);
     }
 
     *buffer = new_buffer;
 }
 
 int execute(char* root_hash, char* next_item, char* res_hash, char* path_end) {
-    if (next_item == NULL || strlen(next_item) == 0) {
+    if (next_item == NULL || strlen(next_item) == 0 || next_item >= path_end) {
+        printf("Already exists\n");
         return ALREADY_EXISTS;
     }
 
@@ -92,8 +97,8 @@ int execute(char* root_hash, char* next_item, char* res_hash, char* path_end) {
 
     FILE* cur_blob = fopen(root_hash, "r");
     if (cur_blob == NULL) {
-        printf("Couldn't open path %s in %s\n", next_item, root_hash);
-        return INVALID_PATH;
+        printf("Couldn't open file %s in %s\n", next_item, root_hash);
+        return CANNOT_OPEN_FILE;
     }
 
     char* file_buffer = NULL;
@@ -104,12 +109,20 @@ int execute(char* root_hash, char* next_item, char* res_hash, char* path_end) {
     while (getline(&line, &len, cur_blob) != -1) {
         char* blob_name = strtok(line, "\t");
         size_t blob_name_len = strlen(blob_name);
+
+        if (blob_name_len == 0) {
+            break;
+        }
+
         char* blob_hash = strtok(NULL, "\n");
+        if (blob_hash == NULL) {
+            printf("Malformed\n");
+            return MALFORMED;
+        }
 
         if (strcmp(blob_name, ".parent/") == 0) {
-            blob_name[blob_name_len - 1] = 0;
-            write_to_buffer(blob_name, &file_buffer, 0);
-            write_to_buffer(root_hash, &file_buffer, 1);
+            write_to_buffer(blob_name, &file_buffer, 0, 0);
+            write_to_buffer(root_hash, &file_buffer, 1, 0);
         } else if (blob_name[blob_name_len - 1] == '/' && next_item_len + 1 == blob_name_len && strncmp(blob_name, next_item, next_item_len) == 0) {
             char new_hash[HASH_LEN + 1];
             new_hash[HASH_LEN] = 0;
@@ -122,27 +135,31 @@ int execute(char* root_hash, char* next_item, char* res_hash, char* path_end) {
                 return sub_res;
             }
 
-            blob_name[blob_name_len - 1] = 0;
-            write_to_buffer(blob_name, &file_buffer, 0);
-            write_to_buffer(new_hash, &file_buffer, 1);
+            write_to_buffer(blob_name, &file_buffer, 0, 0);
+            write_to_buffer(new_hash, &file_buffer, 1, 0);
             success = 1;
         } else if (strncmp(blob_name, next_item, next_item_len) > 0 && !success) {
             if (next_item + strlen(next_item) + 1 < path_end) {
+                printf("Parent directory %s does not exist\n", next_item);
                 return INVALID_PATH;
             }
 
             FILE* new_dir = fopen(EMPTY_HASH, "w");
+            if (new_dir == NULL) {
+                printf ("Could not open file to create empty directory with hash %s", EMPTY_HASH);
+                return CANNOT_OPEN_FILE;
+            }
             fclose(new_dir);
 
-            write_to_buffer(next_item, &file_buffer, 0);
-            write_to_buffer(EMPTY_HASH, &file_buffer, 1);
+            write_to_buffer(next_item, &file_buffer, 0, 1);
+            write_to_buffer(EMPTY_HASH, &file_buffer, 1, 0);
 
-            write_to_buffer(blob_name, &file_buffer, 0);
-            write_to_buffer(blob_hash, &file_buffer, 1);
+            write_to_buffer(blob_name, &file_buffer, 0, 0);
+            write_to_buffer(blob_hash, &file_buffer, 1, 0);
             success = 1;
         } else {
-            write_to_buffer(blob_name, &file_buffer, 0);
-            write_to_buffer(blob_hash, &file_buffer, 1);
+            write_to_buffer(blob_name, &file_buffer, 0, 0);
+            write_to_buffer(blob_hash, &file_buffer, 1, 0);
         }
     }
 
@@ -153,10 +170,14 @@ int execute(char* root_hash, char* next_item, char* res_hash, char* path_end) {
         }
 
         FILE* new_dir = fopen(EMPTY_HASH, "w");
+        if (new_dir == NULL) {
+            printf ("Could not open file to create empty directory with hash %s", EMPTY_HASH);
+            return CANNOT_OPEN_FILE;
+        }
         fclose(new_dir);
 
-        write_to_buffer(next_item, &file_buffer, 0);
-        write_to_buffer(EMPTY_HASH, &file_buffer, 1);
+        write_to_buffer(next_item, &file_buffer, 0, 1);
+        write_to_buffer(EMPTY_HASH, &file_buffer, 1, 0);
     }
 
 
@@ -164,10 +185,13 @@ int execute(char* root_hash, char* next_item, char* res_hash, char* path_end) {
         calculate_hash(file_buffer, res_hash);
 
         FILE* out = fopen(res_hash, "w"); 
-        if (out) { 
-            fprintf(out, "%s", file_buffer); 
-            fclose(out); 
+        if (out == NULL) {
+            printf ("Could not open file to create create new version of directory with hash %s", res_hash);
+            return CANNOT_OPEN_FILE;
         }
+        fprintf(out, "%s", file_buffer); 
+        fclose(out);
+
         free(file_buffer);
 
         success = 1;
