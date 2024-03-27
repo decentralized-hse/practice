@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfStudent>
+  <Student xmlns="1">
+<name>²</name> <login>ov</login> <group>Ð˜45</group> <practice>
+  <boolean>true</boolean>
+<boolean>false</boolean>
+  <boolean>lse</boolean>
+  <boolean>false</boolean></practice>
+<project>
+  <repo>gi</repo>
+ </project>
+ </Student>
+</ArrayOfStudent>

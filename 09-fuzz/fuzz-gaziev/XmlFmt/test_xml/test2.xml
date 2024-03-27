@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfStudent>
+  <Student><name>И�ванов</name>
+    <login>ivanov</login> <group>ИА-345</group> <practice>
+  <boolean>true</boolean>
+  <boolean>true</boolean>
+  <boolean>false</boolean>
+  <boolean>false</boolean>
+  <boolean>false</boolean>   <boolean>false</boolean>
+  <boolean>false</boolean>
+  <boolean>false</boolean>
+    </practice>
+    <project>
+  <repo>github.com/decentralized-hse/practice/tree/main/04-formats</repo>
+     </project>
+    <mark>8</mark>
+  </Student>
+</ArrayOfStudent>

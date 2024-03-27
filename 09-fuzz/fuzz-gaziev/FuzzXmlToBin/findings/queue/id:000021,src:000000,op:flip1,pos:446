@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfStudent>
+  <Student>
+<name>Ин ов</name>
+    <login>iv</login> <group>-345</group> <practice>
+  <boolean>true</boolean>
+  <boolean>true</boolean>
+  <boolean>false</boolean>
+  <boolean>false</boolean>
+  <boolean>false</boolean>   <boolean>false</boolean>
+  <boolean>false</boolean>
+  <boolean>false</boolean>
+    </practice>
+    <project>
+  <repo>github.com/decen-hse/practice/�rts</repo>
+     </project>
+    <mark>8</mark>
+  </Student>
+</ArrayOfStudent>
