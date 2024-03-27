@@ -51,33 +51,46 @@ type is named by a letter.
  1. last-write-wins variables (`I` for int64, `S` for string, `F`
     is float64, and `R` is [id64][i])
  2. counters, `N` increment-only uint64 and `Z` two-way int64
- 3. maps (M), like key-value maps, where keys and values are `ISFR`
- 4. sets (E), contain arbitrary `ISFR` elements
- 5. arrays (L) of arbitrary `ISFR` elements
+ 3. maps (M), like key-value maps, where keys and values are `FIRST`
+ 4. sets (E), contain arbitrary `FIRST` elements
+ 5. arrays (L) of arbitrary `FIRST` elements
  6. version vectors (V)
  7. codegen
 
 The format and the merge rules are as follows.
 
-### `ISFR`
+### `FIRST`
 
 The last-write-wins register is the simplest data type to
-implement. For a field, we only need a logical timestamp and the
-value per se. A logical timestamp is a pair `{rev, src}` where
-`rev` is the revision number and `src` is the id of the author.
-For example, let's see how a bare (no TLV envelope) `I` int64
-`-11` would look like, assuming it is the 4th revision of the
-register autored by replica #5. The TLV would look like: `32 08
-05 15` (hex) where `0x15` is a [zig-zag][g] encoded and zipped
-`-11`, while `32 08 05` is a tiny [ToyTLV][t] record for a
-zipped pair of ints, 4 (signed, zig-zagged, so `08`) and 5
-(unsigned, so `05`). If we add a ToyTLV envelope, that becomes
-`69 04 32 08 05 15` (type of record `I`, length 4, then the bare
-part).
+implement. For each LWW field, we only need the latest "winner"
+op containing the logical timestamp and the value per se. A
+logical timestamp is a pair `{rev, src}` where `rev` is the
+revision number and `src` is the id of the author. For example,
+let's see how a bare (no TLV envelope) `I` int64 `-11` would
+look like, assuming it is the 4th revision of the register
+autored by replica #5. The TLV would look like: `32 08 05 15`
+(hex) where `0x15` is a [zig-zag][g] encoded and zipped `-11`,
+while `32 08 05` is a tiny [ToyTLV][t] record for a zipped pair
+of ints, 4 (signed, zig-zagged, so `08`) and 5 (unsigned, so
+`05`). If we add a ToyTLV envelope, that becomes `69 04 32 08 05
+15` (type of record `I`, length 4, then the bare part).
 
-String values are simply UTF-8 strings; int64, float64 and id64
-values get compressed using [`zip_int`][z] routines. Overlong
-encodings are forbidden both for strings and for zip-ints! 
+String `S` values are simply UTF-8 strings. Int64 `I`, float64
+`F` and id64 `R` values get compressed using [`zip_int`][z]
+routines. Overlong encodings are forbidden both for strings and
+for zip-ints! 
+
+`T` ops have a timestamp, but no value. That is the equivalent
+of a `nil` or `void` value. Those are used as placeholders in
+various cases.
+
+The string value for `FIRST` types is as follows:
+
+ 1. `F` the e-notation, JSON-like
+ 2. `I` signed integer notation,
+ 3. `R` 5-8-3 hex notation (e.g. `c187-3a62-12`)
+ 4. `S` double-quoted JSON-like, e.g. "Sarah O\'Connor"
+ 5. `T` null
 
 Merge rules for LWW are straighforward:
 
@@ -89,46 +102,77 @@ Merge rules for LWW are straighforward:
 
 `N` are increment-only counters. Their TLV state is a sequence
 of `U` records containing zipped uint64 pairs {val,src}, the
-counter value and source replica id. Their merge operator is
-per-replica `max` (as later versions are greater). Their native
-value is the sum of all replica values.
+counter value and source replica id. As the counter is inc-only,
+we may use the value itself as a revision number. The merge
+operator is per-replica `max`, as later versions are greater.
+The native value is the sum of all replica values (sum of
+contributions).
 
 `Z` are two-way counters (inc/dec). Their TLV format is a
 sequence of `I` records each having `{rev,src}` metadata as
-described in the `ISFR` section. One record corresponds to one
+described in the `FIRST` section. One record corresponds to one
 source, per-source merge rules are same as LWW. The native value
 is the sum of all `I` values.
 
 ### `E`
 
-Generic sets containing any `ISFR` elements. The TLV format is a
-sequence of enveloped ISFR records. It can contain records with
-negative version numbers. Those are tombstones (deleted
-entries). For example, `-11` from the previous example would go
-as `69 04 32 08 05 15`. Then, if replica #9 would remove that
-entry, it will change to `69 04 32 07 09 15`. Here, the version
-number changes `08` to `07` or 4 to -4, the author changes to 9.
-The entries are sorted asc lexicographically (bytes.Compare).
+Generic sets containing any `FIRST` elements. The TLV format is
+a sequence of enveloped FIRST records. It can contain records
+with negative revision numbers. Those are tombstones (deleted
+entries). For example, `I{4,5}-11` from the `FIRST` example
+would go as `69 04 32 08 05 15`. Then, if replica #3 would want
+to remove that entry, it will issue a tombstone op `I{-5,3}-11`
+or `69 04 32 09 03 15`. Here, the version number changes from
+`08` to `09` or 4 to -5, the author changes to 3.
+
+Within a set, the ops are sorted in the *value order*. Namely,
+if the type differs, they go in the alphabetical order (`F`,
+`I`, `R`, `S`, `T`). If the type is the same, they go in the
+ascending order, as per `strcmp` or `bytes.Compare`. That way,
+merging multiple versions of a set only requires one parallel
+pass of those, no additional allocation or sorting, very much
+like [mergesort][m] works.
+
+The string value for a set is like `{1,2,3}` where `1,2,3` are
+`FIRST` elements of the set.
 
 ### `M`
 
-Generic maps, mapping any `ISFR` value to any other `ISFR`
-value. The TLV format is a sequence of `ISFR` records, as
-described in the `ISFR` section. Records go in key-value pairs,
-except for tombstones (deleted entries) which go as keys, no
-values. Tombstones have negative revision number, same as `E`.
+Generic maps, mapping any `FIRST` value to any other `FIRST`
+value. The TLV format is a sequence of enveloped key-value op
+pairs. Any update should also contain the affected key-value
+pairs. Deleted entries might have `T` values (the key is
+present, the value is null) or the key might have a negative
+revision (no such key present).
 
-Pairs are sorted in the ascending byte-order of their key
-records (like `bytes.Compare()`). 
+Pairs are sorted in the value-order of their keys. When merging
+two pairs having an identical value of their keys, both the key
+and the value ops are merged according to the LWW rules. As with
+`E` sets, this only requires one parallel pass of the versions.
 
-The merge strategy is last-writer-wins, in regard to values.
+The string value for a map is like `{4:null, "key":"value"}`
 
 ### `L`
 
-Generic arrays store any `ISFR` elements. The TLV format is a
-sequence of enveloped ISFR records. The order of the sequence is
-`weave`-like, i.e. records and tombstones go as they appear(ed)
-in the array. Deleted records change to tombstones, same as E.
+Generic arrays store any `FIRST` elements. Internally, `L` are
+Causal Trees (also known as Replicated Growable Arrays, RGAs).
+The TLV format is a sequence of enveloped FIRST ops. The
+order of the sequence is a *weave*, i.e. ops go in the same
+order as they appear(ed) in the resulting array. Deleted ops 
+change to tombstones, same as E.
+
+The merging procedure follows the tree-traversal logic. Any
+change to an array must have a form of *subtrees*, each one
+arranged in the same weave order, each one prepended with a `T`
+op specifying its attachment point in the edited tree.
+
+Deletions look like `T` ops with negative revision numbers. As
+an example, suppose we have an array authored by #3 `I{1,3}1
+I{2,3}2 I{3,3}3` or `[1,2,3]` and replica #4 wants to delete the
+first entry. Then, it issues a patch `T{1,3}T{-4,4}` that merges
+to produce `I{1,3}1 T{-4,4} I{2,3}2 I{3,3}3` or `[2,3]`.
+
+The string value for an array is like `[1,2,3]`
 
 ### `V`
 
@@ -240,3 +284,4 @@ recommended to check the inputs for correctness.
 [t]: https://github.com/learn-decentralized-systems/toytlv
 [b]: https://en.wikipedia.org/wiki/LEB128
 [i]: https://github.com/learn-decentralized-systems/Chotki/blob/main/id.go#L12
+[m]: https://en.wikipedia.org/wiki/Merge_sort
