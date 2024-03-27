@@ -3,27 +3,33 @@ package main
 import (
 	"Drastijk/router"
 	"fmt"
-	"github.com/jamesruan/sodium"
-	repl "github.com/openengineer/go-repl"
 	"log"
 	"net"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/jamesruan/sodium"
+	repl "github.com/openengineer/go-repl"
 )
 
 var commands = map[string]string{
-	"help":     "               display this message",
-	"listen":   "[host][:port]	listen on an address (TCP)",
-	"connect":  "[host][:port]	connect to an address",
-	"announce": "name           announce a public key",
-	"send":     "name text      send a simple message",
-	"keys":     "name           generate a named pair of keys",
-	"contact":  "name pubkey    add a contact",
-	"ping":     "[host][:port]  send a ping to a peer",
-	"dump":     "[command]      dump the command's metadata",
-	"quit":     "               quit this program for good",
-	"exit":     "               exit",
+	"help":     "                                  display this message",
+	"add":      "n1 n2                             adds two numbers, why not?",
+	"listen":   "[host][:port]                     listen on an address (TCP)",
+	"connect":  "[host][:port]                     connect to an address",
+	"announce": "pubkeyName                        announce a public key",
+	"sendUDP":  "recPubkeyName text                send a message to recPubkeyName",
+	"sendTCP":  "recPubkeyName sndPubkeyName text  send a message expects ACK",
+	"keys":     "name                              generate a named pair of keys",
+	"contact":  "pubkeyName pubkey                 add a contact",
+	"expose":	"pubkeyName                        expose pubkey to all contacts",
+	"commit":   "                                  commit changes to node DB",
+	"show":     "[listen/keys/all]                 show node DB entries by filter",
+	"ping":     "[host][:port]                     send a ping to a peer",
+	"dump":     "[command]                         dump the command's metadata",
+	"quit":     "                                  quit this program for good",
+	"exit":     "                                  exit",
 }
 
 var node = router.Node{}
@@ -101,6 +107,9 @@ func (h *MyHandler) Eval(line string) string {
 		cmd, args := fields[0], fields[1:]
 
 		switch cmd {
+		case "commit":
+			_ = node.DB.Commit()
+			return ""
 		case "help":
 			helpMessage := []byte{}
 			for k, v := range commands {
@@ -131,8 +140,9 @@ func (h *MyHandler) Eval(line string) string {
 				return err.Error()
 			}
 			_ = node.DB.Set('C', addr, "-")
+			node.DB.Commit()
 			go node.Connect(addr, conn)
-			fmt.Printf("peer %s connected\n", addr)
+			fmt.Printf("\r\npeer %s connected\r\n", addr)
 			return ""
 		case "ping":
 			if len(args) < 1 {
@@ -159,7 +169,7 @@ func (h *MyHandler) Eval(line string) string {
 				return err.Error()
 			}
 			return ""
-		case "send":
+		case "sendUDP":
 			if len(args) != 2 {
 				return Usage(cmd)
 			}
@@ -167,7 +177,24 @@ func (h *MyHandler) Eval(line string) string {
 			if err != nil {
 				return err.Error()
 			}
-			err = node.Send(pair.PublicKey, args[1])
+			err = node.SendUDP(pair.PublicKey, args[1])
+			if err != nil {
+				return err.Error()
+			}
+			return ""
+		case "sendTCP":
+			if len(args) != 3 {
+				return Usage(cmd)
+			}
+			pair, err := node.LoadKeys(args[0])
+			if err != nil {
+				return err.Error()
+			}
+			pair_my, err := node.LoadKeys(args[1])
+			if err != nil {
+				return err.Error()
+			}
+			err = node.SendTCP(pair.PublicKey, pair_my.PublicKey, args[2])
 			if err != nil {
 				return err.Error()
 			}
@@ -197,6 +224,20 @@ func (h *MyHandler) Eval(line string) string {
 				return "the name is already known"
 			}
 			err = node.DB.Set('K', name, pubkey)
+			if err != nil {
+				return err.Error()
+			}
+			_ = node.DB.Commit()
+			return ""
+		case "expose":
+			if len(args) != 1 {
+				return Usage(cmd)
+			}
+			pair, err := node.LoadKeys(args[0])
+			if err != nil {
+				return err.Error()
+			}
+			err = node.Expose(pair)
 			if err != nil {
 				return err.Error()
 			}
