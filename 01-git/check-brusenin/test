@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$(realpath $(dirname ${BASH_SOURCE[0]}))
+$SCRIPT_DIR/build
+
+EXPECT_CODE=0
+function test() {
+    local dir_path=$1
+    local root_hash=$2
+    $SCRIPT_DIR/main $dir_path $root_hash
+    code=$?
+    local resolution
+    if [ $code -eq $EXPECT_CODE ]; then
+        resolution="success"
+    else
+        resolution="fail"
+    fi
+    echo "[TEST: $dir_path $root_hash] -> $resolution"
+    echo
+}
+
+echo "---tests start---"
+echo
+
+cd $SCRIPT_DIR/../example
+test . f21ad9b137583c2d87ca8cf3a8c14934076adf50f96f465204262315e7bfeb87
+test / f21ad9b137583c2d87ca8cf3a8c14934076adf50f96f465204262315e7bfeb87
+test subdir f21ad9b137583c2d87ca8cf3a8c14934076adf50f96f465204262315e7bfeb87
+test subdir/ f21ad9b137583c2d87ca8cf3a8c14934076adf50f96f465204262315e7bfeb87
+test subdir/ 99682225f8eeb6a007bed389c124c659f596a794d556b4c865c99995c5f03b98
+test . e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+
+EXPECT_CODE=1
+cd $SCRIPT_DIR/bad_examples
+test . 0ba904eae8773b70c75333db4de2f3ac45a8ad4ddba1b242f0b3cfc199391dd8
+
+echo "---tests done---"
