@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="google.protobuf.kotlin" type="repository">
+    <properties maven-id="com.google.protobuf:protobuf-kotlin:3.21.12" />
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/protobuf-kotlin-3.21.12.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/protobuf-java-3.21.12.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/kotlin-stdlib-1.6.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/annotations-13.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/kotlin-stdlib-common-1.6.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
