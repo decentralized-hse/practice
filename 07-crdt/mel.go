@@ -20,7 +20,7 @@ func MelParse(data []byte) (lit byte, t Time, value, rest []byte, err error) {
 		err = toytlv.ErrIncomplete
 		return
 	}
-	if lit != 'I' && lit != 'S' && lit != 'F' && lit != 'R' {
+	if lit != 'F' && lit != 'I' && lit != 'R' && lit != 'S' && lit != 'T' {
 		err = ErrBadISFR
 		return
 	}
