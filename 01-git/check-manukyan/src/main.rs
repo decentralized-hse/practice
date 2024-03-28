@@ -4,13 +4,13 @@ use std::fmt;
 
 mod validation;
 
-struct Args {
+pub struct Args {
     path: Vec<PathBuf>,
     hash: String,
 }
 
 #[derive(Debug)]
-struct ArgsError {
+pub struct ArgsError {
     info: String,
 }
 
