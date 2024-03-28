@@ -15,12 +15,14 @@ def ls(root, prefix):
             hash = next(iter(hash), None)
 
             if name.endswith(':'):
+                if name[:-1] == ".commit":
+                    continue
                 print(prefix + name[:-1])
             elif name.endswith('/'):
                 if name[:-1] == ".parent":
                     continue
                 print(prefix + name)
-                ls(hash, prefix + "/" + name)
+                ls(hash, prefix + name)
             else:
                 raise Exception("FS format compromised")
 
