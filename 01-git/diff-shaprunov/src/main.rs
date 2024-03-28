@@ -36,6 +36,10 @@ fn read_file_hash(line: &str) -> Result<(&str, &str, bool), &'static str> {
     Err("Bad input")
 }
 
+fn check_system_file(file: &str) -> bool {
+    file.starts_with(".") && file.len() > 2
+}
+
 fn read_file_full(hash_file_path: &str) -> io::Result<(HashMap<String, String>, HashMap<String, bool>)> {
     let mut name_to_hash = HashMap::new();
     let mut name_to_type = HashMap::new();
@@ -69,10 +73,6 @@ fn read_file_full(hash_file_path: &str) -> io::Result<(HashMap<String, String>, 
     }
 
     Ok((name_to_hash, name_to_type))
-}
-
-fn check_system_file(file: &str) -> bool {
-    file.starts_with(".") && file.len() > 2
 }
 
 fn diff(path: &PathBuf, old_hash: &str, new_hash: &str, inside: bool) -> io::Result<String> {
@@ -121,7 +121,7 @@ fn diff(path: &PathBuf, old_hash: &str, new_hash: &str, inside: bool) -> io::Res
         if !directory_marker.get(object_new).unwrap_or(&false) {
             continue;
         }
-        if !*directory_marker_old.get(object_new).unwrap_or(&true) {
+        if *directory_marker_old.get(object_new).unwrap_or(&true) {
             continue;
         }
         let nested_diff = diff(&path.join(object_new), &String::new(),hash_new, inside)?;
@@ -133,7 +133,7 @@ fn diff(path: &PathBuf, old_hash: &str, new_hash: &str, inside: bool) -> io::Res
         if !directory_marker_old.get(object_old).unwrap_or(&false) {
             continue;
         }
-        if !directory_marker.get(object_old).unwrap_or(&false) {
+        if *directory_marker.get(object_old).unwrap_or(&false) {
             continue;
         }
         let nested_diff = diff(&path.join(object_old), hash_old, &name_to_hash_new[object_old], inside)?;
