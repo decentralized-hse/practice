@@ -1,6 +1,8 @@
 import os
 import sys
 import student_pb2 as Student
+from google.protobuf.internal.decoder import _DecodeVarint32
+
 
 from consts import *
 from utils import *
@@ -19,9 +21,7 @@ def bin_to_protobuf(path):
         processed_data = process_unpacked_data(unpacked_data)
 
         student = build_student_proto(processed_data)
-        dump_file(student.SerializeToString(), output_file_path)
-    if not check_file_size(output_file_path, PROTOBUF_MULTIPLIER):
-        raise ValueError("Malformed input")
+        dump_pb_file(student, output_file_path)
     print(f"{os.path.getsize(path) // BIN_MULTIPLIER} students read...")
     print("written to  " + output_file_path)
 
@@ -34,16 +34,24 @@ def protobuf_to_bin(path):
     output_file_path = get_output_file_path(path, BIN_EXTENSION)
     clear_output_file_if_exist(output_file_path)
 
-    for i in range(os.path.getsize(path) // PROTOBUF_MULTIPLIER):
-        student = Student.Student()
-        student.ParseFromString(data[PROTOBUF_MULTIPLIER * i: PROTOBUF_MULTIPLIER * (i + 1)])
-
+    students_number = 0
+    pos = 0
+    while pos < len(data):
+        try:
+            msg_len, pos = _DecodeVarint32(data, pos)
+            msg_buf = data[pos: pos + msg_len]
+            pos += msg_len
+            student = Student.Student()
+            student.ParseFromString(msg_buf)
+        except Exception as e:
+            raise ValueError("Malformed input")
+        
+        students_number += 1
         processed_data = from_student_to_cformat_data(student)
         packed_data = pack_data(processed_data)
-
         dump_file(packed_data, output_file_path)
-    
-    print(f"{os.path.getsize(path) // PROTOBUF_MULTIPLIER} students read...")
+        
+    print(f"{students_number} students read...")
     print("written to  " + output_file_path)
 
 
@@ -51,15 +59,17 @@ if __name__ == "__main__":
     path = sys.argv[1]
     file_type = get_file_type(path)
     if file_type == PROTOBUF_EXTENSION:
-        if not check_file_size(path, PROTOBUF_MULTIPLIER):
+        try:
+            protobuf_to_bin(sys.argv[1])
+        except Exception:
             sys.stderr.write("Malformed input")
             sys.exit(-1)
-        protobuf_to_bin(sys.argv[1])
     elif file_type == BIN_EXTENSION:
-        if not check_file_size(path, BIN_MULTIPLIER):
+        try:
+            bin_to_protobuf(sys.argv[1])
+        except Exception:
             sys.stderr.write("Malformed input")
             sys.exit(-1)
-        bin_to_protobuf(sys.argv[1])
     else:
         sys.stderr.write("Malformed input")
         sys.exit(-1)

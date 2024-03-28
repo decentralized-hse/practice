@@ -1,6 +1,8 @@
 import os
 import struct as Struct
 
+from google.protobuf.internal.encoder import _VarintBytes
+
 from consts import *
 
 def get_file_type(file_name):
@@ -30,6 +32,12 @@ def dump_file(data, path):
     with open(path, "ab") as f:
         # binary output
         f.write(data)
+
+def dump_pb_file(message, path):
+    with open(path, "ab") as f:
+        f.write(_VarintBytes(message.ByteSize()))
+        f.write(message.SerializeToString())
+
 
 def pack_data(processed_data):
     return Struct.pack(FORMAT_STRING,

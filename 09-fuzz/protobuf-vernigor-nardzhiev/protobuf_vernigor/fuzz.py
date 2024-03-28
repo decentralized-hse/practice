@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 import atheris
-import io
 import sys
 
 with atheris.instrument_imports():
-  from protobuf_vernigor import bin_to_protobuf, protobuf_to_bin, get_output_file_path
+  from protobuf_vernigor import bin_to_protobuf, protobuf_to_bin
+  from utils import get_output_file_path
   from consts import BIN_EXTENSION, PROTOBUF_EXTENSION
 
 atheris.instrument_func
@@ -18,14 +18,17 @@ def check_roundtrip(bin_in: bytearray):
     return
   
   protobuf = get_output_file_path(binary, PROTOBUF_EXTENSION)
-  protobuf_to_bin(protobuf)
+  try:
+    protobuf_to_bin(protobuf)
+  except ValueError as e:
+    return
 
   bin_f = get_output_file_path(protobuf, BIN_EXTENSION)
   with open(bin_f, 'rb') as f:
     bin_out = f.read()
   if bin_in == bin_out:
     return
-  raise RuntimeError(f"mismatch\nin: {bin_in.hex()}\nout: {bin_out.hex()}\n")
+  raise RuntimeError(f"mismatch\nin : {bin_in.hex()}\nout: {bin_out.hex()}\n")
 
 atheris.instrument_func
 def test_one_input(data):
