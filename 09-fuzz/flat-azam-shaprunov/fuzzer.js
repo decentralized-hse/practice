@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { exec } = require('child_process');
 const crypto = require('crypto');
-const { v4: uuidv4 } = require('uuid'); // Импорт функции генерации UUID
+const { v4: uuidv4 } = require('uuid');
 
 
 function randomCharString(length, charSet) {
@@ -90,7 +90,6 @@ function testConversion(callback) {
 
 }
 
-// Запускаем тесты в цикле
 function runTests(testCount) {
     let completedTests = 0;
     const testCompletedCallback = (completed) => {
