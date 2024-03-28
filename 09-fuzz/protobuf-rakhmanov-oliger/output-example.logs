@@ -1,0 +1,306 @@
+(base) nickoliger@Nicks-Air protobuf-rakhmanov-oliger % jazzer/jazzer --cp=target/04-formats-1.0-SNAPSHOT-jar-with-dependencies.jar --target_class=Fuzzer --target_method=fuzzerTestOneInput
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+INFO: Loaded 270 hooks from com.code_intelligence.jazzer.runtime.TraceCmpHooks
+INFO: Loaded 5 hooks from com.code_intelligence.jazzer.runtime.TraceDivHooks
+INFO: Loaded 2 hooks from com.code_intelligence.jazzer.runtime.TraceIndirHooks
+INFO: Loaded 4 hooks from com.code_intelligence.jazzer.runtime.NativeLibHooks
+INFO: Loaded 2 hooks from com.code_intelligence.jazzer.sanitizers.ClojureLangHooks
+INFO: Loaded 5 hooks from com.code_intelligence.jazzer.sanitizers.Deserialization
+INFO: Loaded 5 hooks from com.code_intelligence.jazzer.sanitizers.ExpressionLanguageInjection
+INFO: Loaded 70 hooks from com.code_intelligence.jazzer.sanitizers.LdapInjection
+INFO: Loaded 46 hooks from com.code_intelligence.jazzer.sanitizers.NamingContextLookup
+INFO: Loaded 1 hooks from com.code_intelligence.jazzer.sanitizers.OsCommandInjection
+INFO: Loaded 48 hooks from com.code_intelligence.jazzer.sanitizers.ReflectiveCall
+INFO: Loaded 8 hooks from com.code_intelligence.jazzer.sanitizers.RegexInjection
+INFO: Loaded 16 hooks from com.code_intelligence.jazzer.sanitizers.RegexRoadblocks
+INFO: Loaded 12 hooks from com.code_intelligence.jazzer.sanitizers.ScriptEngineInjection
+INFO: Loaded 3 hooks from com.code_intelligence.jazzer.sanitizers.ServerSideRequestForgery
+INFO: Loaded 19 hooks from com.code_intelligence.jazzer.sanitizers.SqlInjection
+INFO: Loaded 6 hooks from com.code_intelligence.jazzer.sanitizers.XPathInjection
+INFO: Instrumented Fuzzer (took 215 ms, size +17%)
+INFO: found LLVMFuzzerCustomMutator (0x103e03038). Disabling -len_control by default.
+INFO: libFuzzer ignores flags that start with '--'
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 2126297091
+INFO: Loaded 1 modules   (512 inline 8-bit counters): 512 [0x140058000, 0x140058200), 
+INFO: Loaded 1 PC tables (512 PCs): 512 [0x11fd4f000,0x11fd51000), 
+INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
+INFO: Instrumented Main (took 40 ms, size +19%)
+INFO: Instrumented com.google.protobuf.ExtensionRegistryLite (took 7 ms, size +19%)
+INFO: Instrumented com.google.protobuf.ExtensionRegistry (took 11 ms, size +18%)
+INFO: New number of coverage counters: 1024
+INFO: Instrumented com.google.protobuf.Descriptors$FileDescriptor (took 19 ms, size +17%)
+INFO: Instrumented com.google.protobuf.Descriptors$GenericDescriptor (took 1 ms, size +11%)
+INFO: Instrumented com.google.protobuf.InvalidProtocolBufferException (took 7 ms, size +9%)
+INFO: Instrumented com.google.protobuf.Descriptors$DescriptorValidationException (took 3 ms, size +6%)
+INFO: Instrumented com.google.protobuf.Message (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.MessageLite (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.MessageLiteOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.MessageOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.Descriptors$Descriptor (took 13 ms, size +16%)
+INFO: Instrumented com.google.protobuf.Internal (took 11 ms, size +19%)
+INFO: Instrumented com.google.protobuf.CodedInputStream (took 8 ms, size +9%)
+INFO: New number of coverage counters: 2048
+INFO: Instrumented com.google.protobuf.CodedInputStream$IterableDirectByteBufferDecoder (took 30 ms, size +20%)
+INFO: Instrumented com.google.protobuf.IterableByteBufferInputStream (took 2 ms, size +20%)
+INFO: Instrumented com.google.protobuf.CodedInputStream$ArrayDecoder (took 17 ms, size +19%)
+INFO: Instrumented com.google.protobuf.CodedInputStream$StreamDecoder (took 20 ms, size +18%)
+INFO: New number of coverage counters: 4096
+INFO: Instrumented com.google.protobuf.CodedInputStream$UnsafeDirectNioDecoder (took 17 ms, size +19%)
+INFO: Instrumented com.google.protobuf.InvalidProtocolBufferException$InvalidWireTypeException (took 0 ms, size +15%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FileDescriptorProto (took 24 ms, size +16%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FileDescriptorProtoOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.GeneratedMessageV3 (took 15 ms, size +10%)
+INFO: Instrumented com.google.protobuf.AbstractMessage (took 6 ms, size +20%)
+INFO: Instrumented com.google.protobuf.AbstractMessageLite (took 3 ms, size +9%)
+INFO: Instrumented com.google.protobuf.Internal$IntList (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.Internal$ProtobufList (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.Internal$DoubleList (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.Internal$FloatList (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.Reader (took 0 ms, size +-1%)
+INFO: Instrumented com.google.protobuf.Internal$BooleanList (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.GeneratedMessageV3$BuilderParent (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.AbstractMessage$BuilderParent (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.Internal$LongList (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FileOptionsOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.GeneratedMessageV3$ExtendableMessageOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$SourceCodeInfoOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.ProtocolStringList (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.MessageLite$Builder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.Message$Builder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.Parser (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.UnknownFieldSet (took 7 ms, size +14%)
+INFO: Instrumented com.google.protobuf.UnknownFieldSet$Parser (took 1 ms, size +6%)
+INFO: Instrumented com.google.protobuf.AbstractParser (took 9 ms, size +6%)
+INFO: Instrumented com.google.protobuf.AbstractMessageLite$Builder$LimitedInputStream (took 1 ms, size +24%)
+INFO: Instrumented com.google.protobuf.ExtensionRegistryFactory (took 1 ms, size +38%)
+INFO: Instrumented com.google.protobuf.Extension (took 1 ms, size +7%)
+INFO: Instrumented com.google.protobuf.ExtensionLite (took 0 ms, size +10%)
+INFO: Instrumented com.google.protobuf.GeneratedMessage$GeneratedExtension (took 3 ms, size +10%)
+INFO: Instrumented com.google.protobuf.ExtensionRegistry$ExtensionInfo (took 0 ms, size +8%)
+INFO: Instrumented com.google.protobuf.Extension$ExtensionType (took 0 ms, size +10%)
+INFO: Instrumented com.google.protobuf.Descriptors$FieldDescriptor (took 11 ms, size +17%)
+INFO: Instrumented com.google.protobuf.FieldSet$FieldDescriptorLite (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.LazyStringArrayList (took 10 ms, size +11%)
+INFO: Instrumented com.google.protobuf.LazyStringList (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.AbstractProtobufList (took 3 ms, size +24%)
+INFO: Instrumented com.google.protobuf.IntArrayList (took 6 ms, size +16%)
+INFO: Instrumented com.google.protobuf.PrimitiveNonBoxingCollection (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FileDescriptorProto$1 (took 0 ms, size +5%)
+INFO: Instrumented com.google.protobuf.UninitializedMessageException (took 1 ms, size +12%)
+INFO: New number of coverage counters: 8192
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FileDescriptorProto$Builder (took 43 ms, size +13%)
+INFO: Instrumented com.google.protobuf.GeneratedMessageV3$Builder (took 11 ms, size +7%)
+INFO: Instrumented com.google.protobuf.AbstractMessage$Builder (took 12 ms, size +5%)
+INFO: Instrumented com.google.protobuf.AbstractMessageLite$Builder (took 6 ms, size +7%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FileOptions (took 27 ms, size +26%)
+INFO: Instrumented com.google.protobuf.GeneratedMessageV3$ExtendableMessage (took 6 ms, size +6%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$SourceCodeInfo (took 8 ms, size +7%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$DescriptorProto (took 20 ms, size +13%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$DescriptorProtoOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$EnumDescriptorProto (took 14 ms, size +13%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$EnumDescriptorProtoOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$ServiceDescriptorProto (took 11 ms, size +13%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$ServiceDescriptorProtoOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FieldDescriptorProto (took 18 ms, size +22%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FieldDescriptorProtoOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.WireFormat (took 1 ms, size +7%)
+INFO: Instrumented com.google.protobuf.ByteString (took 10 ms, size +11%)
+INFO: Instrumented com.google.protobuf.ByteString$LiteralByteString (took 4 ms, size +18%)
+INFO: Instrumented com.google.protobuf.ByteString$LeafByteString (took 1 ms, size +11%)
+INFO: Instrumented com.google.protobuf.ByteString$ByteArrayCopier (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.NioByteString (took 4 ms, size +15%)
+INFO: Instrumented com.google.protobuf.ByteString$BoundedByteString (took 1 ms, size +8%)
+INFO: Instrumented com.google.protobuf.ByteString$ByteIterator (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.Android (took 1 ms, size +48%)
+INFO: Instrumented com.google.protobuf.ByteString$ArraysByteArrayCopier (took 0 ms, size +12%)
+INFO: Instrumented com.google.protobuf.ByteString$2 (took 1 ms, size +38%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$MessageOptionsOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$DescriptorProto$1 (took 0 ms, size +5%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$DescriptorProto$Builder (took 52 ms, size +13%)
+INFO: New number of coverage counters: 16384
+INFO: Instrumented com.google.protobuf.DescriptorProtos$MessageOptions (took 11 ms, size +12%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$DescriptorProto$ExtensionRange (took 8 ms, size +11%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$DescriptorProto$ExtensionRangeOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$OneofDescriptorProto (took 8 ms, size +13%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$OneofDescriptorProtoOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$DescriptorProto$ReservedRange (took 7 ms, size +9%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$DescriptorProto$ReservedRangeOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FieldOptionsOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FieldDescriptorProto$1 (took 0 ms, size +5%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FieldDescriptorProto$Builder (took 21 ms, size +12%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FieldOptions (took 12 ms, size +14%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FieldDescriptorProto$Label (took 2 ms, size +5%)
+INFO: Instrumented com.google.protobuf.ProtocolMessageEnum (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.Internal$EnumLite (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.Internal$EnumLiteMap (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FieldDescriptorProto$Label$1 (took 0 ms, size +8%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FieldDescriptorProto$Type (took 2 ms, size +6%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FieldDescriptorProto$Type$1 (took 0 ms, size +8%)
+INFO: Instrumented com.google.protobuf.Descriptors$DescriptorPool (took 3 ms, size +32%)
+INFO: Instrumented com.google.protobuf.Descriptors$DescriptorPool$PackageDescriptor (took 1 ms, size +7%)
+INFO: Instrumented com.google.protobuf.Utf8 (took 5 ms, size +17%)
+INFO: Instrumented com.google.protobuf.Utf8$UnpairedSurrogateException (took 0 ms, size +12%)
+INFO: Instrumented com.google.protobuf.Utf8$Processor (took 3 ms, size +34%)
+INFO: Instrumented com.google.protobuf.Utf8$UnsafeProcessor (took 6 ms, size +49%)
+INFO: Instrumented com.google.protobuf.Utf8$SafeProcessor (took 3 ms, size +37%)
+INFO: Instrumented com.google.protobuf.UnsafeUtil (took 13 ms, size +12%)
+INFO: Instrumented com.google.protobuf.UnsafeUtil$MemoryAccessor (took 2 ms, size +8%)
+INFO: Instrumented com.google.protobuf.UnsafeUtil$Android64MemoryAccessor (took 3 ms, size +11%)
+INFO: Instrumented com.google.protobuf.UnsafeUtil$Android32MemoryAccessor (took 3 ms, size +11%)
+INFO: Instrumented com.google.protobuf.UnsafeUtil$JvmMemoryAccessor (took 3 ms, size +11%)
+INFO: Instrumented com.google.protobuf.UnsafeUtil$1 (took 1 ms, size +21%)
+INFO: Instrumented com.google.protobuf.Descriptors (took 2 ms, size +9%)
+INFO: Instrumented com.google.protobuf.Descriptors$EnumDescriptor (took 4 ms, size +9%)
+INFO: Instrumented com.google.protobuf.Descriptors$ServiceDescriptor (took 2 ms, size +7%)
+INFO: Instrumented com.google.protobuf.Descriptors$OneofDescriptor (took 3 ms, size +8%)
+INFO: Instrumented com.google.protobuf.TextFormat$InvalidEscapeSequenceException (took 0 ms, size +16%)
+INFO: Instrumented com.google.protobuf.Descriptors$NumberGetter (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.Descriptors$FieldDescriptor$1 (took 0 ms, size +10%)
+INFO: Instrumented com.google.protobuf.WireFormat$FieldType (took 1 ms, size +7%)
+INFO: Instrumented com.google.protobuf.WireFormat$FieldType$1 (took 0 ms, size +11%)
+INFO: Instrumented com.google.protobuf.WireFormat$FieldType$2 (took 0 ms, size +11%)
+INFO: Instrumented com.google.protobuf.WireFormat$FieldType$3 (took 0 ms, size +11%)
+INFO: Instrumented com.google.protobuf.WireFormat$FieldType$4 (took 0 ms, size +11%)
+INFO: Instrumented com.google.protobuf.WireFormat$JavaType (took 1 ms, size +8%)
+INFO: Instrumented com.google.protobuf.Descriptors$FieldDescriptor$Type (took 1 ms, size +7%)
+INFO: Instrumented com.google.protobuf.Descriptors$FieldDescriptor$JavaType (took 1 ms, size +7%)
+INFO: Instrumented com.google.protobuf.MessageReflection$MergeTarget (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.GeneratedMessageV3$ExtendableBuilder (took 10 ms, size +7%)
+INFO: Instrumented com.google.protobuf.FieldSet (took 12 ms, size +15%)
+INFO: Instrumented com.google.protobuf.LazyFieldLite (took 4 ms, size +22%)
+INFO: Instrumented com.google.protobuf.LazyField (took 1 ms, size +36%)
+INFO: Instrumented com.google.protobuf.SmallSortedMap (took 6 ms, size +21%)
+INFO: Instrumented com.google.protobuf.SmallSortedMap$1 (took 1 ms, size +20%)
+INFO: Instrumented com.google.protobuf.SmallSortedMap$EmptySet (took 0 ms, size +11%)
+INFO: Instrumented com.google.protobuf.SmallSortedMap$EmptySet$1 (took 0 ms, size +12%)
+INFO: Instrumented com.google.protobuf.SmallSortedMap$EmptySet$2 (took 0 ms, size +13%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$FieldOptions$1 (took 0 ms, size +5%)
+INFO: Instrumented com.google.protobuf.Descriptors$1 (took 0 ms, size +15%)
+INFO: Instrumented com.google.protobuf.DescriptorProtos$MessageOptions$1 (took 0 ms, size +5%)
+INFO: Instrumented com.google.protobuf.Descriptors$DescriptorPool$SearchFilter (took 0 ms, size +9%)
+INFO: Instrumented com.google.protobuf.GeneratedMessageV3$FieldAccessorTable (took 1 ms, size +9%)
+INFO: Instrumented com.google.protobuf.GeneratedMessageV3$FieldAccessorTable$FieldAccessor (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.GeneratedMessageV3$FieldAccessorTable$OneofAccessor (took 1 ms, size +11%)
+INFO: A corpus is not provided, starting from an empty corpus
+#2      INITED cov: 18 ft: 18 corp: 1/1b exec/s: 0 rss: 883Mb
+INFO: Instrumented Main$MyStudent (took 0 ms, size +18%)
+INFO: Instrumented Main$MyProject (took 0 ms, size +24%)
+#12676  NEW    cov: 44 ft: 44 corp: 2/129b lim: 128 exec/s: 6338 rss: 883Mb L: 128/128 MS: 8 InsertRepeatedBytes-Custom-ChangeByte-Custom-ChangeByte-Custom-InsertByte-Custom-
+#12771  NEW    cov: 45 ft: 45 corp: 3/257b lim: 128 exec/s: 6385 rss: 883Mb L: 128/128 MS: 10 CopyPart-Custom-ChangeBinInt-Custom-CrossOver-Custom-CMP-Custom-CMP-Custom- DE: ".protobuf"-"\001\000\000\000\000\000\000\000"-
+#12777  NEW    cov: 45 ft: 46 corp: 4/385b lim: 128 exec/s: 6388 rss: 883Mb L: 128/128 MS: 2 ChangeByte-Custom-
+#12873  NEW    cov: 45 ft: 47 corp: 5/513b lim: 128 exec/s: 6436 rss: 883Mb L: 128/128 MS: 2 ChangeBinInt-Custom-
+#12877  NEW    cov: 45 ft: 48 corp: 6/641b lim: 128 exec/s: 6438 rss: 883Mb L: 128/128 MS: 8 ShuffleBytes-Custom-ShuffleBytes-Custom-ChangeByte-Custom-ChangeByte-Custom-
+#12889  NEW    cov: 45 ft: 49 corp: 7/769b lim: 128 exec/s: 6444 rss: 883Mb L: 128/128 MS: 4 CMP-Custom-CopyPart-Custom- DE: ".protobuf"-
+#12902  NEW    cov: 56 ft: 65 corp: 8/897b lim: 128 exec/s: 6451 rss: 883Mb L: 128/128 MS: 6 CopyPart-Custom-PersAutoDict-Custom-CrossOver-Custom- DE: ".protobuf"-
+#13096  NEW    cov: 56 ft: 66 corp: 9/1025b lim: 128 exec/s: 6548 rss: 883Mb L: 128/128 MS: 8 CMP-Custom-ChangeASCIIInt-Custom-ShuffleBytes-Custom-ShuffleBytes-Custom- DE: "!\000"-
+INFO: Instrumented Main$Student (took 10 ms, size +17%)
+INFO: Instrumented Main$StudentOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented Main$ProjectOrBuilder (took 0 ms, size +0%)
+INFO: Instrumented Main$Student$1 (took 0 ms, size +8%)
+INFO: Instrumented Main$Student$Builder (took 11 ms, size +12%)
+INFO: Instrumented Main$Project (took 7 ms, size +13%)
+INFO: Instrumented Main$Project$1 (took 0 ms, size +8%)
+INFO: Instrumented Main$Project$Builder (took 8 ms, size +9%)
+INFO: Instrumented com.google.protobuf.CodedOutputStream (took 16 ms, size +7%)
+INFO: Instrumented com.google.protobuf.ByteOutput (took 0 ms, size +19%)
+INFO: Instrumented com.google.protobuf.Writer (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.CodedOutputStream$UnsafeDirectNioEncoder (took 7 ms, size +12%)
+INFO: Instrumented com.google.protobuf.CodedOutputStream$SafeDirectNioEncoder (took 6 ms, size +11%)
+INFO: Instrumented com.google.protobuf.CodedOutputStream$OutOfSpaceException (took 0 ms, size +9%)
+INFO: Instrumented com.google.protobuf.CodedOutputStream$HeapNioEncoder (took 0 ms, size +13%)
+INFO: Instrumented com.google.protobuf.CodedOutputStream$ArrayEncoder (took 6 ms, size +11%)
+INFO: Instrumented com.google.protobuf.CodedOutputStream$OutputStreamEncoder (took 6 ms, size +13%)
+INFO: Instrumented com.google.protobuf.CodedOutputStream$AbstractBufferedEncoder (took 1 ms, size +16%)
+INFO: Instrumented com.google.protobuf.CodedOutputStream$ByteOutputEncoder (took 6 ms, size +12%)
+INFO: Instrumented com.google.protobuf.SingleFieldBuilderV3 (took 2 ms, size +13%)
+INFO: Instrumented com.google.protobuf.GeneratedMessageV3$Builder$BuilderParentImpl (took 0 ms, size +8%)
+INFO: Instrumented com.google.protobuf.GeneratedMessageV3$1 (took 0 ms, size +8%)
+#13129  NEW    cov: 468 ft: 494 corp: 10/1153b lim: 128 exec/s: 6564 rss: 884Mb L: 128/128 MS: 6 CopyPart-Custom-CrossOver-Custom-CopyPart-Custom-
+#13262  NEW    cov: 468 ft: 504 corp: 11/1281b lim: 128 exec/s: 6631 rss: 884Mb L: 128/128 MS: 6 ChangeBit-Custom-CrossOver-Custom-ShuffleBytes-Custom-
+#13338  NEW    cov: 468 ft: 508 corp: 12/1409b lim: 128 exec/s: 6669 rss: 884Mb L: 128/128 MS: 2 CrossOver-Custom-
+#13341  NEW    cov: 470 ft: 512 corp: 13/1537b lim: 128 exec/s: 6670 rss: 884Mb L: 128/128 MS: 6 PersAutoDict-Custom-PersAutoDict-Custom-CopyPart-Custom- DE: ".protobuf"-"!\000"-
+#13353  NEW    cov: 470 ft: 514 corp: 14/1665b lim: 128 exec/s: 6676 rss: 884Mb L: 128/128 MS: 4 ShuffleBytes-Custom-ChangeByte-Custom-
+#13664  NEW    cov: 511 ft: 568 corp: 15/1793b lim: 128 exec/s: 6832 rss: 884Mb L: 128/128 MS: 2 CrossOver-Custom-
+#13912  NEW    cov: 511 ft: 570 corp: 16/1921b lim: 128 exec/s: 6956 rss: 884Mb L: 128/128 MS: 6 ShuffleBytes-Custom-CrossOver-Custom-ChangeByte-Custom-
+#14297  NEW    cov: 516 ft: 579 corp: 17/2049b lim: 128 exec/s: 7148 rss: 884Mb L: 128/128 MS: 10 CopyPart-Custom-CrossOver-Custom-ShuffleBytes-Custom-EraseBytes-Custom-InsertRepeatedBytes-Custom-
+#14333  NEW    cov: 516 ft: 623 corp: 18/2177b lim: 128 exec/s: 7166 rss: 884Mb L: 128/128 MS: 2 PersAutoDict-Custom- DE: "\001\000\000\000\000\000\000\000"-
+#14401  NEW    cov: 519 ft: 629 corp: 19/2305b lim: 128 exec/s: 7200 rss: 884Mb L: 128/128 MS: 6 ShuffleBytes-Custom-CopyPart-Custom-CopyPart-Custom-
+#14433  NEW    cov: 520 ft: 630 corp: 20/2433b lim: 128 exec/s: 7216 rss: 884Mb L: 128/128 MS: 4 ShuffleBytes-Custom-PersAutoDict-Custom- DE: "\001\000\000\000\000\000\000\000"-
+#14487  NEW    cov: 520 ft: 631 corp: 21/2561b lim: 128 exec/s: 7243 rss: 884Mb L: 128/128 MS: 8 CopyPart-Custom-CrossOver-Custom-CrossOver-Custom-PersAutoDict-Custom- DE: ".protobuf"-
+#14786  NEW    cov: 520 ft: 632 corp: 22/2689b lim: 128 exec/s: 7393 rss: 884Mb L: 128/128 MS: 8 CrossOver-Custom-ChangeByte-Custom-ShuffleBytes-Custom-CopyPart-Custom-
+#14947  NEW    cov: 520 ft: 639 corp: 23/2817b lim: 128 exec/s: 7473 rss: 884Mb L: 128/128 MS: 2 CrossOver-Custom-
+#15150  NEW    cov: 521 ft: 640 corp: 24/2945b lim: 128 exec/s: 7575 rss: 884Mb L: 128/128 MS: 6 EraseBytes-Custom-ChangeBinInt-Custom-InsertRepeatedBytes-Custom-
+#15156  NEW    cov: 522 ft: 641 corp: 25/3073b lim: 128 exec/s: 7578 rss: 884Mb L: 128/128 MS: 2 ChangeBit-Custom-
+#15228  NEW    cov: 522 ft: 643 corp: 26/3201b lim: 128 exec/s: 7614 rss: 884Mb L: 128/128 MS: 4 CMP-Custom-ChangeByte-Custom- DE: "\000\000\000\000\000\000\000\000"-
+#15565  NEW    cov: 527 ft: 649 corp: 27/3329b lim: 128 exec/s: 7782 rss: 884Mb L: 128/128 MS: 4 CopyPart-Custom-ChangeByte-Custom-
+#15692  NEW    cov: 527 ft: 651 corp: 28/3457b lim: 128 exec/s: 7846 rss: 884Mb L: 128/128 MS: 4 CopyPart-Custom-CMP-Custom- DE: "c\000"-
+#16384  pulse  cov: 527 ft: 651 corp: 28/3457b lim: 128 exec/s: 8192 rss: 884Mb
+#16943  NEW    cov: 533 ft: 663 corp: 29/3585b lim: 135 exec/s: 8471 rss: 884Mb L: 128/128 MS: 2 ChangeBinInt-Custom-
+#17855  NEW    cov: 533 ft: 702 corp: 30/3713b lim: 142 exec/s: 8927 rss: 884Mb L: 128/128 MS: 4 ShuffleBytes-Custom-ChangeBinInt-Custom-
+#21751  NEW    cov: 533 ft: 704 corp: 31/3841b lim: 177 exec/s: 7250 rss: 884Mb L: 128/128 MS: 2 ChangeBit-Custom-
+#21967  NEW    cov: 545 ft: 716 corp: 32/3969b lim: 177 exec/s: 7322 rss: 884Mb L: 128/128 MS: 2 ChangeBinInt-Custom-
+#25488  NEW    cov: 545 ft: 717 corp: 33/4097b lim: 205 exec/s: 8496 rss: 885Mb L: 128/128 MS: 2 CMP-Custom- DE: "\001\000\000\026"-
+#28075  NEW    cov: 547 ft: 723 corp: 34/4225b lim: 226 exec/s: 9358 rss: 885Mb L: 128/128 MS: 4 ShuffleBytes-Custom-ChangeBit-Custom-
+#28191  NEW    cov: 548 ft: 724 corp: 35/4353b lim: 226 exec/s: 9397 rss: 885Mb L: 128/128 MS: 2 ChangeByte-Custom-
+#30082  NEW    cov: 549 ft: 725 corp: 36/4481b lim: 240 exec/s: 7520 rss: 886Mb L: 128/128 MS: 2 ChangeBinInt-Custom-
+#30354  NEW    cov: 551 ft: 731 corp: 37/4609b lim: 240 exec/s: 7588 rss: 887Mb L: 128/128 MS: 4 ShuffleBytes-Custom-PersAutoDict-Custom- DE: ".protobuf"-
+#31632  NEW    cov: 555 ft: 743 corp: 38/4737b lim: 247 exec/s: 7908 rss: 887Mb L: 128/128 MS: 6 CopyPart-Custom-ChangeBit-Custom-CMP-Custom- DE: ".protobuf"-
+#32768  pulse  cov: 555 ft: 743 corp: 38/4737b lim: 254 exec/s: 8192 rss: 887Mb
+#33514  NEW    cov: 555 ft: 779 corp: 39/4865b lim: 261 exec/s: 8378 rss: 887Mb L: 128/128 MS: 4 ChangeByte-Custom-PersAutoDict-Custom- DE: "c\000"-
+#34825  NEW    cov: 566 ft: 792 corp: 40/4993b lim: 269 exec/s: 8706 rss: 887Mb L: 128/128 MS: 2 ChangeBit-Custom-
+#43381  NEW    cov: 567 ft: 793 corp: 41/5121b lim: 349 exec/s: 8676 rss: 887Mb L: 128/128 MS: 2 ChangeByte-Custom-
+#62932  NEW    cov: 582 ft: 808 corp: 42/5249b lim: 535 exec/s: 8990 rss: 887Mb L: 128/128 MS: 2 CMP-Custom- DE: "\357\277\275"-
+#64958  NEW    cov: 583 ft: 815 corp: 43/5377b lim: 553 exec/s: 9279 rss: 887Mb L: 128/128 MS: 2 CMP-Custom- DE: "\357\277\275"-
+#65536  pulse  cov: 583 ft: 815 corp: 43/5377b lim: 553 exec/s: 9362 rss: 887Mb
+#74084  NEW    cov: 583 ft: 817 corp: 44/5505b lim: 643 exec/s: 9260 rss: 887Mb L: 128/128 MS: 2 CMP-Custom- DE: ".protobuf"-
+#76725  NEW    cov: 583 ft: 821 corp: 45/5633b lim: 661 exec/s: 9590 rss: 887Mb L: 128/128 MS: 2 CMP-Custom- DE: ".protobuf"-
+#81496  NEW    cov: 583 ft: 828 corp: 46/5761b lim: 706 exec/s: 9055 rss: 887Mb L: 128/128 MS: 2 ChangeBit-Custom-
+#82367  NEW    cov: 583 ft: 831 corp: 47/5889b lim: 706 exec/s: 9151 rss: 887Mb L: 128/128 MS: 2 CrossOver-Custom-
+#83763  NEW    cov: 583 ft: 838 corp: 48/6017b lim: 715 exec/s: 9307 rss: 887Mb L: 128/128 MS: 2 CMP-Custom- DE: "\357\277\275"-
+#84189  NEW    cov: 583 ft: 839 corp: 49/6145b lim: 715 exec/s: 9354 rss: 887Mb L: 128/128 MS: 2 CopyPart-Custom-
+#84686  NEW    cov: 583 ft: 840 corp: 50/6273b lim: 715 exec/s: 9409 rss: 887Mb L: 128/128 MS: 4 ChangeBit-Custom-ChangeBinInt-Custom-
+#87777  NEW    cov: 583 ft: 842 corp: 51/6401b lim: 742 exec/s: 8777 rss: 887Mb L: 128/128 MS: 2 ChangeBinInt-Custom-
+#94203  NEW    cov: 583 ft: 848 corp: 52/6529b lim: 805 exec/s: 9420 rss: 887Mb L: 128/128 MS: 2 ChangeByte-Custom-
+#94874  NEW    cov: 583 ft: 863 corp: 53/6657b lim: 805 exec/s: 9487 rss: 887Mb L: 128/128 MS: 2 CrossOver-Custom-
+#101850 NEW    cov: 583 ft: 871 corp: 54/6785b lim: 868 exec/s: 9259 rss: 887Mb L: 128/128 MS: 2 PersAutoDict-Custom- DE: "\357\277\275"-
+#105546 NEW    cov: 583 ft: 874 corp: 55/6913b lim: 904 exec/s: 9595 rss: 887Mb L: 128/128 MS: 2 CopyPart-Custom-
+#122808 NEW    cov: 583 ft: 884 corp: 56/7041b lim: 1070 exec/s: 9446 rss: 887Mb L: 128/128 MS: 4 CopyPart-Custom-CMP-Custom- DE: "\357\277\275"-
+#124179 NEW    cov: 585 ft: 886 corp: 57/7169b lim: 1080 exec/s: 9552 rss: 887Mb L: 128/128 MS: 2 ChangeBit-Custom-
+#131072 pulse  cov: 585 ft: 886 corp: 57/7169b lim: 1140 exec/s: 9362 rss: 887Mb
+#145216 NEW    cov: 585 ft: 888 corp: 58/7297b lim: 1280 exec/s: 9076 rss: 887Mb L: 128/128 MS: 4 ChangeBit-Custom-CrossOver-Custom-
+#150458 NEW    cov: 585 ft: 889 corp: 59/7425b lim: 1330 exec/s: 9403 rss: 887Mb L: 128/128 MS: 4 ChangeBit-Custom-ChangeBinInt-Custom-
+#160664 NEW    cov: 585 ft: 891 corp: 60/7553b lim: 1430 exec/s: 9450 rss: 887Mb L: 128/128 MS: 2 ChangeBinInt-Custom-
+#161200 NEW    cov: 585 ft: 893 corp: 61/7681b lim: 1430 exec/s: 9482 rss: 887Mb L: 128/128 MS: 2 CopyPart-Custom-
+#185807 NEW    cov: 586 ft: 894 corp: 62/7809b lim: 1670 exec/s: 9290 rss: 887Mb L: 128/128 MS: 4 CopyPart-Custom-ChangeBinInt-Custom-
+INFO: Instrumented com.google.protobuf.CodedInputStream$1 (took 0 ms, size +0%)
+INFO: Instrumented com.google.protobuf.CodedOutputStream$1 (took 0 ms, size +0%)
+#213608 NEW    cov: 586 ft: 897 corp: 63/7937b lim: 1940 exec/s: 9287 rss: 888Mb L: 128/128 MS: 2 CopyPart-Custom-
+#215184 NEW    cov: 586 ft: 904 corp: 64/8065b lim: 1950 exec/s: 9355 rss: 888Mb L: 128/128 MS: 2 CopyPart-Custom-
+#217800 NEW    cov: 586 ft: 906 corp: 65/8193b lim: 1970 exec/s: 9469 rss: 888Mb L: 128/128 MS: 2 CMP-Custom- DE: ".protobuf"-
+#233507 NEW    cov: 586 ft: 915 corp: 66/8321b lim: 2116 exec/s: 9340 rss: 888Mb L: 128/128 MS: 4 ShuffleBytes-Custom-CrossOver-Custom-
+#242463 NEW    cov: 586 ft: 918 corp: 67/8449b lim: 2204 exec/s: 9325 rss: 888Mb L: 128/128 MS: 2 CopyPart-Custom-
+#243329 NEW    cov: 586 ft: 928 corp: 68/8577b lim: 2204 exec/s: 9358 rss: 888Mb L: 128/128 MS: 2 CopyPart-Custom-
+#252300 NEW    cov: 586 ft: 936 corp: 69/8705b lim: 2292 exec/s: 9344 rss: 888Mb L: 128/128 MS: 2 CMP-Custom- DE: "\357\277\275"-
+#262144 pulse  cov: 586 ft: 936 corp: 69/8705b lim: 2380 exec/s: 9362 rss: 888Mb
+#290821 NEW    cov: 586 ft: 937 corp: 70/8833b lim: 2666 exec/s: 9381 rss: 888Mb L: 128/128 MS: 2 ChangeBit-Custom-
+#310498 NEW    cov: 586 ft: 938 corp: 71/8961b lim: 2853 exec/s: 9409 rss: 888Mb L: 128/128 MS: 4 CMP-Custom-ChangeBit-Custom- DE: "\377\377\377\377\377\377\377\036"-
+#368601 NEW    cov: 587 ft: 939 corp: 72/9089b lim: 3425 exec/s: 9215 rss: 888Mb L: 128/128 MS: 6 PersAutoDict-Custom-ChangeByte-Custom-CMP-Custom- DE: "\001\000\000\026"-"com.google.protobuf.ExtensionRegistry"-
+#374197 NEW    cov: 593 ft: 1032 corp: 73/9217b lim: 3480 exec/s: 9354 rss: 888Mb L: 128/128 MS: 2 CopyPart-Custom-
+#375223 NEW    cov: 612 ft: 1070 corp: 74/9345b lim: 3480 exec/s: 9380 rss: 888Mb L: 128/128 MS: 2 ChangeBinInt-Custom-
+#381829 NEW    cov: 614 ft: 1075 corp: 75/9473b lim: 3535 exec/s: 9312 rss: 888Mb L: 128/128 MS: 2 ChangeBinInt-Custom-
+#388882 NEW    cov: 614 ft: 1076 corp: 76/9601b lim: 3601 exec/s: 9259 rss: 889Mb L: 128/128 MS: 6 ShuffleBytes-Custom-ChangeBinInt-Custom-PersAutoDict-Custom- DE: "\357\277\275"-
+#512684 NEW    cov: 614 ft: 1079 corp: 77/9729b lim: 4096 exec/s: 9155 rss: 889Mb L: 128/128 MS: 4 PersAutoDict-Custom-CMP-Custom- DE: "com.google.protobuf.ExtensionRegistry"-".protobuf"-
+#524288 pulse  cov: 614 ft: 1079 corp: 77/9729b lim: 4096 exec/s: 9039 rss: 889Mb
+#790656 NEW    cov: 614 ft: 1087 corp: 78/9857b lim: 4096 exec/s: 8883 rss: 889Mb L: 128/128 MS: 4 ChangeBinInt-Custom-CopyPart-Custom-
+#811998 NEW    cov: 614 ft: 1089 corp: 79/9985b lim: 4096 exec/s: 8826 rss: 889Mb L: 128/128 MS: 4 ChangeBit-Custom-ChangeBit-Custom-
+#812980 NEW    cov: 614 ft: 1091 corp: 80/10113b lim: 4096 exec/s: 8836 rss: 889Mb L: 128/128 MS: 4 ShuffleBytes-Custom-CopyPart-Custom-
+#850471 NEW    cov: 614 ft: 1093 corp: 81/10241b lim: 4096 exec/s: 8767 rss: 889Mb L: 128/128 MS: 2 CopyPart-Custom-
+#971823 NEW    cov: 614 ft: 1095 corp: 82/10369b lim: 4096 exec/s: 8755 rss: 889Mb L: 128/128 MS: 4 CrossOver-Custom-CrossOver-Custom-
+#972239 NEW    cov: 614 ft: 1099 corp: 83/10497b lim: 4096 exec/s: 8758 rss: 889Mb L: 128/128 MS: 2 PersAutoDict-Custom- DE: "\357\277\275"-
+#1048576        pulse  cov: 614 ft: 1099 corp: 83/10497b lim: 4096 exec/s: 8738 rss: 889Mb
+#1085936        NEW    cov: 614 ft: 1102 corp: 84/10625b lim: 4096 exec/s: 8687 rss: 889Mb L: 128/128 MS: 4 ChangeBit-Custom-CrossOver-Custom-
+#1100303        NEW    cov: 614 ft: 1105 corp: 85/10753b lim: 4096 exec/s: 8663 rss: 889Mb L: 128/128 MS: 4 ChangeBinInt-Custom-PersAutoDict-Custom- DE: "\357\277\275"-
+#1283286        NEW    cov: 614 ft: 1107 corp: 86/10881b lim: 4096 exec/s: 8612 rss: 889Mb L: 128/128 MS: 6 ChangeBit-Custom-ChangeBit-Custom-CopyPart-Custom-
+#1298177        NEW    cov: 617 ft: 1110 corp: 87/11009b lim: 4096 exec/s: 8597 rss: 889Mb L: 128/128 MS: 2 PersAutoDict-Custom- DE: ".protobuf"-
+#1314373        NEW    cov: 617 ft: 1113 corp: 88/11137b lim: 4096 exec/s: 8590 rss: 889Mb L: 128/128 MS: 2 CopyPart-Custom-

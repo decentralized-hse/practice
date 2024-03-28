@@ -49,6 +49,8 @@ jazzer/jazzer --cp=target/04-formats-1.0-SNAPSHOT-jar-with-dependencies.jar --ta
 
 ![1-test](images/1-test.png)
 
+Пример логов работы фаззинга можно посмотреть в файле `output-example.logs`
+
 В случае падения к стэктрейсу будет приложена информация о вводе:
 
 ```Java

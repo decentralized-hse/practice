@@ -2021,6 +2021,9 @@ public final class Main {
         if (os != null) {
           os.close();
         }
+        checkBinFile(path.toString());
+      } catch (IllegalArgumentException exp) {
+        throw new IllegalArgumentException("Invalid input found in binData!");
       } catch (IOException e) {
         // exit(1);
         // e.printStackTrace();
@@ -2050,7 +2053,7 @@ public final class Main {
                           .setMark(student.mark)
                           .build();
           s.writeTo(output);
-        } catch (IOException e) {
+        } catch (final IOException e) {
           // exit(1);
           throw new RuntimeException(e);
         }
@@ -2062,8 +2065,9 @@ public final class Main {
       throw new RuntimeException(e);
     } finally {
       try {
-        if (output != null)
+        if (output != null) {
           output.close();
+        }
       } catch (IOException e) {
         // exit(1);
         // e.printStackTrace();
