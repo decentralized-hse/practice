@@ -169,7 +169,9 @@ fn read_dir_by_hash(hash: &str) -> std::io::Result<Vec<DirEntry>> {
         }
 
         // else match the pattern
-        let Ok(re) = Regex::new(r"^([0-9a-zA-Z.]+)([:/])[ \t]+([0-9a-f]+)$") else {
+        let Ok(re) = Regex::new(r"^([0-9a-zA-Z._]+)([:/])[ \t]+([0-9a-f]+)$") else {
+            eprintln!("Line: '{}' in '{}' does not match the pattern. Skipping", 
+                        trimmed, hash);
             continue;
         };
 
@@ -182,6 +184,7 @@ fn read_dir_by_hash(hash: &str) -> std::io::Result<Vec<DirEntry>> {
             });
         }
 
+        line.clear();
         len = reader.read_line(&mut line)?; 
     }
 
