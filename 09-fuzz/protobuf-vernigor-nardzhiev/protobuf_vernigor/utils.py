@@ -34,9 +34,12 @@ def dump_file(data, path):
         f.write(data)
 
 def dump_pb_file(message, path):
-    with open(path, "ab") as f:
-        f.write(_VarintBytes(message.ByteSize()))
-        f.write(message.SerializeToString())
+    try:
+        with open(path, "ab") as f:
+            f.write(_VarintBytes(message.ByteSize()))
+            f.write(message.SerializeToString())
+    except Exception:
+        raise ValueError("Malformed input")
 
 
 def pack_data(processed_data):
