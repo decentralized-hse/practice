@@ -1,12 +1,13 @@
 package rdx
 
 import (
-	"github.com/learn-decentralized-systems/toyqueue"
-	"github.com/learn-decentralized-systems/toytlv"
-	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"os"
 	"testing"
+
+	"github.com/learn-decentralized-systems/toyqueue"
+	"github.com/learn-decentralized-systems/toytlv"
+	"github.com/stretchr/testify/assert"
 )
 
 func DupAndShuffle(inputs toyqueue.Records) toyqueue.Records {
@@ -110,7 +111,7 @@ func TestMMerge(t *testing.T) { // maps
 			toytlv.Record('I', Itlvt(6, Time{1, 1})),
 		),
 		toytlv.Concat( // remove 5:6
-			toytlv.Record('I', Itlvt(5, Time{-1, 1})),
+			toytlv.Record('I', Itlvt(5, Time{-2, 1})),
 		),
 	}
 
