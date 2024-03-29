@@ -20,7 +20,6 @@ static void _advance(struct parser* p) {
     if (p->_done) {
         return;
     }
-    if (p->_line) free(p->_line);
     ssize_t read = getline(&p->_line, &p->_len, p->_file);
     if (read == -1) {
         p->_done = true;
