@@ -1,4 +1,5 @@
 #include <fstream>
+#include <cstdint>
 #include <iostream>
 #include <vector>
 #include <charconv>

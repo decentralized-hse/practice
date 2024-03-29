@@ -1,4 +1,5 @@
 #include "helpers.hpp"
+#include <cstdint>
 
 using namespace std;
 
@@ -29,7 +30,7 @@ void dumpStudentKV(ofstream& out, const Student& student, size_t id) {
 
 void dumpFromBinToKv(const string& mainFileName) {
     auto in = fopen((mainFileName + ".bin").c_str(), "rb");  // фикс неправильного режима чтения файла
-    cout << "Reading binary student data from " << mainFileName << ".bin..." << endl;
+    // cout << "Reading binary student data from " << mainFileName << ".bin..." << endl;
 
     ofstream out(mainFileName + ".kv");
 
@@ -49,8 +50,9 @@ void dumpFromBinToKv(const string& mainFileName) {
         ++id;
     }
     fclose(in);  // фикс незакрытых файловых дескрипторов
-    cout << id << " students read..." << endl;
-    cout << "written to " << mainFileName << ".kv..." << endl;
+    //
+    // cout << id << " students read..." << endl;
+    // cout << "written to " << mainFileName << ".kv..." << endl;
 }
 
 void loadString(const string& str, char field[]) {
@@ -111,7 +113,7 @@ void dumpStudentBin(FILE* out, const Student& student, const string& id) {
 
 void dumpFromKvToBin(const string& mainFileName) {
     ifstream in(mainFileName + ".kv");
-    cout << "Reading kv student data from " << mainFileName << ".kv..." << endl;
+    //cout << "Reading kv student data from " << mainFileName << ".kv..." << endl;
     
     auto out = fopen((mainFileName + ".bin").c_str(), "w");
 
@@ -128,7 +130,7 @@ void dumpFromKvToBin(const string& mainFileName) {
         }
 
         if (!loadStudentField(student, key, value)) {
-            cout << "Error. Wrong type of structure field. Line: " << line << " " << key << endl;
+            //cout << "Error. Wrong type of structure field. Line: " << line << " " << key << endl;
             fclose(out);
             exit(1);
         }
@@ -141,8 +143,8 @@ void dumpFromKvToBin(const string& mainFileName) {
 
     fclose(out);
 
-    cout << atoi(prevStudentId.c_str()) + 1 << " students read..." << endl;
-    cout << "written to " << mainFileName << ".bin..." << endl;
+    //cout << atoi(prevStudentId.c_str()) + 1 << " students read..." << endl;
+    //cout << "written to " << mainFileName << ".bin..." << endl;
 }
 
 bool chooseFormat(const string& path) {
@@ -163,17 +165,17 @@ bool chooseFormat(const string& path) {
 
 int execute_main(int argc, char* argv[]) {
     if (argc < 2) {
-        cout << "Error. Add path of file with a bin or kv dump in the command parameters" << endl;
+        //cout << "Error. Add path of file with a bin or kv dump in the command parameters" << endl;
         return 1;
     }
 
     try {
         if (!chooseFormat(argv[1])) {
-            cout << "Error. Unsupported file type. Choose file with .bin or .kv" << endl;
+            //cout << "Error. Unsupported file type. Choose file with .bin or .kv" << endl;
             return 1;
         }
     } catch (MalformedInputException exc) {
-        cerr << exc.what() << "\n";
+        //cerr << exc.what() << "\n";
         return -1;
     }
 
