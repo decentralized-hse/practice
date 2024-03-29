@@ -121,12 +121,12 @@ func ValidateMark(student StudentC) error {
 
 func goStruct2xmlStruct(student StudentC) StudentXML {
 	xmlStudent := StudentXML{
-		Name:     strings.TrimRight(string(student.Name[:]), "\x00"),
-		Login:    strings.TrimRight(string(student.Login[:]), "\x00"),
-		Group:    strings.TrimRight(string(student.Group[:]), "\x00"),
+		Name:     fmt.Sprintf("%q", []byte(strings.TrimRight(string(student.Name[:]), "\x00"))),
+		Login:    fmt.Sprintf("%q", []byte(strings.TrimRight(string(student.Login[:]), "\x00"))),
+		Group:    fmt.Sprintf("%q", []byte(strings.TrimRight(string(student.Group[:]), "\x00"))),
 		Practice: make([]int32, 8),
 		Project: projectXML{
-			Repo: strings.TrimRight(string(student.Project.Repo[:]), "\x00"),
+			Repo: fmt.Sprintf("%q", []byte(strings.TrimRight(string(student.Project.Repo[:]), "\x00"))),
 			Mark: student.Project.Mark,
 		},
 		Mark: student.Mark,
@@ -137,20 +137,40 @@ func goStruct2xmlStruct(student StudentC) StudentXML {
 	return xmlStudent
 }
 
-func xmlStruct2goStruct(xmlStudent StudentXML) StudentC {
+func xmlStruct2goStruct(xmlStudent StudentXML) (StudentC, error) {
 	var student StudentC
+    
+	tt := student.Name[:]
+	if _, err := fmt.Sscanf(xmlStudent.Name, "%q", &tt); err != nil {
+		return student, err
+	}
+	copy(student.Name[:], tt)
 
-	copy(student.Name[:], xmlStudent.Name)
-	copy(student.Login[:], xmlStudent.Login)
-	copy(student.Group[:], xmlStudent.Group)
-	copy(student.Project.Repo[:], xmlStudent.Project.Repo)
+	tt = student.Login[:]
+	if _, err := fmt.Sscanf(xmlStudent.Login, "%q", &tt); err != nil {
+		return student, err
+	}
+	copy(student.Login[:], tt)
+
+	tt = student.Group[:]
+	if _, err := fmt.Sscanf(xmlStudent.Group, "%q", &tt); err != nil {
+		return student, err
+	}
+    copy(student.Group[:], tt)
+
+	tt = student.Project.Repo[:]
+	if _, err := fmt.Sscanf(xmlStudent.Project.Repo, "%q", &tt); err != nil {
+		return student, err
+	}
+	copy(student.Project.Repo[:], tt)
+
 	for i, practice := range xmlStudent.Practice {
 		student.Practice[i] = uint8(practice)
 	}
 	student.Project.Mark = xmlStudent.Project.Mark
 	student.Mark = xmlStudent.Mark
 
-	return student
+	return student, nil
 }
 
 func readBinaryFile(filepath string) ([]StudentC, error) {
@@ -206,7 +226,11 @@ func readXMLFile(filepath string) ([]StudentC, error) {
 
 	var students []StudentC
 	for _, studentXML := range studentsXML.Students {
-		students = append(students, xmlStruct2goStruct(studentXML))
+		st, err := xmlStruct2goStruct(studentXML)
+		if err != nil {
+			return nil, fmt.Errorf("Could not convert XML: %v", err)
+		}
+		students = append(students, st)
 	}
 
 	for _, student := range students {
