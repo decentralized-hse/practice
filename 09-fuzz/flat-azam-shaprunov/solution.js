@@ -6,11 +6,24 @@ var Buffer = require('buffer/').Buffer
 
 function parseBin(path) {
 	var data = fs.readFileSync(path);
+	return parseDataToJson(data);
+}
+
+function safelyReadFloatLE(buffer, offset) {
+    const FLOAT_SIZE = 4;
+    if (offset + FLOAT_SIZE > buffer.length) {
+        throw new Error("Trying to read beyond buffer length");
+    }
+    return buffer.readFloatLE(offset);
+}
+
+function parseDataToJson(data) {
 	var fileData = Buffer.from(data, "utf8");
 	var N = Buffer.byteLength(data, "utf8");
 	if (N % 128 != 0) {
 		console.error("Parsing error: invalid file size to input .bin");
-		throw new Error("Invalid file size to input .bin");
+		// return;
+		// throw new Error("Invalid file size to input .bin");
 	}
 	var res = [];
 	for (var i = 0; i < N; i += 128) {
@@ -20,7 +33,12 @@ function parseBin(path) {
 		var practice = Array.from(new TextEncoder().encode(fileData.slice(i + 56, i + 64)));
 		var repo = fileData.slice(i + 64, i + 123).toString();
 		var markk = new TextEncoder().encode(fileData.slice(i + 123, i + 124))[0];
-		var mark = fileData.slice(i + 124, i + 128).readFloatLE(0);
+		try {
+			var mark = safelyReadFloatLE(fileData, 124);
+		} catch (e) {
+			console.log(e.message);
+			return;
+		}
 		res.push({
 			'name' : name,
 			'login' : login,
@@ -73,10 +91,13 @@ function getFlat(binStudent) {
 	var students = ds.Students.endStudents(builder);
 	builder.finish(students);
 	var buf = builder.asUint8Array();
-	return buf;
+	var kek = builder.dataBuffer();
+	return kek;
 }
 
-function dumpBin(studs) {
+function dumpBin(buf) {
+	var students = ds.Students.getRootAsStudents(buf);
+	var N = students.kingsLength();
 	res = []
 	for (var i = 0; i < N; i++) {
 		var king = studs.kings(i);
@@ -120,16 +141,18 @@ if (process.argv[2].split('.').pop() == 'bin') {
 	console.log(`Reading flatbuffers student data from ${process.argv[2]}...`);
 	var bytes = new Uint8Array(fs.readFileSync(process.argv[2]));
 	var buf = new flatbuffers.ByteBuffer(bytes);
-	var students = ds.Students.getRootAsStudents(buf);
-	var N = students.kingsLength();
 	console.log(`${N} student${N > 1 ? 's' : ''} read...`);
 	var fileName = process.argv[2].split('.');
 	fileName.pop();
 	fileName.push('bin');
 	fileName = fileName.join('.');
-	buf = dumpBin(students);
-	fs.writeFileSync(fileName, buf, 'binary');
+	let bufNew = dumpBin(buf);
+	fs.writeFileSync(fileName, bufNew, 'binary');
 	console.log(`written to ${fileName}`);
 } else {
 	console.log("wrong format");
 }
+
+module.exports.parseDataToJson = parseDataToJson;
+module.exports.dumpBin = dumpBin;
+module.exports.getFlat = getFlat;

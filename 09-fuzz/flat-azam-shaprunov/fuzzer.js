@@ -2,7 +2,12 @@ const fs = require('fs');
 const { exec } = require('child_process');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
-
+const { getFlat } = require('./solution');
+const { dumpBin } = require('./solution');
+const { parseDataToJson } = require('./solution');
+var flatbuffers = require('flatbuffers').flatbuffers;
+var ds = require('./student_generated').ds
+var Buffer = require('buffer/').Buffer
 
 function randomCharString(length, charSet) {
     let randomString = '';
@@ -52,8 +57,8 @@ function generateMultipleStudentsData(count) {
 
 const COUNT = 5;
 const studentsData = generateMultipleStudentsData(COUNT);
-console.log(studentsData);
-console.log("Generated data length:", studentsData.length);
+// console.log(studentsData);
+// console.log("Generated data length:", studentsData.length);
 
 function runCommand(command, callback) {
     exec(command, (error, stdout, stderr) => {
@@ -111,4 +116,22 @@ function runTests(testCount) {
 }
 
 const TEST_COUNT = 100;
-runTests(TEST_COUNT);
+// runTests(TEST_COUNT);
+
+function fuzz(data) {
+    try {
+        let parsedData = parseDataToJson(data);
+        let flatBuf = getFlat(parsedData);
+        const resultData = dumpBin(flatBuf);
+        if (data.compare(resultData) != 0) {
+            console.log("Ошибка теста: Данные не совпадают");
+        }
+    } catch (error) {
+        console.error("Произошла ошибка");
+        throw error;
+    }
+};
+
+module.exports = {
+    fuzz
+};
