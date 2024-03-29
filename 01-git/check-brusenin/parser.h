@@ -36,6 +36,7 @@ void parser_open(struct parser* p, char* file_path) {
     p->_file = fp;
     p->_line = NULL;
     p->_len = 0;
+    p->_done = false;
     _advance(p);
 }
 

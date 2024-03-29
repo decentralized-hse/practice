@@ -34,7 +34,7 @@ EXPECT_CODE=1
 cd $SCRIPT_DIR/bad_examples
 test . 0ba904eae8773b70c75333db4de2f3ac45a8ad4ddba1b242f0b3cfc199391dd8
 
-# file `e2139d6601b956bdef6acc120450b5896323428160c6054f7dc32d7ea8fb1a92` has invalid hash
+# file `77f851a6ca814a3c95883f940fe9474c0c92521669f7ba748e15cf563e1b62c5` doesn't exist
 test . e2139d6601b956bdef6acc120450b5896323428160c6054f7dc32d7ea8fb1a92
 
 # file `77f851a6ca814a3c95883f940fe9474c0c92521669f7ba748e15cf563e1b62c5` doesn't exist
