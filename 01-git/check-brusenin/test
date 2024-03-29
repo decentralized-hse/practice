@@ -34,4 +34,19 @@ EXPECT_CODE=1
 cd $SCRIPT_DIR/bad_examples
 test . 0ba904eae8773b70c75333db4de2f3ac45a8ad4ddba1b242f0b3cfc199391dd8
 
+# file `e2139d6601b956bdef6acc120450b5896323428160c6054f7dc32d7ea8fb1a92` has invalid hash
+test . e2139d6601b956bdef6acc120450b5896323428160c6054f7dc32d7ea8fb1a92
+
+# file `77f851a6ca814a3c95883f940fe9474c0c92521669f7ba748e15cf563e1b62c5` doesn't exist
+test . 47f2c9bc1a423d713c1128f3399aaff3b1a7fb24e9a625ced9c50a47f8066c9c
+
+# bad line: hello.txt:      0ba904eae8773b70c75333db4de2f3ac45a8ad4ddba1b242f0b3cfc199391dd8
+test . ff1fc80d201244e50e7ac1ef4708fa796bb2bbf86f8eea06f7181c57df15aae5
+
+# bad line: subdir/
+test . cb4da89b9bf32d238f710f4cf55242084b8b6d5557f1d32ef5fb9418d072d019
+
+# the last argument should be the hash of the root dir (sha256)
+test . INVALID_HASH
+
 echo "---tests done---"

@@ -20,6 +20,7 @@ static void _advance(struct parser* p) {
     if (p->_done) {
         return;
     }
+    if (p->_line) free(p->_line);
     ssize_t read = getline(&p->_line, &p->_len, p->_file);
     if (read == -1) {
         p->_done = true;
@@ -43,13 +44,21 @@ bool parser_has_next(struct parser* p) {
 }
 
 bool parser_parse_line(struct parser* p, char** node_name, char** node_hash) {
-    DEBUGF("[DEBUG] parse line: %s", p->_line);
-    char *checkpoint;
-    *node_name = strdup(strtok_r(p->_line, "\t", &checkpoint));
-    require(*node_name != NULL, "failed to parse hash file: node name is null");
-    *node_hash = strdup(strtok_r(NULL, "\n", &checkpoint));
-    require(*node_hash != NULL, "faild to parse hash file: node hash is null");
+    *node_name = NULL; *node_hash = NULL;
+    char *line = strdup(p->_line);
+    DEBUGF("[DEBUG] parse line: %s", line);
+    char *checkpoint, *token;
+
+    token = strtok_r(line, "\t", &checkpoint);
+    require(token != NULL, "failed to parse hash file: node name not found");
+    *node_name = strdup(token);
+
+    token = strtok_r(NULL, "\n", &checkpoint);
+    require(token != NULL, "faild to parse hash file: node hash not found");
+    *node_hash = strdup(token);
+
     DEBUGF("[DEBUG] > node_name=`%s`\tnode_hash=`%s`\n", *node_name, *node_hash);
+    if (line) free(line);
     _advance(p);
 }
 

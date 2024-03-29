@@ -29,7 +29,7 @@ bool validate_hash_file(char* hash) {
     requiref(path_exists(hash), "file `%s` doesn't exist", hash);
     char actual_hash[65];
     sha256(hash, actual_hash);
-    requiref(strcmp(actual_hash, hash) == 0, "file `%s` has invalid hash:\nactual:   `%s`\nexpected: `%s`\n", hash, actual_hash, hash);
+    requiref(strcmp(actual_hash, hash) == 0, "file `%s` has invalid hash:\nactual:   `%s`\nexpected: `%s`", hash, actual_hash, hash);
 }
 
 void validate_dir(char* hash) {
@@ -56,6 +56,11 @@ char* find_node_hash(char* hash, char* target_node_name) {
     while (parser_has_next(&p)) {
         char *node_name, *node_hash;
         parser_parse_line(&p, &node_name, &node_hash);
+        require(strlen(node_name) > 0 &&
+            (node_name[strlen(node_name)-1] == '/' || node_name[strlen(node_name)-1] == ':'),
+            "failed to parse line: node name has invalid format");
+        require(strlen(node_hash) == 64, "failed to parse line: node hash has invalid format");
+
         if (strlen(node_name) > 0 && node_name[strlen(node_name)-1] == '/') {
             node_name[strlen(node_name)-1] = 0;
         }

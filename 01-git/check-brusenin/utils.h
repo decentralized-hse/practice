@@ -9,7 +9,7 @@ char LOG_BUFFER[2048];
 
 void require(bool cond, char* msg) {
     if (!cond) {
-        printf("%s", msg);
+        printf("%s\n", msg);
         exit(1);
     }
 }
