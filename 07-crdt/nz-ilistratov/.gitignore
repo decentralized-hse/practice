@@ -1,0 +1,6 @@
+go/lww/**
+lib/zipint_tlv.a
+lib/zipint_tlv.h
+lww
+.vscode
+*.out
