@@ -46,4 +46,7 @@ java.lang.NullPointerException: Cannot invoke "java.util.List.size()" because "s
         at Fuzzer.fuzzerTestOneInput(Fuzzer.java:31)
 ```
 
+
 больше ошибок не обнаружилось, в принципе отрабатывает нормально
+
+Также для большей уверенности я написал сам для себя скрипт который генерирует данные и смотрел на разных данных как оно себя ведет. Скрипт приложил рядышком.
