@@ -100,12 +100,23 @@ func (peer *Peer) Read() (err error) {
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err.Error())
 			}
+		case 'E':
+			err = peer.node.ExposedKey(peer.address, body[:32])
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err.Error())
+			}
 		case 'M':
 			var to SHA256
 			copy(to[:], body[:32])
 			msg := Message{to: to, body: body[32:]}
-			fmt.Printf("Messaged by %s: %s\n\r", peer.address, body)
-			err = peer.node.RouteMessage(msg)
+			fmt.Printf("\r\nMessaged by %s: %s\r\n", peer.address, body)
+			err = peer.node.RouteMessageUDP(msg)
+		case 'R':
+			var to SHA256
+			copy(to[:], body[:32])
+			msg := Message{to: to, body: body[32:]}
+			fmt.Printf("\r\nMessaged by %s: %s\r\n", peer.address, body)
+			err = peer.node.RouteMessageTCP(msg)			
 		case 'P':
 			fmt.Printf("Pinged by %s: %s\n\r", peer.address, body)
 			pong, _ := TLVAppend2(nil, 'O', []byte("Re: "), body)

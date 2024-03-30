@@ -1,19 +1,22 @@
 package router
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net"
+	"os"
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/cockroachdb/pebble"
 	"github.com/jamesruan/sodium"
 	"github.com/learn-decentralized-systems/toykv"
-	"net"
-	"os"
-	"sync"
-	"time"
 )
 
 const MAXD = 5
@@ -98,7 +101,7 @@ func (node *Node) Register(recvd SHA256, address string) error {
 		return err
 	}
 	next := sha256.Sum256(recvd[:])
-	fmt.Printf("reg %s\r\nfwd %s\r\n", Hex(recvd[:]), Hex(next[:]))
+	fmt.Printf("\n\rreg %s\r\nfwd %s\r\n", Hex(recvd[:]), Hex(next[:]))
 
 	relay, _ := TLVAppend(nil, 'A', next[:])
 	for _, p := range node.peers {
@@ -110,9 +113,32 @@ func (node *Node) Register(recvd SHA256, address string) error {
 	return nil
 }
 
+var exposed_cnt int
+
+func (node *Node) ExposedKey(address string, recvd []byte) error {
+	exposed_cnt += 1
+	err := node.DB.Set('K', "peer" + strconv.Itoa(exposed_cnt), Hex(recvd))
+	if err != nil {
+		return err
+	}
+	_ = node.DB.Commit()
+	return nil
+}
+
 func (node *Node) Announce(kp sodium.BoxKP) error {
 	hash0 := CurrentHash(kp.PublicKey)
 	return node.Register(hash0, "-")
+}
+
+func (node *Node) Expose(kp sodium.BoxKP) error {
+	relay, _ := TLVAppend(nil, 'E', kp.PublicKey.Bytes)
+	for _, p := range node.peers {
+		if p == nil {
+			continue
+		}
+		p.Queue(relay)
+	}
+	return nil
 }
 
 var ErrAddressUnknown = errors.New("Address unknown")
@@ -156,16 +182,31 @@ func (node *Node) Init() (err error) {
 	if err != nil {
 		return
 	}
-	i := node.DB.Range('L', "", "~")
-	for i.Next() {
-		address := i.Key()
-		go node.Listen(address)
-	}
-	for i.Next() {
-		address := string(i.Key()[1:])
-		go node.Connect(address, nil)
-	}
-	i.Close()
+	
+	// Commented. It doesn't work, but We don't need it yet.
+
+	// {
+	// 	i := node.DB.Range('L', "", "~")
+	// 	for i.Valid() {
+	// 		address := string(i.Key())
+	// 		go node.Listen(address)
+	// 		fmt.Printf("\rListen on %s\r\n", address)
+	// 		i.Next()
+	// 	}
+	// 	i.Close()
+	// }
+
+	// {
+	// 	i := node.DB.Range('C', "", "~")
+	// 	for i.Valid() {
+	// 		address := string(i.Key())
+	// 		go node.Connect(address, nil)
+	// 		fmt.Printf("\rConnect to %s\r\n", address)
+	// 		i.Next()
+	// 	}
+	// 	i.Close()
+	// }
+
 	return
 }
 
@@ -193,7 +234,7 @@ func (node *Node) Listen(addr string) (err error) {
 	return
 }
 
-func (node *Node) RouteMessage(msg Message) error {
+func (node *Node) RouteMessageUDP(msg Message) error {
 	prev, err := node.findPrevHash(msg.to)
 	if err != nil {
 		return err
@@ -215,6 +256,43 @@ func (node *Node) RouteMessage(msg Message) error {
 	return nil
 }
 
+func (node *Node) RouteMessageTCP(msg Message) error {
+	prev, err := node.findPrevHash(msg.to)
+	if err != nil {
+		return err
+	}
+	peer, err := node.findFwdPeer(prev)
+	if err != nil {
+		return err
+	}
+	if peer == nil { // FIXME check have secret
+		index := binary.LittleEndian.Uint32(msg.body[:4])
+		snd_key_hex := Hex(msg.body[4:36])
+		body := msg.body[36:]
+
+		var keypair sodium.BoxKP
+		keypair.PublicKey.Bytes, err = unhexize(snd_key_hex)
+		if err != nil {
+			return err
+		}
+		
+		fmt.Printf("\r\nReceived for: %s", Hex(msg.to[:]))
+		fmt.Printf("\r\nACK index: %d", index)
+		fmt.Printf("\r\nSender pubkey: %s", snd_key_hex)
+		fmt.Printf("\r\nBody: %s\r\n", body)
+
+		node.SendUDP(keypair.PublicKey, "ACK_" + strconv.FormatUint(uint64(index), 10))
+		return nil
+	}
+	if peer != nil {
+		fwd, _ := TLVAppend2(nil, 'R', prev[:], msg.body)
+		peer.boxmx.Lock()
+		peer.outbox = append(peer.outbox, fwd)
+		peer.boxmx.Unlock()
+	}
+	return nil
+}
+
 func HourlyHash(key sodium.BoxPublicKey, time int64) SHA256 {
 	time -= time % (60 * 60 * 1000000000) // round to an hour
 	var timestr [8]byte
@@ -227,7 +305,7 @@ func CurrentHash(key sodium.BoxPublicKey) SHA256 {
 	return HourlyHash(key, time.Now().UnixNano())
 }
 
-func (node *Node) Send(key sodium.BoxPublicKey, txt string) error {
+func (node *Node) SendUDP(key sodium.BoxPublicKey, txt string) error {
 	hash := CurrentHash(key)
 	fmt.Fprintf(os.Stderr, "current hash %s\r\n", hexize(hash[:]))
 	for i := 0; i < MAXD; i++ {
@@ -235,7 +313,30 @@ func (node *Node) Send(key sodium.BoxPublicKey, txt string) error {
 		if err == nil && peer != nil {
 			msg, _ := TLVAppend2(nil, 'M', hash[:], []byte(txt))
 			peer.Queue(msg)
-			fmt.Fprintf(os.Stderr, "message sent to %s\r\n", hexize(key.Bytes))
+			fmt.Fprintf(os.Stderr, "'M' message sent to %s\r\n", hexize(key.Bytes))
+			return nil
+		}
+		hash = sha256.Sum256(hash[:])
+	}
+	return ErrAddressUnknown
+}
+
+var ack_cnt uint32
+
+func (node *Node) SendTCP(key sodium.BoxPublicKey, snd sodium.BoxPublicKey, txt string) error {
+	ack_cnt += 1
+
+	hash := CurrentHash(key)
+	fmt.Fprintf(os.Stderr, "current hash %s\r\n", hexize(hash[:]))
+	for i := 0; i < MAXD; i++ {
+		peer, err := node.findFwdPeer(hash)
+		if err == nil && peer != nil {
+			bs := make([]byte, 4)
+    		binary.LittleEndian.PutUint32(bs, ack_cnt)
+			msg, _ := TLVAppend2(nil, 'R', hash[:], bytes.Join([][]byte{bs, snd.Bytes, []byte(txt)}, []byte("")))
+			peer.Queue(msg)
+			fmt.Fprintf(os.Stderr, "'R' message sent to %s\r\n", hexize(key.Bytes))
+			println("Payload: ", Hex(bytes.Join([][]byte{bs, snd.Bytes, []byte(txt)}, []byte(""))))
 			return nil
 		}
 		hash = sha256.Sum256(hash[:])
@@ -292,7 +393,7 @@ func (node *Node) LoadKeys(name string) (keypair sodium.BoxKP, err error) {
 func (node *Node) ShowKeys() {
 
 	for i := node.DB.Range('K', "", "~"); i.Valid(); i.Next() {
-		name := string(i.Key()[1:])
+		name := string(i.Key())
 		key := i.Value()
 		_, err := node.DB.Get('P', name)
 		mine := ""
