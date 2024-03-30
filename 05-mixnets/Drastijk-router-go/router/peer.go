@@ -180,6 +180,7 @@ func (peer *Peer) doWrite() {
 		}
 
 		err := peer.WriteByChunks(buf)
+		peer.UpdateWorkload()
 
 		if err != nil {
 			fmt.Printf("failed to send bytes by chunks: %v", err)
