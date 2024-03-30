@@ -112,7 +112,7 @@ struct NRecord NRecordFromString(const char* txt) {
   struct NRecord res;
   uint32_t offset = 0;
   sscanf(txt + offset, "%x", &res.size);
-  res.data = calloc(res.size, sizeof(struct NRecord));
+  res.data = calloc(res.size, sizeof(struct URecord));
   offset = AdvanceOffset(txt, offset);
   for (uint32_t rec_idx = 0; rec_idx < res.size; rec_idx++) {
     sscanf(txt + offset, " %lx %lx", &res.data[rec_idx].val, &res.data[rec_idx].src);
@@ -284,11 +284,11 @@ int IRecCmp(const void* lhs, const void* rhs) {
 struct ZRecord ZRecordFromBytes(struct Bytes tlv) {
   uint32_t cap = 16;
   struct ZRecord res = {
-    .data = calloc(cap, sizeof(struct URecord)),
+    .data = calloc(cap, sizeof(struct IRecord)),
     .size = 0
   };
   const struct RecordHeader z_hdr = ProbeHeader2(tlv);
-  if (tolower(z_hdr.lit) != 'z') {
+  if (tolower(z_hdr.lit) != 'z' && !isdigit(z_hdr.lit)) {
     return InvalidateZRecord(&res);
   }
   for (int offset = z_hdr.hdrlen; offset != tlv.len;) {
@@ -297,7 +297,7 @@ struct ZRecord ZRecordFromBytes(struct Bytes tlv) {
       tlv.len - offset
     };
     const struct RecordHeader i_hdr = ProbeHeader2(i_tlv);
-    if (tolower(i_hdr.lit) != 'i') {
+    if (tolower(i_hdr.lit) != 'i' && !isdigit(i_hdr.lit)) {
       return InvalidateZRecord(&res);
     }
     int i_tlv_len = i_hdr.hdrlen + i_hdr.bodylen;
@@ -306,7 +306,7 @@ struct ZRecord ZRecordFromBytes(struct Bytes tlv) {
     }
     const struct Bytes t_tlv = {
       tlv.data + offset + i_hdr.hdrlen,
-      tlv.len - offset
+      tlv.len - offset - i_hdr.hdrlen
     };
     const struct RecordHeader t_hdr = ProbeHeader2(t_tlv);
     struct UnzipIntUint64Pair_return rev_src = UnzipIntUint64Pair(tlv.data + offset + i_hdr.hdrlen + t_hdr.hdrlen, t_hdr.bodylen);
@@ -320,8 +320,11 @@ struct ZRecord ZRecordFromBytes(struct Bytes tlv) {
     offset += i_tlv_len;
     res.data[res.size] = i_rec;
     res.size += 1;
+    if (res.size == cap) {
+      res.data = realloc(res.data, cap * 2 * sizeof(struct IRecord));
+    }
   }
-  res.data = realloc(res.data, res.size & sizeof(struct IRecord));
+  res.data = realloc(res.data, res.size * sizeof(struct IRecord));
   qsort(res.data, res.size, sizeof(struct IRecord), IRecCmp);
   for (uint32_t rec_idx = 1; rec_idx < res.size; rec_idx++) {
     if (res.data[rec_idx - 1].src == res.data[rec_idx].src) {
@@ -412,6 +415,102 @@ int64_t Znative(const struct Bytes tlv) {
   return val;
 }
 
-struct Bytes Zdelta(const struct Bytes old_tlv, struct ZRecord new_vals);
+struct ZRecord ZRecordDelta(struct ZRecord old, struct ZRecord new) {
+  uint32_t it_o = 0;
+  struct ZRecord res = {
+    .size = 0,
+    .data = calloc(new.size, sizeof(struct IRecord))
+  };
+  for (uint32_t it_n = 0; it_n < new.size; it_n++) {
+    while (it_o < old.size && old.data[it_o].src < new.data[it_n].src) {
+      ++it_o;
+    }
+    if (it_o == old.size || old.data[it_o].src > new.data[it_n].src ||
+        IRecCmp(old.data + it_o, new.data + it_n) < 0) {
+      res.data[res.size] = new.data[it_n];
+      ++res.size;
+    }
+  }
+  res.data = realloc(res.data, res.size * sizeof(struct IRecord));
+  return res;
+}
 
-const struct Bytes Zmerge(const struct Bytes tlvs[], size_t tlvs_len);
+struct Bytes Zdelta(const struct Bytes old_tlv, struct ZRecord new_vals) {
+  struct ZRecord old = ZRecordFromBytes(old_tlv);
+  struct ZRecord delta = ZRecordDelta(old, new_vals);
+  InvalidateZRecord(&old);
+  struct Bytes res = Ztlv(delta);
+  InvalidateZRecord(&delta);
+  return res;
+}
+
+struct ZRecord ZRecordMerge(const struct ZRecord lhs, const struct ZRecord rhs) {
+  uint32_t num_insp = 0;
+  uint32_t it_l = 0;
+  uint32_t it_r = 0;
+  while (it_l < lhs.size && it_r < rhs.size) {
+    if (lhs.data[it_l].src < rhs.data[it_r].src) {
+      ++it_l;
+      continue;
+    }
+    if (lhs.data[it_l].src > rhs.data[it_r].src) {
+      ++it_r;
+      continue;
+    }
+    ++num_insp;
+    ++it_l;
+    ++it_r;
+  }
+  struct ZRecord res = {
+    .size = lhs.size + rhs.size - num_insp
+  };
+  res.data = calloc(res.size, sizeof(struct IRecord));
+  it_l = it_r = 0;
+  uint32_t dst = 0;
+  while (it_l < lhs.size && it_r < rhs.size) {
+    if (lhs.data[it_l].src < rhs.data[it_r].src) {
+      res.data[dst] = lhs.data[it_l];
+      ++it_l;
+      ++dst;
+      continue;
+    }
+    if (lhs.data[it_l].src > rhs.data[it_r].src) {
+      res.data[dst] = rhs.data[it_r];
+      ++it_r;
+      ++dst;
+      continue;
+    }
+    if (IRecCmp(lhs.data + it_l, rhs.data + it_r) < 0) {
+      res.data[dst] = rhs.data[it_l];  
+    } else {
+      res.data[dst] = lhs.data[it_l];  
+    }
+    ++it_l;
+    ++it_r;
+    ++dst;
+  }
+  if (it_l < lhs.size) {
+    memcpy(res.data + dst, lhs.data + it_l, (lhs.size - it_l) * sizeof(struct IRecord));
+  }
+  if (it_r < rhs.size) {
+    memcpy(res.data + dst, rhs.data + it_r, (rhs.size - it_r) * sizeof(struct IRecord));
+  }
+  return res;
+}
+
+const struct Bytes Zmerge(const struct Bytes tlvs[], size_t tlvs_len) {
+  if (tlvs_len == 1) {
+    return tlvs[0];
+  }
+  struct ZRecord res_n_rec = ZRecordFromBytes(tlvs[0]);
+  for (size_t tlv_idx = 1; tlv_idx < tlvs_len; tlv_idx++) {
+    struct ZRecord next_rec = ZRecordFromBytes(tlvs[1]);
+    struct ZRecord merged_rec = ZRecordMerge(res_n_rec, next_rec);
+    InvalidateZRecord(&res_n_rec);
+    InvalidateZRecord(&next_rec);
+    res_n_rec = merged_rec;
+  }
+  struct Bytes res = Ztlv(res_n_rec);
+  InvalidateZRecord(&res_n_rec);
+  return res;
+}

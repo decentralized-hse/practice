@@ -83,9 +83,88 @@ void TestN() {
   free(merged.data);
   free(merged_string);
 
-  puts("================ TEST [int64] FINISHED ================\n");
+  puts("================ TEST [N] FINISHED ================\n");
+}
+
+const char* z_str1 = "1 0 0 ff";
+const char* z_str2 = "2 0 0 ff 0 1 0";
+const char* z_str_delta = "1 0 1 0";
+
+struct IRecord z_rec_1_arr[] = {
+  { 0, 0, 0xff },
+};
+
+struct ZRecord z_rec1 = {
+  .size = 1,
+  .data = z_rec_1_arr
+};
+
+struct IRecord z_rec_2_arr[] = {
+  { 0, 0, 0xff },
+  { 0, 1, 0 },
+};
+
+struct ZRecord z_rec2 = {
+  .size = 2,
+  .data = z_rec_2_arr
+};
+
+struct IRecord z_rec_delta_arr[] = {
+  { 1, 0, 1 },
+};
+
+struct ZRecord z_rec_delta = {
+  .size = 1,
+  .data = z_rec_delta_arr
+};
+
+void TestZ() {
+  puts("================ TEST [Z] STARTED ================");
+
+  struct Bytes tlv1 = Zparse(z_str1);
+  PrintBytes("TLV1", tlv1);
+  struct Bytes tlv1_expected = Ztlv(z_rec1);
+  char* tlv1_str = Zstring(tlv1);
+  assert(strcmp(z_str1, tlv1_str) == 0);
+  assert(Equals(tlv1, tlv1_expected));
+
+  struct Bytes tlv2 = Zparse(z_str2);
+  PrintBytes("TLV2", tlv2);
+  struct Bytes tlv2_expected = Ztlv(z_rec2);
+  char* tlv2_str = Zstring(tlv2);
+  assert(strcmp(z_str2, tlv2_str) == 0);
+  assert(Equals(tlv2, tlv2_expected));
+
+  struct Bytes delta12 = Zdelta(tlv1, z_rec2);
+  PrintBytes("DELTA12", delta12);
+  char* delta_str = Zstring(delta12);
+  assert(strcmp(z_str_delta, delta_str) == 0);
+
+  const struct Bytes tlvs[2] = {tlv1, delta12};
+  struct Bytes merged = Zmerge(tlvs, 2);
+  PrintBytes("MERGED", merged);
+
+  char* merged_string = Zstring(merged);
+  PrintStringBytes("MERGED_S", merged_string);
+  PrintStringBytes("STR2", z_str2);
+
+  assert(strcmp(z_str2, merged_string) == 0);
+
+  free(tlv1.data);
+  free(tlv1_expected.data);
+  free(tlv1_str);
+  free(tlv2.data);
+  free(tlv2_expected.data);
+  free(tlv2_str);
+  free(delta12.data);
+  free(delta_str);
+  free(merged.data);
+  free(merged_string);
+
+  puts("================ TEST [Z] FINISHED ================\n");
 }
 
 int main(void) {
   TestN();
+  TestZ();
 }
