@@ -7,7 +7,7 @@
     wget https://github.com/CodeIntelligenceTesting/jazzer/releases/download/v0.22.1/jazzer-macos.tar.gz
 ```
 
-Установить в свой локальный мавен-репозиторий
+Установить в свой локальный мавен-репозиторий:
 
 ```
 mvn install:install-file -Dfile= ../jazzer_standalone.jar  -DgroupId=com.code_intelligence -DartifactId=jazzer -Dversion=0.22.1 -Dpackaging=jar
@@ -46,7 +46,6 @@ java.lang.NullPointerException: Cannot invoke "java.util.List.size()" because "s
         at Fuzzer.fuzzerTestOneInput(Fuzzer.java:31)
 ```
 
-
-больше ошибок не обнаружилось, в принципе отрабатывает нормально
+больше ошибок не обнаружилось, гарантировалось roundtrip гарантия на разных входных данных в json и bin файлах.
 
 Также для большей уверенности я написал сам для себя скрипт который генерирует данные и смотрел на разных данных как оно себя ведет. Скрипт приложил рядышком.
