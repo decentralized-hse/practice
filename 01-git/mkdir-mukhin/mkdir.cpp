@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <openssl/sha.h>
 #include <cstring>
+#include <iomanip>
+
 
 std::string Sha256(const std::string &data) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
