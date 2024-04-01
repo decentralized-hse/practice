@@ -1,0 +1,44 @@
+{
+  "StudentsList": [
+    {
+      "Name": "Иван Иванов",
+      "Login": "ivanov",
+      "Group": "ИА-345",
+      "Practice": [
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "Project": {
+        "Name": "github.com/decentralized-hse/practice/tree/main/04-formats",
+        "Mark": 9
+      },
+      "Mark": 8
+    },
+    {
+      "Name": "Петр Петров",
+      "Login": "petrov",
+      "Group": "ПП-345",
+      "Practice": [
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "Project": {
+        "Name": "github.com/decentralized-hse/practice/tree/main/04-formats",
+        "Mark": 5
+      },
+      "Mark": 4
+    }
+  ]
+}
