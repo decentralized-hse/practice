@@ -36,6 +36,9 @@ public class Main {
             String line;
             while ((line = file.readLine()) != null) {
                 var inputLines = line.split("\t");
+                if (inputLines.length < 2) {
+                    return;
+                }
                 var objectName = inputLines[0];
                 var objectHash = inputLines[1];
                 if (objectName.endsWith(":")) {
