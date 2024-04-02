@@ -21,9 +21,8 @@ function parseDataToJson(data) {
 	var fileData = Buffer.from(data, "utf8");
 	var N = Buffer.byteLength(data, "utf8");
 	if (N % 128 != 0) {
-		console.error("Parsing error: invalid file size to input .bin");
-		// return;
-		// throw new Error("Invalid file size to input .bin");
+		// console.error("Parsing error: invalid file size to input .bin");
+		throw new Error("Invalid file size to input .bin");
 	}
 	var res = [];
 	for (var i = 0; i < N; i += 128) {
@@ -37,7 +36,7 @@ function parseDataToJson(data) {
 			var mark = safelyReadFloatLE(fileData, 124);
 		} catch (e) {
 			console.log(e.message);
-			return;
+			throw e;
 		}
 		res.push({
 			'name' : name,

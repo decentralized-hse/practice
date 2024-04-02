@@ -127,8 +127,7 @@ function fuzz(data) {
             console.log("Ошибка теста: Данные не совпадают");
         }
     } catch (error) {
-        console.error("Произошла ошибка");
-        throw error;
+        console.error(`Malformed input`);
     }
 };
 
