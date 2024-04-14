@@ -53,7 +53,7 @@ def validateTree(path, hash):
                 continue
             print(c)
             # should not reach this
-            #return False
+            return False
         return True
             
 
