@@ -24,7 +24,6 @@ def validateTree(path, hash):
 
         for content in sub_content:
             c = content.split(':\t')
-        
             if len(c) == 2:
                 # process file
                 name, hash = c[0], c[1]
@@ -51,6 +50,10 @@ def validateTree(path, hash):
                 res = validateTree(path, hash)
                 if not res:
                     return res
+                continue
+            print(c)
+            # should not reach this
+            #return False
         return True
             
 
