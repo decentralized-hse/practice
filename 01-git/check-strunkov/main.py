@@ -9,11 +9,11 @@ def handle_bad_hash(name, correct):
     print(f"Error: bad hash for {name}")
     print(f"Hash should be equal {correct}")
 
-def validateTree(hash):
-    if not os.path.exists(hash):
+def validateTree(path, hash):
+    if not os.path.exists(path + '/' + hash):
         handle_no_file(hash)
         return False
-    with open(hash, 'r') as f:
+    with open(path + '/' + hash, 'r') as f:
         text = f.read()
         sub_content = text.split('\n')
         text = text.encode('utf-8')
@@ -29,11 +29,11 @@ def validateTree(hash):
                 # process file
                 name, hash = c[0], c[1]
                 # check if file exists
-                if not os.path.exists(hash):
+                if not os.path.exists(path + '/' + hash):
                     handle_no_file(hash)
                     return False
                 # check content hash
-                with open(hash, 'r') as simple_file:
+                with open(path + '/' + hash, 'r') as simple_file:
                     contentHash = hashlib.sha256(simple_file.read().encode('utf-8')).hexdigest()
                 if contentHash != hash:
                     handle_bad_hash(hash, contentHash)
@@ -45,10 +45,10 @@ def validateTree(hash):
                 # process folder
                 name, hash = c[0], c[1]
                  # check if directory file exists
-                if not os.path.exists(hash):
+                if not os.path.exists(path + '/' + hash):
                     handle_no_file(hash)
                     return False
-                res = validateTree(hash)
+                res = validateTree(path, hash)
                 if not res:
                     return res
         return True
@@ -59,7 +59,7 @@ def validateTree(hash):
 def main():
     args = sys.argv[1:]
     print(*args)
-    if validateTree(args[0]):
+    if validateTree(args[0], args[1]):
         print('tree is valid')
     else:
         print('tree is not valid')
