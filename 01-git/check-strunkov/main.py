@@ -23,7 +23,7 @@ def validateTree(path, hash):
 
 
         for content in sub_content:
-            c = content.split(':    ')
+            c = content.split(':\t')
         
             if len(c) == 2:
                 # process file
@@ -40,7 +40,7 @@ def validateTree(path, hash):
                     return False
                 continue
 
-            c = content.split('/    ')
+            c = content.split('/\t')
             if len(c) == 2:
                 # process folder
                 name, hash = c[0], c[1]
