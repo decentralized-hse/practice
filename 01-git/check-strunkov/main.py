@@ -11,7 +11,7 @@ def handle_bad_hash(name, correct):
 
 def validateTree(path, hash):
     if not os.path.exists(path + '/' + hash):
-        handle_no_file(hash)
+        handle_no_file(path + '/' + hash)
         return False
     with open(path + '/' + hash, 'r') as f:
         text = f.read()
@@ -23,6 +23,8 @@ def validateTree(path, hash):
 
 
         for content in sub_content:
+            if len(content) == 0:
+                continue
             c = content.split(':\t')
             if len(c) == 2:
                 # process file
@@ -66,5 +68,5 @@ def main():
         print('tree is valid')
     else:
         print('tree is not valid')
-
-main()
+if __name__ == "__main__":
+    main()
