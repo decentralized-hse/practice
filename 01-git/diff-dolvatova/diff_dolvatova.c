@@ -146,7 +146,7 @@ void diffDirectories(const char *prevHash, const char *newHash, const char *path
         char newPath[MAX_STR];
         snprintf(newPath, MAX_STR, "%s/%s", path, prevDir.entries[i].name);
 
-        char extraDiff[MAX_STR];
+        char extraDiff[MAX_STR] = "";
         diffDirectories(prevDir.entries[i].hash, "", newPath, extraDiff);
 
         char line_dir[MAX_STR];
@@ -179,7 +179,7 @@ void diffDirectories(const char *prevHash, const char *newHash, const char *path
         char newPath[MAX_STR];
         snprintf(newPath, MAX_STR, "%s/%s", path, newDir.entries[j].name);
 
-        char extraDiff[MAX_STR];
+        char extraDiff[MAX_STR] = "";
         diffDirectories("", newDir.entries[j].hash, newPath, extraDiff);
 
         char line_dir[MAX_STR];
@@ -215,7 +215,7 @@ void diffDirectories(const char *prevHash, const char *newHash, const char *path
         char newPath[MAX_STR];
         snprintf(newPath, MAX_STR, "%s/%s", path, prevDir.entries[i].name);
 
-        char extraDiff[MAX_STR];
+        char extraDiff[MAX_STR] = "";
         diffDirectories(prevDir.entries[i].hash, newDir.entries[newEntry].hash, newPath, extraDiff);
 
         if (strcmp(extraDiff, "") != 0) {
