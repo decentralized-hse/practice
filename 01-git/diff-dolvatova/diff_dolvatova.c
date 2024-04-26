@@ -2,10 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
-#include <assert.h>
 #include <stdbool.h>
 
-#define MAX_STR 4096
+#define MAX_STR 8192
 
 typedef struct fileEntry {
     char name[MAX_STR];
@@ -19,11 +18,12 @@ typedef struct directory {
 } Directory;
 
 Directory readDirectory(const char *dirPath) {
-    FILE *file = fopen(dirPath, "r");
-    assert(file != NULL);
-
-
     Directory dir = {NULL, 0};
+
+    FILE *file = fopen(dirPath, "r");
+    if (file == NULL) {
+        return dir;
+    }
 
     char current_line[MAX_STR];
     while (fgets(current_line, sizeof(current_line), file) != NULL) {
@@ -98,9 +98,10 @@ void diffDirectories(const char *prevHash, const char *newHash, const char *path
             --newDir.count;
             break;
         }
-        if (is_dir) {
+        if (found && is_dir) {
             continue;
         }
+
         if (!found) {
             char line_remove[MAX_STR];
             snprintf(line_remove, MAX_STR, "- %s/%s\n", path, prevDir.entries[i].name);
@@ -121,66 +122,107 @@ void diffDirectories(const char *prevHash, const char *newHash, const char *path
         j = 0;
     }
 
+    for (int i = 0; i < prevDir.count; ++i) {
+        if (!prevDir.entries[i].is_dir) {
+            continue;
+        }
+
+        bool found = false;
+        bool is_dir = false;
+        for (int j = 0; j < newDir.count; ++j) {
+            if (strcmp(newDir.entries[j].name, prevDir.entries[i].name) != 0) {
+                continue;
+            }
+            found = true;
+            if (newDir.entries[j].is_dir) {
+                is_dir = true;
+            }
+            break;
+        }
+        if (found && is_dir) {
+            continue;
+        }
+
+        char newPath[MAX_STR];
+        snprintf(newPath, MAX_STR, "%s/%s", path, prevDir.entries[i].name);
+
+        char extraDiff[MAX_STR];
+        diffDirectories(prevDir.entries[i].hash, "", newPath, extraDiff);
+
+        char line_dir[MAX_STR];
+        snprintf(line_dir, MAX_STR, "d %s/%s\n", path, prevDir.entries[i].name);
+        strcat(diff, line_dir);
+        strcat(diff, extraDiff);
+    }
+
     for (int j = 0; j < newDir.count; ++j) {
         if (!newDir.entries[j].is_dir) {
             continue;
         }
 
         bool found = false;
+        bool is_dir = false;
         for (int i = 0; i < prevDir.count; ++i) {
-            if (!prevDir.entries[i].is_dir) {
-                continue;
-            }
-            if (strcmp(prevDir.entries[i].name, newDir.entries[j].name) != 0) {
+            if (strcmp(newDir.entries[j].name, prevDir.entries[i].name) != 0) {
                 continue;
             }
             found = true;
-        }
-
-        if (found) {
+            if (prevDir.entries[i].is_dir) {
+                is_dir = true;
+            }
             break;
         }
+        if (found && is_dir) {
+            continue;
+        }
 
-        char line_add[MAX_STR];
-        snprintf(line_add, MAX_STR, "d %s/%s\n", path, newDir.entries[j].name);
-        strcat(diff, line_add);
+        char newPath[MAX_STR];
+        snprintf(newPath, MAX_STR, "%s/%s", path, newDir.entries[j].name);
 
-        newDir.entries[j] = newDir.entries[newDir.count - 1];
-        --newDir.count;
-        j = 0;
+        char extraDiff[MAX_STR];
+        diffDirectories("", newDir.entries[j].hash, newPath, extraDiff);
+
+        char line_dir[MAX_STR];
+        snprintf(line_dir, MAX_STR, "d %s/%s\n", path, newDir.entries[j].name);
+        strcat(diff, line_dir);
+        strcat(diff, extraDiff);
     }
 
     for (int i = 0; i < prevDir.count; ++i) {
-//        if (!prevDir.entries[i].is_dir) {
-//            continue;
-//        }
+        if (!prevDir.entries[i].is_dir) {
+            continue;
+        }
 
-        FileEntry prevEntry = prevDir.entries[i];
-        FileEntry newEntry;
+        int newEntry;
 
-//        bool found = false;
+        bool found = false;
+        bool is_dir = false;
         for (int j = 0; j < newDir.count; ++j) {
             if (strcmp(newDir.entries[j].name, prevDir.entries[i].name) != 0) {
                 continue;
             }
-//            found = true;
-            newEntry = newDir.entries[j];
+            found = true;
+            if (newDir.entries[j].is_dir) {
+                is_dir = true;
+            }
+            newEntry = j;
             break;
         }
+        if (!found || !is_dir) {
+            continue;
+        }
 
-        if (prevEntry.is_dir && newEntry.is_dir) {
-            char newPath[MAX_STR];
-            snprintf(newPath, MAX_STR, "%s/%s", path, prevEntry.name);
+        char newPath[MAX_STR];
+        snprintf(newPath, MAX_STR, "%s/%s", path, prevDir.entries[i].name);
 
-            char extraDiff[MAX_STR];
-            diffDirectories(prevEntry.hash, newEntry.hash, newPath, extraDiff);
+        char extraDiff[MAX_STR];
+        diffDirectories(prevDir.entries[i].hash, newDir.entries[newEntry].hash, newPath, extraDiff);
 
-            if (strcmp(extraDiff, "") != 0) {
-                char line_dir[MAX_STR];
-                snprintf(line_dir, MAX_STR, "d %s/%s\n", path, prevEntry.name);
-                strcat(diff, line_dir);
-                strcat(diff, extraDiff);
-            }
+        if (strcmp(extraDiff, "") != 0) {
+            char line_dir[MAX_STR];
+            snprintf(line_dir, MAX_STR, "d %s/%s\n", path, prevDir.entries[i].name);
+            strcat(diff, line_dir);
+            strcat(diff, extraDiff);
         }
     }
 }
