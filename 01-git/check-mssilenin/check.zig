@@ -10,25 +10,11 @@ const ErrorIncorrectTree = error{
     IncorrectHash,
 };
 
-// pub fn concatenateDirCommit(allocator: Allocator, root: []const u8, commit: []const u8) ![]const u8 {
-//     const new_len = root.len + commit.len + 1;
-
-//     var result = try allocator.alloc(u8, new_len);
-
-//     std.mem.copy(u8, result[0..root.len], root);
-//     std.mem.copy(u8, result[root.len .. root.len + 1], "/");
-//     std.mem.copy(u8, result[root.len + 1 .. new_len], commit);
-
-//     return result;
-// }
-
 fn checkBufHash(buf: []const u8, expected: []const u8) !void {
     var hash: [HASH_SIZE]u8 = undefined;
     sha2.Sha256.hash(buf, &hash, .{});
 
     var slice_hash = std.mem.bytesAsSlice(u8, &hash);
-
-    //std.debug.print("hex of file hash:{}\nfile name: {s}\n", .{ std.fmt.fmtSliceHexLower(slice_hash), expected });
 
     var hex_bytes: [HEX_SIZE]u8 = undefined;
     _ = try std.fmt.bufPrint(&hex_bytes, "{}", .{std.fmt.fmtSliceHexLower(slice_hash)});
