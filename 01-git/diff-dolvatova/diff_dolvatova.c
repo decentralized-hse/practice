@@ -121,18 +121,34 @@ void diffDirectories(const char *prevHash, const char *newHash, const char *path
         j = 0;
     }
 
-//    for (int j = 0; j < newDir.count; ++j) {
-//        if (!newDir.entries[j].is_dir) {
-//            continue;
-//        }
-//        char line_add[MAX_STR];
-//        snprintf(line_add, MAX_STR, "d %s/%s\n", path, newDir.entries[j].name);
-//        strcat(diff, line_add);
-//
-//        newDir.entries[j] = newDir.entries[newDir.count - 1];
-//        --newDir.count;
-//        j = 0;
-//    }
+    for (int j = 0; j < newDir.count; ++j) {
+        if (!newDir.entries[j].is_dir) {
+            continue;
+        }
+
+        bool found = false;
+        for (int i = 0; i < prevDir.count; ++i) {
+            if (!prevDir.entries[i].is_dir) {
+                continue;
+            }
+            if (strcmp(prevDir.entries[i].name, newDir.entries[j].name) != 0) {
+                continue;
+            }
+            found = true;
+        }
+
+        if (found) {
+            break;
+        }
+
+        char line_add[MAX_STR];
+        snprintf(line_add, MAX_STR, "d %s/%s\n", path, newDir.entries[j].name);
+        strcat(diff, line_add);
+
+        newDir.entries[j] = newDir.entries[newDir.count - 1];
+        --newDir.count;
+        j = 0;
+    }
 
     for (int i = 0; i < prevDir.count; ++i) {
 //        if (!prevDir.entries[i].is_dir) {
