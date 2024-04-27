@@ -8,6 +8,7 @@ const HEX_SIZE = 64;
 
 const ErrorIncorrectTree = error{
     IncorrectHash,
+    FileNotFound,
 };
 
 fn checkBufHash(buf: []const u8, expected: []const u8) !void {
@@ -87,6 +88,12 @@ fn findDir(allocator: Allocator, root_dir: []const u8, commit_hash: []const u8) 
                 break;
             }
         }
+    }
+
+    if (std.mem.eql(u8, current_commit_hash, commit_hash)) {
+        std.debug.print("dir={s} is not found\n", .{root_dir});
+
+        return ErrorIncorrectTree.FileNotFound;
     }
 
     std.debug.print("found dir={s}\n", .{current_commit_hash});
