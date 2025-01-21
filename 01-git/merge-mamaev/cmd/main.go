@@ -16,7 +16,7 @@ func main() {
 	const RFC822 = "02 Jan 06 15:04 MST"
 
 	if len(os.Args) != 4 {
-		fmt.Println("Usage: ./merge-mamaev <target_hash> <merged_hash> <comment>")
+		fmt.Println("Usage: ./merge-mamaev/cmd/main.go <target_hash> <merged_hash> <comment>")
 		os.Exit(1)
 	}
 
