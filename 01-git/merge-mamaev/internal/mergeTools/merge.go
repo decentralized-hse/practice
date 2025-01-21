@@ -80,7 +80,6 @@ func MergeDirectories(targetHash, mergingHash string, comment []string) Commit {
 		log.Fatal(err)
 		os.Exit(1)
 	}
-	fmt.Println(mutualChanges)
 	content := formCommit(&mutualChanges, initial)
 
 	commit := Commit{Parent: []string{targetHash, mergingHash}, Comment: comment, Content: content}
