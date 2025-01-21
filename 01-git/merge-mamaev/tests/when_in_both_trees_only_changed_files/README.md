@@ -1,0 +1,4 @@
+# test
+
+# Command line
+go run ../../cmd/main.go bb644e0a13a82363d64f309b8bcc7148708948521994cb7052cd5204276ace95 ac7d9eb45c3176c009b965cdb7be9859494fbc14bf050b130c04006e89af5d4c
