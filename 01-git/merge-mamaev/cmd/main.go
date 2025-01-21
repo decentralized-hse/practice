@@ -13,6 +13,8 @@ import (
 )
 
 func main() {
+	const RFC822 = "02 Jan 06 15:04 MST"
+
 	if len(os.Args) != 4 {
 		fmt.Println("Usage: ./merge-mamaev <target_hash> <merged_hash> <comment>")
 		os.Exit(1)
@@ -21,8 +23,6 @@ func main() {
 	target := os.Args[1]
 	merged := os.Args[2]
 	comment := os.Args[3]
-	fmt.Println(target)
-	fmt.Println(merged)
 	commit := mergeTools.MergeDirectories(target, merged, strings.Split(comment, "\n"))
 
 	sort.Strings(commit.Parent)
@@ -33,19 +33,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	newFileContent := append(commit.Content, fmt.Sprintf(".parent\t%s", parentHash))
+	newFileContent := append(commit.Content, fmt.Sprintf(".parent:\t%s", parentHash))
 	sort.Strings(newFileContent)
 
 	treeHash, err := CreateBlob(newFileContent)
-
 	loc, err := time.LoadLocation("Europe/Moscow")
 	if err != nil {
 		log.Fatal("Cannot load TimeZone")
 		os.Exit(1)
 	}
 	date := time.Now().In(loc)
-
-	commitContent := []string{"Root: " + treeHash, "Date: " + date.Format("01 Jan 2005 12:12:12") + " MSK\n", comment}
+	//To prevent inconsistent state(tree with .commit file, but old hash in its name) need to create new tree refers to old
+	commitContent := []string{"Root: " + treeHash, "Date: " + date.Format(RFC822) + "\n", comment}
 
 	commitHash, err := CreateBlob(commitContent)
 	commitTreeContent := make([]string, 0)
@@ -57,7 +56,7 @@ func main() {
 
 	}
 
-	commitTreeContent = append(commitTreeContent, fmt.Sprintf(".parent\t%s", treeHash), fmt.Sprintf(".commit\t%s", commitHash))
+	commitTreeContent = append(commitTreeContent, fmt.Sprintf(".parent:\t%s", treeHash), fmt.Sprintf(".commit:\t%s", commitHash))
 
 	sort.Strings(commitTreeContent)
 
@@ -81,9 +80,8 @@ func CreateBlob(content []string) (string, error) {
 		return "", err
 	}
 
-	defer file.Close()
-
 	file.Write([]byte(fileText))
+	defer file.Close()
 
 	return hash, nil
 }

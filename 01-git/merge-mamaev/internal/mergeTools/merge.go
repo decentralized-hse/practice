@@ -8,12 +8,6 @@ import (
 	"strings"
 )
 
-type Commit struct {
-	Parent  []string
-	Comment []string
-	Content []string
-}
-
 func getParent(hash string) string {
 	file, err := os.ReadFile(hash)
 	if err != nil {
@@ -29,7 +23,6 @@ func getParent(hash string) string {
 	}
 
 	return ""
-
 }
 
 func getDepth(hash string) int {
@@ -74,153 +67,186 @@ func MergeDirectories(targetHash, mergingHash string, comment []string) Commit {
 		if strings.HasPrefix(line, ".parent") || strings.HasPrefix(line, ".commit") || len(line) == 0 {
 			continue
 		}
-		entry, hash := getEntryAndHash(line)
-		initial[entry] = hash
+		pair := getEntryAndHash(line)
+		initial[pair.Entry] = pair.Hash
 
 	}
 
-	a := GetUpcomingChanges(targetHash, initial)
-	b := GetUpcomingChanges(mergingHash, initial)
+	a := getUpcomingChanges(targetHash, initial)
+	b := getUpcomingChanges(mergingHash, initial)
 
-	content, err := FormCommit(a, b, initial)
-
+	mutualChanges, err := makeMutualChanges(&a, &b)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
+	fmt.Println(mutualChanges)
+	content := formCommit(&mutualChanges, initial)
+
 	commit := Commit{Parent: []string{targetHash, mergingHash}, Comment: comment, Content: content}
 	return commit
 }
 
-func FormCommit(target, merged Changes, initial map[string]string) ([]string, error) {
-	deleted := make(map[string]int)
-	changedConflicts := make([]string, 0)
-	addedConflicts := make([]string, 0)
-	for _, line := range merged.Deleted {
-		deleted[line] = 1
+func makeMutualChanges(target, merged *Changes) (Changes, error) {
+	deletedHashMap := make(map[EntryAndHashPair]int)
+	for _, pair := range merged.Deleted {
+		deletedHashMap[pair] = 1
 	}
-	for _, line := range target.Deleted {
-		deleted[line] = 1
+	for _, pair := range target.Deleted {
+		deletedHashMap[pair] = 1
 	}
-
-	changed := make(map[string]string)
-	for _, line := range merged.Changed {
-		file, hash := getEntryAndHash(line)
-		changed[file] = hash
-
+	deleted := make([]EntryAndHashPair, 0, len(deletedHashMap))
+	for eahp := range deletedHashMap {
+		deleted = append(deleted, eahp)
 	}
 
-	for _, line := range target.Changed {
-		file, hash := getEntryAndHash(line)
-
-		if value, ok := changed[file]; ok {
-			if value == hash {
-				log.Fatal("conflict")
-				//continue
-				//если файл конкурентно добавлен/изменен, ошибка. Как я понял, даже когда совпадает хеш
-
+	changedConflicts := make([][]EntryAndHashPair, 0)
+	changedHashMap := make(map[string]string)
+	for _, pair := range merged.Changed {
+		changedHashMap[pair.Entry] = pair.Hash
+	}
+	for _, pair := range target.Changed {
+		if existingHash, ok := changedHashMap[pair.Entry]; ok {
+			if existingHash == pair.Hash {
+				//If both trees have equal changes, IMHO there is no conflict
+				continue
 			}
-
-			changedConflicts = append(changedConflicts, file)
-
+			changedConflicts = append(changedConflicts, []EntryAndHashPair{
+				{Entry: pair.Entry, Hash: existingHash}, pair})
 		} else {
-			changed[file] = hash
-
-		}
-
-	}
-
-	added := make(map[string]string)
-	for _, line := range merged.Added {
-		file, hash := getEntryAndHash(line)
-		added[file] = hash
-
-	}
-	for _, line := range target.Added {
-		file, hash := getEntryAndHash(line)
-
-		if value, ok := added[file]; ok {
-			if value == hash {
-				//continue
-				//если файл конкурентно добавлен/изменен, ошибка. Как я понял, даже когда совпадает хеш
-
-			}
-			addedConflicts = append(addedConflicts, file)
-
-		} else {
-			added[file] = hash
-
+			changedHashMap[pair.Entry] = pair.Hash
 		}
 	}
-	for value := range deleted {
-		delete(initial, value)
+	changed := make([]EntryAndHashPair, 0, len(changedHashMap))
+	for eahp := range changedHashMap {
+		changed = append(changed, EntryAndHashPair{eahp, changedHashMap[eahp]})
 	}
 
-	for value := range changed {
-		initial[value] = changed[value]
+	addedConflicts := make([][]EntryAndHashPair, 0)
+	addedHashMap := make(map[string]string)
+	for _, pair := range merged.Added {
+		addedHashMap[pair.Entry] = pair.Hash
+	}
+	for _, pair := range target.Added {
+		if existingHash, ok := addedHashMap[pair.Entry]; ok {
+			if existingHash == pair.Hash {
+				//If both trees have equal changes, IMHO there is no conflict
+				continue
+			}
+			addedConflicts = append(addedConflicts, []EntryAndHashPair{
+				{Entry: pair.Entry, Hash: existingHash}, pair})
+		} else {
+			addedHashMap[pair.Entry] = pair.Hash
+		}
+	}
+	added := make([]EntryAndHashPair, 0, len(addedHashMap))
+	for eahp := range addedHashMap {
+		added = append(added, EntryAndHashPair{eahp, addedHashMap[eahp]})
 	}
 
-	for value := range changed {
-		initial[value] = added[value]
+	if len(addedConflicts)+len(changedConflicts) > 0 {
+		fmt.Println(buildConflictMessage(&addedConflicts, &changedConflicts))
+		return Changes{}, errors.New("Fatal error in merge, aborting...")
 	}
-	fmt.Println(len(changedConflicts))
-	fmt.Println(addedConflicts)
-	if len(addedConflicts)+len(changedConflicts) != 0 {
-		return nil, errors.New(strings.Join(addedConflicts, "\n") + "\n---\n" + strings.Join(changedConflicts, "\n"))
+
+	return Changes{Deleted: deleted, Added: added, Changed: changed}, nil
+}
+
+func buildConflictMessage(changed, added *[][]EntryAndHashPair) string {
+	message := "Failed to merge: there was conflicts in following files\n\n"
+	if len(*changed) != 0 {
+		message += "files/directories concurrently modified:\n\n"
+		for _, item := range *changed {
+			message += fmt.Sprintf("\t%s -- merging [%s...] -> target [%s...]\n", item[0].Entry, item[0].Hash[0:8], item[1].Hash[0:8])
+		}
 	}
+	if len(*added) != 0 {
+		message += "files/directories concurrently added:\n\n"
+		for _, item := range *added {
+			message += fmt.Sprintf("\t%s -- merging [%s...] -> target [%s...]\n", item[0].Entry, item[0].Hash[0:8], item[1].Hash[0:8])
+		}
+	}
+	return message
+}
+
+func formCommit(changes *Changes, initial map[string]string) []string {
+
+	for _, pair := range changes.Deleted {
+		delete(initial, pair.Entry)
+	}
+
+	for _, pair := range changes.Changed {
+		initial[pair.Entry] = pair.Hash
+	}
+
+	for _, pair := range changes.Added {
+		initial[pair.Entry] = pair.Hash
+	}
+
 	final := make([]string, 0)
 	for key := range initial {
 		final = append(final, fmt.Sprintf("%s\t%s", key, initial[key]))
 	}
-	return final, nil
+	return final
 }
 
-func GetUpcomingChanges(hash string, previous map[string]string) Changes {
+func getUpcomingChanges(hash string, previous map[string]string) Changes {
 	data, err := os.ReadFile(hash)
 	if err != nil {
 		os.Exit(1)
 	}
-	deleted := make([]string, 0)
+	deleted := make([]EntryAndHashPair, 0)
 	visited := make(map[string]int)
 
-	changed := make([]string, 0)
+	changed := make([]EntryAndHashPair, 0)
 
-	added := make([]string, 0)
+	added := make([]EntryAndHashPair, 0)
 	for _, line := range strings.Split(string(data), "\n") {
 		if strings.HasPrefix(line, ".parent") || strings.HasPrefix(line, ".commit") || len(line) == 0 {
 			continue
 		}
-		entry, hash := getEntryAndHash(line)
-		if oldHash, ok := previous[entry]; ok {
-			visited[entry] = 1
-			if hash == oldHash {
+		pair := getEntryAndHash(line)
+		if previousHash, ok := previous[pair.Entry]; ok {
+			visited[pair.Entry] = 1
+			if pair.Hash == previousHash {
 				continue
 			} else {
-				changed = append(changed, fmt.Sprintf("%s\t%s", entry, hash))
+				changed = append(changed, pair)
 			}
 		} else {
-			added = append(added, fmt.Sprintf("%s\t%s", entry, hash))
+			added = append(added, pair)
 		}
-
 	}
 
-	for oldObject := range previous {
-		if value, ok := previous[oldObject]; ok {
+	for pKey := range previous {
+		if _, ok := visited[pKey]; ok {
 			continue
 		} else {
-			deleted = append(deleted, fmt.Sprintf("%s\t%s", oldObject, value))
+			deleted = append(deleted, EntryAndHashPair{Entry: pKey, Hash: previous[pKey]})
 		}
 	}
+
 	return Changes{Deleted: deleted, Changed: changed, Added: added}
 }
 
-func getEntryAndHash(line string) (string, string) {
+func getEntryAndHash(line string) EntryAndHashPair {
 	parts := strings.Split(line, "\t")
-	return parts[0][0 : len(parts[0])-1], parts[1]
+	return EntryAndHashPair{Entry: parts[0], Hash: parts[1]}
+}
+
+type EntryAndHashPair struct {
+	Entry string
+	Hash  string
 }
 
 type Changes struct {
-	Deleted []string
-	Changed []string
-	Added   []string
+	Deleted []EntryAndHashPair
+	Changed []EntryAndHashPair
+	Added   []EntryAndHashPair
+}
+
+type Commit struct {
+	Parent  []string
+	Comment []string
+	Content []string
 }
