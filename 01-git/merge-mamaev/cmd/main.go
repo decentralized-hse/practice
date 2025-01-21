@@ -29,7 +29,7 @@ func main() {
 
 	parentHash, err := CreateBlob(commit.Parent)
 	if err != nil {
-		log.Fatal("Cannot create file in this directory")
+		log.Fatal("Cannot create file in this directory " + err.Error())
 		os.Exit(1)
 	}
 
@@ -39,7 +39,7 @@ func main() {
 	treeHash, err := CreateBlob(newFileContent)
 	loc, err := time.LoadLocation("Europe/Moscow")
 	if err != nil {
-		log.Fatal("Cannot load TimeZone")
+		log.Fatal("Cannot load TimeZone " + err.Error())
 		os.Exit(1)
 	}
 	date := time.Now().In(loc)
@@ -62,7 +62,7 @@ func main() {
 
 	result, err := CreateBlob(commitTreeContent)
 	if err != nil {
-		log.Fatal("cannot create merge tree")
+		log.Fatal("cannot create merge tree " + err.Error())
 		os.Exit(1)
 	}
 

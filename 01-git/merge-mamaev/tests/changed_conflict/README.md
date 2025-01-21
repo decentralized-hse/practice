@@ -1,3 +1,0 @@
-# test
-
-# Command line

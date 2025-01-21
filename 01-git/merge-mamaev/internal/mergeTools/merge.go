@@ -145,7 +145,7 @@ func makeMutualChanges(target, merged *Changes) (Changes, error) {
 	}
 
 	if len(addedConflicts)+len(changedConflicts) > 0 {
-		fmt.Println(buildConflictMessage(&addedConflicts, &changedConflicts))
+		fmt.Println(buildConflictMessage(&changedConflicts, &addedConflicts))
 		return Changes{}, errors.New("Fatal error in merge, aborting...")
 	}
 
