@@ -57,8 +57,8 @@ In JDR, a regular C Hello World may look like this:
 ````
 Not too ugly. Essentially, this is a stream of tokens.
 Here, `int`, `main` etc are RDX Terms, i.e. unquoted Base64 strings.
-Any numbers can go as-as, i.e. RDX Integer or Float.
-Everything else has to go quoted as an RDX String.
+Any numbers can go as-is, i.e. RDX Integer or Float.
+Everything else has to be quoted as an RDX String.
 
 ##  `fork-in`
 
@@ -66,7 +66,7 @@ Rules of tokenisation obviously differ for different languages.
 `fork-in` is a common interface to three implementations:
 
  1. `fork-in-lsp` Language Server Protocol based,
- 2. `fork-in-dt` difftastic based,
+ 2. `fork-in-dt` [difftastic][d] based,
  3. `fork-in-regex` regex based.
 
  The frontend detects the file format and invokes the relevant 
@@ -76,6 +76,8 @@ In all the cases, input/outputs are like:
 
   - input: a file
   - output: an RDX blob (the token stream)
+
+[d]: http://github.com/Wilfred/difftastic
 
 ##  `fork-out`
 
