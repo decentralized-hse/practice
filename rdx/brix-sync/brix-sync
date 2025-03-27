@@ -1,0 +1,45 @@
+#!/bin/python3
+
+import paramiko
+
+import sys
+
+VERBOSE = True
+
+def go_to_brix_directory(ssh, brix_path='brix'):
+    command = "cd " + brix_path
+    try:
+        _, _, stderr = ssh.exec_command(command)
+        error = stderr.read().decode().strip()
+        if VERBOSE and error:
+            print(f"Command {command} got following errors: {error}")
+            print(error)
+    except Exception as e:
+        print(f"Command failed with error: {e}")
+        ssh.close()
+        sys.exit(1)
+
+
+def run_sync(host, port, username, password):
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    
+    try:
+        ssh.connect(host, port, username, password)
+    except Exception as e:
+        print(f"Connection failed with error: {e}")
+        sys.exit(1)
+    
+    go_to_brix_directory(ssh)
+
+    print("Syncing is over")
+    ssh.close()
+
+
+if __name__ == "__main__":
+    host = "127.0.0.1"
+    port = 2222
+    username = "testuser"
+    password = "testpass"
+    
+    run_sync(host, port, username, password)
