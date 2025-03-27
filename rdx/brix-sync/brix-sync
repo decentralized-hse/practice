@@ -38,7 +38,16 @@ def run_sync(host, port, username, password):
         sys.exit(1)
     
     remote_brik_files = get_remote_brik_files(ssh)
+
+    # TODO: merge remote brik files
+    # TODO: fetch resulting file
+    # TODO: write it locally
+
     local_brik_files = get_local_brik_files()
+    # TODO: merge local files
+    # TODO: transfer local file to remote
+
+
     print(remote_brik_files, local_brik_files)
     print("Syncing is over")
     ssh.close()
