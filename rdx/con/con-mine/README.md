@@ -17,7 +17,7 @@ pyinstaller --onefile con_mine.py
 ```
 
 ```
-./con_mine --miner-id Yanikus --target "00000000000" --malicious
+./con_mine --miner-id Yanikus --target "00000000000" --transaction-count 1 --malicious
 ```
 
 # How to test

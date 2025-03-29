@@ -8,6 +8,7 @@ DATABASE_PATH = "/tmp/.con/db"
 MEMPOOL_PATH = "/tmp/.con/mempool"
 BLOCK_REWARD = 1
 DIFFICULTY_TARGET = "0000"
+MAX_TRANSACTION_COUNT = 10
 
 # TODO: change json -> brix
 def load_json(file_path: str) -> Dict:
@@ -109,6 +110,7 @@ def main():
     parser = argparse.ArgumentParser(description="ConCoin Mining Module")
     parser.add_argument("--miner-id", required=True, help="ID of the miner")
     parser.add_argument("--target", default=DIFFICULTY_TARGET, help="difficulty target for nonce")
+    parser.add_argument("--transaction-count", default=MAX_TRANSACTION_COUNT, type=int, help="max transaction count")
     parser.add_argument("--malicious", action="store_true", help="malicious mode")
 
     args = parser.parse_args()
@@ -119,7 +121,7 @@ def main():
         return
 
     transactions = get_mempool_transactions()
-    valid_transactions = [tx for tx in transactions if validate_transaction(tx)]
+    valid_transactions = [tx for tx in transactions if validate_transaction(tx)][:args.transaction_count]
     if not valid_transactions:
         print("Error: No valid transactions found in the mempool.")
         return
