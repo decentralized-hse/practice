@@ -1,5 +1,8 @@
 `con-pick` chooses the best available state (the longest branch),
 
+Для работы программы нужно установить библиотеку nlohmann-json:
+brew install nlohmann-json
+
 Пример запуска:
 
 ./con_pick --db ../../db
