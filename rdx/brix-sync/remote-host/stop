@@ -1,4 +1,0 @@
-#!/bin/bash
-
-docker stop ssh-server
-docker rm ssh-server

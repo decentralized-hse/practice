@@ -1,0 +1,100 @@
+#!/bin/python3
+
+import os
+import sys
+
+import paramiko
+
+VERBOSE = True
+
+def get_remote_brik_files(ssh):
+    command = "ls .rdx/brix"
+    try:
+        _, stdout, stderr = ssh.exec_command(command)
+        output = stdout.read().decode().strip()
+        error = stderr.read().decode().strip()
+        if VERBOSE and error:
+            print(f"Command {command} got following errors: {error}")
+        return output.split("\n")
+    except Exception as e:
+        print(f"Command failed with error: {e}")
+        ssh.close()
+        sys.exit(1)
+
+
+def merge_remote_brik_files(ssh, brik_files):
+    command = "./brix"
+    for i, brik_file in enumerate(brik_files):
+        command += f" add {brik_file[:10]}"
+        if i + 1 < len(brik_file):
+            command += ','
+    command += " merge"
+
+    try:
+        _, stdout, stderr = ssh.exec_command(command)
+        output = stdout.read().decode().strip()
+        error = stderr.read().decode().strip()
+        if VERBOSE and error:
+            print(f"Command {command} got following errors: {error}")
+        return output.strip()
+    except Exception as e:
+        print(f"Command failed with error: {e}")
+        ssh.close()
+        sys.exit(1)
+
+
+def clear_remote_brik_files(ssh, brik_files):
+    command = "rm"
+    for brik_file in brik_files:
+        command += f" .rdx/brix/{brik_file}"
+
+    try:
+        _, _, stderr = ssh.exec_command(command)
+        error = stderr.read().decode().strip()
+        if VERBOSE and error:
+            print(f"Command {command} got following errors: {error}")
+        return
+    except Exception as e:
+        print(f"Command failed with error: {e}")
+        return
+
+
+def get_local_brik_files():
+    files = os.listdir(".rdx/brix")
+    return files
+
+
+def run_sync(host, port, username, password):
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    
+    try:
+        ssh.connect(host, port, username, password)
+    except Exception as e:
+        print(f"Connection failed with error: {e}")
+        sys.exit(1)
+    
+    remote_brik_files = get_remote_brik_files(ssh)
+    merged_file = merge_remote_brik_files(ssh, remote_brik_files)
+    print(merged_file)
+    clear_remote_brik_files(ssh, remote_brik_files)
+
+    # TODO: fetch resulting file
+    # TODO: write it locally
+
+    # local_brik_files = get_local_brik_files()
+    # TODO: merge local files
+    # TODO: transfer local file to remote
+
+
+    print("Syncing is over")
+    ssh.close()
+
+
+if __name__ == "__main__":
+    host = "127.0.0.1"
+    port = 2222
+    username = "testuser"
+    password = "testpass"
+    
+    run_sync(host, port, username, password)

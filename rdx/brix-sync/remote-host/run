@@ -1,9 +1,0 @@
-#!/bin/bash
-
-docker build -t ssh-server .
-docker run \
-    -p 2222:22 \
-    -d \
-    -v ./brix:/home/testuser/brix \
-    --name ssh-server \
-    ssh-server
