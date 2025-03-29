@@ -3,7 +3,8 @@
 #include <string>
 #include <filesystem>
 #include <fstream>
-#include "nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
+#include <getopt.h>
 
 using json = nlohmann::json;
 
@@ -58,18 +59,43 @@ Block getBestChain(const std::vector<Block>& blocks) {
     return bestBlock;
 }
 
-int main() {
-    std::string dbPath = "../../db"; // Укажите правильный путь к вашей базе данных
+int main(int argc, char** argv) {
+    std::string dbPath;
+    int option_index = 0;
+    int c;
 
+    // Опции для командной строки
+    struct option long_options[] = {
+        {"db", required_argument, 0, 'd'},
+        {"help", no_argument, 0, 'h'},
+        {0, 0, 0, 0}
+    };
+
+    while ((c = getopt_long(argc, argv, "d:h", long_options, &option_index)) != -1) {
+        switch (c) {
+            case 'd':
+                dbPath = optarg;
+                break;
+            case 'h':
+            default:
+                std::cout << "Usage: " << argv[0] << " --db <path-to-db> [--help]\n";
+                return 0;
+        }
+    }
+
+    if (dbPath.empty()) {
+        std::cerr << "Error: Database path is required. Use --help for usage.\n";
+        return 1;
+    }
+
+    // Логика работы с базой данных...
     std::vector<Block> blocks = readBlocksFromDatabase(dbPath);
-
     if (blocks.empty()) {
-        std::cout << "No blocks found in the database." << std::endl;
+        std::cerr << "No blocks found in the database.\n";
         return 1;
     }
 
     Block bestBlock = getBestChain(blocks);
-
     std::cout << "The best block hash is: " << bestBlock.hash << std::endl;
 
     return 0;
