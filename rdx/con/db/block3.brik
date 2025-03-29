@@ -1,5 +1,6 @@
 {
   "type": "block",
+  "hash": "block3_hash",
   "prevBlock": "block2",
   "txs": [],
   "nonce": "abc123xyz",

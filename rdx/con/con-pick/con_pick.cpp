@@ -43,7 +43,7 @@ std::vector<Block> readBlocksFromDatabase(const std::string& dbPath) {
             file >> blockJson;
 
             Block block;
-            block.hash = entry.path().stem(); // Используем имя файла как hash для простоты
+            block.hash = blockJson.value("hash", "default_hash"); 
             block.prevBlockHash = blockJson.value("prevBlock", "");
             block.difficulty = calculateDifficulty(blockJson.value("difficultyTarget", ""));
             
@@ -54,16 +54,13 @@ std::vector<Block> readBlocksFromDatabase(const std::string& dbPath) {
 }
 
 // Метод для поиска лучшей цепочки
-Block getBestChain(const std::vector<Block>& blocks) {
-    // Создаем карту для хранения сложности цепочек по конечному блоку
+Block getBestChain(const std::vector<Block>& blocks, bool maliciousMode) {
     std::map<std::string, unsigned long> chainDifficulties;
     
-    // Проходим по всем блокам
     for (const auto& block : blocks) {
         unsigned long totalDifficulty = block.difficulty;
         std::string currentHash = block.prevBlockHash;
         
-        // Переходим по всей цепочке и суммируем сложность
         while (!currentHash.empty()) {
             auto it = std::find_if(blocks.begin(), blocks.end(), [&currentHash](const Block& blk) { return blk.hash == currentHash; });
             if (it != blocks.end()) {
@@ -74,18 +71,16 @@ Block getBestChain(const std::vector<Block>& blocks) {
             }
         }
         
-        // Сохраняем суммарную сложность этой цепочки
         chainDifficulties[block.hash] = totalDifficulty;
     }
     
-    // Находим блок с наибольшей сложностью цепочки
     Block bestBlock;
-    unsigned long maxDifficulty = 0;
+    unsigned long targetDifficulty = maliciousMode ? ULONG_MAX : 0;
     for (const auto& entry : chainDifficulties) {
-        const auto& hash = entry.first; // Локальная переменная для лямбды
+        const auto& hash = entry.first;
         unsigned long difficulty = entry.second;
-        if (difficulty > maxDifficulty) {
-            maxDifficulty = difficulty;
+        if ((maliciousMode && difficulty < targetDifficulty) || (!maliciousMode && difficulty > targetDifficulty)) {
+            targetDifficulty = difficulty;
             auto it = std::find_if(blocks.begin(), blocks.end(), [&hash](const Block& blk) { return blk.hash == hash; });
             if (it != blocks.end()) {
                 bestBlock = *it;
@@ -97,23 +92,28 @@ Block getBestChain(const std::vector<Block>& blocks) {
 
 int main(int argc, char** argv) {
     std::string dbPath;
+    bool maliciousMode = false;
     int option_index = 0;
     int c;
 
     struct option long_options[] = {
         {"db", required_argument, 0, 'd'},
         {"help", no_argument, 0, 'h'},
+        {"malicious", no_argument, 0, 'm'},
         {0, 0, 0, 0}
     };
 
-    while ((c = getopt_long(argc, argv, "d:h", long_options, &option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "d:hm", long_options, &option_index)) != -1) {
         switch (c) {
             case 'd':
                 dbPath = optarg;
                 break;
+            case 'm':
+                maliciousMode = true;
+                break;
             case 'h':
             default:
-                std::cout << "Usage: " << argv[0] << " --db <path-to-db> [--help]\n";
+                std::cout << "Usage: " << argv[0] << " --db <path-to-db> [--malicious] [--help]\n";
                 return 0;
         }
     }
@@ -129,8 +129,8 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    Block bestBlock = getBestChain(blocks);
-    std::cout << "The best block hash is: " << bestBlock.hash << std::endl;
+    Block bestBlock = getBestChain(blocks, maliciousMode);
+    std::cout << bestBlock.hash << std::endl;
 
     return 0;
 }
