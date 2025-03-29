@@ -12,13 +12,18 @@ struct Block {
     std::string hash;
     std::string prevBlockHash;
     unsigned long difficulty; // Это можно вычислить из difficultyTarget
-    // Дополнительные поля для других атрибутов блока
 };
 
 unsigned long calculateDifficulty(const std::string& difficultyTarget) {
-    // Пример подсчета сложности — вы можете использовать реальную логику
-    // Преобразовать target в число сложности, например, подсчитывая нули
-    return static_cast<unsigned long>(difficultyTarget.length());
+    unsigned long zeroCount = 0;
+    for (char c : difficultyTarget) {
+        if (c == '0') {
+            ++zeroCount;
+        } else {
+            break; // Останавливаемся, как только встречаем не 0
+        }
+    }
+    return zeroCount;
 }
 
 std::vector<Block> readBlocksFromDatabase(const std::string& dbPath) {
@@ -39,7 +44,6 @@ std::vector<Block> readBlocksFromDatabase(const std::string& dbPath) {
             block.hash = entry.path().stem(); // Используем имя файла как hash для простоты
             block.prevBlockHash = blockJson.value("prevBlock", "");
             block.difficulty = calculateDifficulty(blockJson.value("difficultyTarget", ""));
-            // Прочитайте остальные необходимые поля, если это понадобиться
             
             blocks.push_back(block);
         }
@@ -88,7 +92,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // Логика работы с базой данных...
+    // Логика работы с базой данных
     std::vector<Block> blocks = readBlocksFromDatabase(dbPath);
     if (blocks.empty()) {
         std::cerr << "No blocks found in the database.\n";
