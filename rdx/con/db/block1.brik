@@ -1,5 +1,6 @@
 {
   "type": "block",
+  "hash": "block1_hash",
   "prevBlock": "",
   "txs": [],
   "nonce": "lmns54nguoq2dfg",
