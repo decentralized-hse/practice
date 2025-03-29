@@ -82,7 +82,7 @@ Block getBestChain(const std::vector<Block>& blocks) {
     Block bestBlock;
     unsigned long maxDifficulty = 0;
     for (const auto& entry : chainDifficulties) {
-        const auto& hash = entry.first; // Local variable to capture in lambda
+        const auto& hash = entry.first; // Локальная переменная для лямбды
         unsigned long difficulty = entry.second;
         if (difficulty > maxDifficulty) {
             maxDifficulty = difficulty;
