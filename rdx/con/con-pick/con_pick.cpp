@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <map>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -11,7 +12,7 @@ using json = nlohmann::json;
 struct Block {
     std::string hash;
     std::string prevBlockHash;
-    unsigned long difficulty; // Это можно вычислить из difficultyTarget
+    unsigned long difficulty;
 };
 
 unsigned long calculateDifficulty(const std::string& difficultyTarget) {
@@ -20,12 +21,13 @@ unsigned long calculateDifficulty(const std::string& difficultyTarget) {
         if (c == '0') {
             ++zeroCount;
         } else {
-            break; // Останавливаемся, как только встречаем не 0
+            break;
         }
     }
     return zeroCount;
 }
 
+// Прочитать блоки из базы
 std::vector<Block> readBlocksFromDatabase(const std::string& dbPath) {
     std::vector<Block> blocks;
     
@@ -51,13 +53,43 @@ std::vector<Block> readBlocksFromDatabase(const std::string& dbPath) {
     return blocks;
 }
 
+// Метод для поиска лучшей цепочки
 Block getBestChain(const std::vector<Block>& blocks) {
+    // Создаем карту для хранения сложности цепочек по конечному блоку
+    std::map<std::string, unsigned long> chainDifficulties;
+    
+    // Проходим по всем блокам
+    for (const auto& block : blocks) {
+        unsigned long totalDifficulty = block.difficulty;
+        std::string currentHash = block.prevBlockHash;
+        
+        // Переходим по всей цепочке и суммируем сложность
+        while (!currentHash.empty()) {
+            auto it = std::find_if(blocks.begin(), blocks.end(), [&currentHash](const Block& blk) { return blk.hash == currentHash; });
+            if (it != blocks.end()) {
+                totalDifficulty += it->difficulty;
+                currentHash = it->prevBlockHash;
+            } else {
+                break;
+            }
+        }
+        
+        // Сохраняем суммарную сложность этой цепочки
+        chainDifficulties[block.hash] = totalDifficulty;
+    }
+    
+    // Находим блок с наибольшей сложностью цепочки
     Block bestBlock;
     unsigned long maxDifficulty = 0;
-    for (const auto& block : blocks) {
-        if (block.difficulty > maxDifficulty) {
-            maxDifficulty = block.difficulty;
-            bestBlock = block;
+    for (const auto& entry : chainDifficulties) {
+        const auto& hash = entry.first; // Local variable to capture in lambda
+        unsigned long difficulty = entry.second;
+        if (difficulty > maxDifficulty) {
+            maxDifficulty = difficulty;
+            auto it = std::find_if(blocks.begin(), blocks.end(), [&hash](const Block& blk) { return blk.hash == hash; });
+            if (it != blocks.end()) {
+                bestBlock = *it;
+            }
         }
     }
     return bestBlock;
@@ -68,7 +100,6 @@ int main(int argc, char** argv) {
     int option_index = 0;
     int c;
 
-    // Опции для командной строки
     struct option long_options[] = {
         {"db", required_argument, 0, 'd'},
         {"help", no_argument, 0, 'h'},
@@ -92,7 +123,6 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // Логика работы с базой данных
     std::vector<Block> blocks = readBlocksFromDatabase(dbPath);
     if (blocks.empty()) {
         std::cerr << "No blocks found in the database.\n";
