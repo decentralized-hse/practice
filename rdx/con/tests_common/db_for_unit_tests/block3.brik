@@ -1,0 +1,16 @@
+{
+  "type": "block",
+  "hash": "block3_hash",
+  "prevBlock": "block2",
+  "txs": [],
+  "nonce": "abc123xyz",
+  "miner": "Bob",
+  "reward": 1,
+  "time": 1680000323,
+  "difficultyTarget": "000000ff",
+  "balancesDelta": {
+     "Alice": -150,
+     "Bob": 150,
+     "Scrooge": 1
+  }
+}
