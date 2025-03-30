@@ -3,6 +3,7 @@ import json
 import os
 import time
 from typing import List, Dict
+import subprocess
 
 DATABASE_PATH = "/tmp/.con/db"
 MEMPOOL_PATH = "/tmp/.con/mempool"
@@ -20,28 +21,36 @@ def save_json(data: Dict, file_path: str) -> None:
     with open(file_path, 'w') as file:
         json.dump(data, file, indent=4)
 
-# TODO: should be common method for concoin
 def calculate_hash(data: str) -> str:
     return hashlib.sha256(data.encode('utf-8')).hexdigest()
 
-# TODO: change to con-valid
 def validate_transaction(transaction: Dict) -> bool:
+    try:
+        con_valid_res = subprocess.run(["con_valid", "--transaction", transaction["hash"]])
+        return con_pick_res.returncode == 0
+    except Exception as e:
+        print(e)
+
     return True
 
-# TODO: change to con-pick
 def get_best_block() -> Dict:
+    best_block_hash = None
+    try:
+        con_pick_res = subprocess.run(["con_pick", "--db", DATABASE_PATH], capture_output=True)
+        if con_pick_res.returncode != 0:
+            raise Exception(f"Error: con_pick return {con_pick_res.returncode}")
+        best_block_hash = con_pick_res.stdout.decode()
+    except Exception as e:
+        print(e)
+
     files = os.listdir(DATABASE_PATH)
-    best_block = None
-    max_difficulty = -1
 
     for file in files:
         block = load_json(os.path.join(DATABASE_PATH, file))
-        difficulty = len(block["difficultyTarget"])
-        if difficulty > max_difficulty:
-            best_block = block
-            max_difficulty = difficulty
+        if block["hash"] == best_block_hash or best_block_hash is None:
+            return block
 
-    return best_block
+    return None
 
 # TODO: change to con-run
 def publish_block(block: Dict) -> None:
