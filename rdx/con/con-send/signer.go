@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"log"
 	"math/big"
+	"net/http"
 	"os"
 )
 
@@ -68,6 +69,29 @@ func SignAndSend(tx Transaction) {
 	}
 
 	os.Stdout.Write(output)
+}
+
+func transactionHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var tx Transaction
+	err := json.NewDecoder(r.Body).Decode(&tx)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if tx.Key == nil {
+		http.Error(w, "Missing private key in transaction", http.StatusBadRequest)
+		return
+	}
+
+	SignAndSend(tx)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Transaction signed and sent successfully"))
 }
 
 // func main() {

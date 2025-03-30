@@ -1,0 +1,3 @@
+[submodule "rdx/con/rdx/con/librdx"]
+	path = rdx/con/rdx/con/librdx
+	url = https://github.com/gritzko/librdx.git
