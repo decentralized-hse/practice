@@ -1,5 +1,6 @@
 #!/bin/python3
 
+import fcntl
 import os
 import subprocess
 import sys
@@ -7,6 +8,40 @@ import sys
 import paramiko
 
 VERBOSE = True
+
+def acquire_remote_lock(ssh):
+    command = "flock -x lock.lock"
+    try:
+        _, stdout, stderr = ssh.exec_command(command)
+        output = stdout.read().decode().strip()
+        error = stderr.read().decode().strip()
+        if VERBOSE and error:
+            print(f"Command {command} got following errors: {error}")
+        return output.split("\n")
+    except Exception as e:
+        print(f"Command failed with error: {e}")
+        ssh.close()
+        sys.exit(1)
+
+def release_remote_lock(ssh):
+    command = "flock -u lock.lock"
+    try:
+        _, stdout, stderr = ssh.exec_command(command)
+        output = stdout.read().decode().strip()
+        error = stderr.read().decode().strip()
+        if VERBOSE and error:
+            print(f"Command {command} got following errors: {error}")
+        return output.split("\n")
+    except Exception as e:
+        print(f"Command failed with error: {e}")
+        ssh.close()
+        sys.exit(1)
+
+def diff_two_lists(x, y):
+    x_set, y_set = set(x), set(y)
+    only_x = list(x_set - y_set)
+    only_y = list(y_set - x_set)
+    return only_x, only_y
 
 def get_remote_brik_files_names(ssh):
     command = "ls .rdx/brix"
@@ -22,10 +57,13 @@ def get_remote_brik_files_names(ssh):
         ssh.close()
         sys.exit(1)
 
+def get_local_brik_files_names():
+    return os.listdir(".rdx/brix")
 
-def merge_remote_brik_files(ssh, brik_files):
+
+def merge_remote_brik_files(ssh, files):
     command = "./brix"
-    for i, brik_file in enumerate(brik_files):
+    for i, brik_file in enumerate(files):
         command += f" add {brik_file[:10]}"
         if i + 1 < len(brik_file):
             command += ','
@@ -44,9 +82,9 @@ def merge_remote_brik_files(ssh, brik_files):
         sys.exit(1)
 
 
-def clear_remote_brik_files(ssh, brik_files):
+def clear_remote_brik_files(ssh, files):
     command = "rm"
-    for brik_file in brik_files:
+    for brik_file in files:
         command += f" .rdx/brix/{brik_file}"
 
     try:
@@ -73,9 +111,7 @@ def fetch_remote_brik_file(ssh, brik_file_hash):
         sftp.close()
 
 
-def merge_local_brik_files():
-    files = os.listdir(".rdx/brix")
-
+def merge_local_brik_files(files):
     if len(files) == 0:
         return
 
@@ -83,7 +119,7 @@ def merge_local_brik_files():
     for file in files:
         command.append(f" add {file[:10]},")
     command.append("merge")
-    
+
     result = subprocess.run(
         command,
         capture_output=True,
@@ -111,28 +147,44 @@ def send_brik_file_to_remote(ssh, brik_file_hash):
 
 
 def run_sync(host, port, username, password):
-    # TODO: add lock against data races
+    print("Acquiring local lock...")
+    with open("lock.lock", "w") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    
+
     try:
         ssh.connect(host, port, username, password)
     except Exception as e:
         print(f"Connection failed with error: {e}")
         sys.exit(1)
-    
+
+    print("Acquiring remote lock...")
+    acquire_remote_lock(ssh)
+
     remote_brik_files_names = get_remote_brik_files_names(ssh)
-    merged_file_hash = merge_remote_brik_files(ssh, remote_brik_files_names)
-    clear_remote_brik_files(ssh, remote_brik_files_names)
-    
+    local_brik_files = get_local_brik_files_names()
+    only_local, only_remote = diff_two_lists(local_brik_files, remote_brik_files_names)
+
+    merged_file_hash = merge_remote_brik_files(ssh, only_remote)
+    clear_remote_brik_files(ssh, only_remote)
+
     fetch_remote_brik_file(ssh, merged_file_hash)
     clear_remote_brik_files(ssh, [f'{merged_file_hash}.brik'])
 
-    local_merged_file_hash = merge_local_brik_files()
+    local_merged_file_hash = merge_local_brik_files(only_local + [f'{merged_file_hash}.brik'])
     send_brik_file_to_remote(ssh, local_merged_file_hash)
+
+    print("Releasing remote lock...")
+    release_remote_lock(ssh)
 
     print("Syncing is over")
     ssh.close()
+
+    print("Releasing local lock...")
+    with open("lock.lock", "w") as f:
+        fcntl.flock(f, fcntl.LOCK_UN)
 
 
 if __name__ == "__main__":
@@ -140,5 +192,5 @@ if __name__ == "__main__":
     port = 2222
     username = "testuser"
     password = "testpass"
-    
+
     run_sync(host, port, username, password)
