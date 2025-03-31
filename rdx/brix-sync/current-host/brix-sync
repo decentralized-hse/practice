@@ -10,28 +10,27 @@ import paramiko
 VERBOSE = True
 
 def acquire_remote_lock(ssh):
-    command = "flock -x lock.lock"
+    command = "exec {fd}>lock.lock; flock -x $fd; echo $fd"
     try:
         _, stdout, stderr = ssh.exec_command(command)
         output = stdout.read().decode().strip()
         error = stderr.read().decode().strip()
         if VERBOSE and error:
             print(f"Command {command} got following errors: {error}")
-        return output.split("\n")
+        return output.strip()
     except Exception as e:
         print(f"Command failed with error: {e}")
         ssh.close()
         sys.exit(1)
 
-def release_remote_lock(ssh):
-    command = "flock -u lock.lock"
+def release_remote_lock(ssh, fd):
+    command = f"exec {fd}>&-"
     try:
         _, stdout, stderr = ssh.exec_command(command)
         output = stdout.read().decode().strip()
         error = stderr.read().decode().strip()
         if VERBOSE and error:
             print(f"Command {command} got following errors: {error}")
-        return output.split("\n")
     except Exception as e:
         print(f"Command failed with error: {e}")
         ssh.close()
@@ -62,6 +61,9 @@ def get_local_brik_files_names():
 
 
 def merge_remote_brik_files(ssh, files):
+    if len(files) == 0:
+        return None
+
     command = "./brix"
     for i, brik_file in enumerate(files):
         command += f" add {brik_file[:10]}"
@@ -83,6 +85,9 @@ def merge_remote_brik_files(ssh, files):
 
 
 def clear_remote_brik_files(ssh, files):
+    if len(files) == 0:
+        return
+
     command = "rm"
     for brik_file in files:
         command += f" .rdx/brix/{brik_file}"
@@ -148,8 +153,8 @@ def send_brik_file_to_remote(ssh, brik_file_hash):
 
 def run_sync(host, port, username, password):
     print("Acquiring local lock...")
-    with open("lock.lock", "w") as f:
-        fcntl.flock(f, fcntl.LOCK_EX)
+    local_lock_file = open("lock.lock", "w")
+    fcntl.flock(local_lock_file, fcntl.LOCK_EX)
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -161,7 +166,7 @@ def run_sync(host, port, username, password):
         sys.exit(1)
 
     print("Acquiring remote lock...")
-    acquire_remote_lock(ssh)
+    remote_fd = acquire_remote_lock(ssh)
 
     remote_brik_files_names = get_remote_brik_files_names(ssh)
     local_brik_files = get_local_brik_files_names()
@@ -170,21 +175,24 @@ def run_sync(host, port, username, password):
     merged_file_hash = merge_remote_brik_files(ssh, only_remote)
     clear_remote_brik_files(ssh, only_remote)
 
-    fetch_remote_brik_file(ssh, merged_file_hash)
-    clear_remote_brik_files(ssh, [f'{merged_file_hash}.brik'])
+    list_to_merge = only_local
+    if merged_file_hash is not None:
+        fetch_remote_brik_file(ssh, merged_file_hash)
+        clear_remote_brik_files(ssh, [f'{merged_file_hash}.brik'])
+        list_to_merge.append(f'{merged_file_hash}.brik')
 
-    local_merged_file_hash = merge_local_brik_files(only_local + [f'{merged_file_hash}.brik'])
-    send_brik_file_to_remote(ssh, local_merged_file_hash)
+    if len(list_to_merge) > 0:
+        local_merged_file_hash = merge_local_brik_files(list_to_merge)
+        send_brik_file_to_remote(ssh, local_merged_file_hash)
 
     print("Releasing remote lock...")
-    release_remote_lock(ssh)
+    release_remote_lock(ssh, remote_fd)
 
     print("Syncing is over")
     ssh.close()
 
     print("Releasing local lock...")
-    with open("lock.lock", "w") as f:
-        fcntl.flock(f, fcntl.LOCK_UN)
+    fcntl.flock(local_lock_file, fcntl.LOCK_UN)
 
 
 if __name__ == "__main__":
