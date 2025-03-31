@@ -30,4 +30,3 @@ We want to ensure replicas are *identical* (hashes match).
     in flight (in the network).
  4. In the end of a run, the resulting SST files on both sides
     must be identical (same hashes).
-
