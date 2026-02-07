@@ -17,27 +17,17 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         return 0;
     }
 
-    // generated fuzzed data write into file
-    const std::string inputFileName = "fuzzed_data.bin";
-    std::ofstream outFile(inputFileName, std::ios::out | std::ios::binary);
-    outFile.write((char*)data, size);
-    outFile.close();
+    std::vector<uint8_t> dataVector(data, data + size);
 
     // calling covertBinaryToJson
-    TaskAux inputTask = getTaskType(inputFileName);
-    covertBinaryToJson(inputTask);  // result will be writen into fuzzed_data.json
+    TaskAux inputTask = getTaskType(&dataVector, nullptr, TaskAux::Type::BinaryToJson);
+    std::string binToJson = covertBinaryToJson(inputTask);  // result will be writen into fuzzed_data.json
 
     // calling convertJsonToBinary
-    const std::string outputFileName = "fuzzed_data.json";
-    TaskAux outputTask = getTaskType(outputFileName);
-    convertJsonToBinary(outputTask); 
+    TaskAux outputTask = getTaskType(nullptr, &binToJson, TaskAux::Type::JsonToBinary);
+    std::vector<uint8_t> jsonToBin = convertJsonToBinary(outputTask);
 
-    // Compare the buffer with original data
-    std::ifstream inFile(inputFileName, std::ios::in | std::ios::binary);
-    std::vector<uint8_t> buffer(std::istreambuf_iterator<char>(inFile), {});
-    bool isSame = (memcmp(data, buffer.data(), size) == 0);
-    if(isSame) {
-        inFile.close();
+    if (dataVector == jsonToBin) {
         return 0;
     } else {
         assert(false);

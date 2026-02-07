@@ -36,6 +36,12 @@ public:
     }
 };
 
+class NullBuffer : public std::streambuf
+{
+public:
+  int overflow(int c) { return c; }
+};
+
 struct StudentCheck {
     char name[32];
     char login[16];
@@ -53,19 +59,15 @@ void fail(const char* where) {
     throw MyException(std::string(where));
 }
 
-void isConvertibleToJson(const char* str, size_t size, const char* where) {
+void isConvertibleToJson(const char* str, const char* where) {
     try {
-        char tmpBuffer[64];
-        tmpnam(tmpBuffer);
-        std::string tmpFileName(tmpBuffer);
-        std::ofstream out(tmpFileName);
+        NullBuffer null_buffer;
+        std::ostream null_stream(&null_buffer);
 
         json tmp;
         tmp["tmp"] = str;
 
-        out << tmp;
-
-        std::remove(tmpFileName.c_str());
+        null_stream << tmp;
     } catch (...) {
         fail(where);
     }
@@ -89,7 +91,7 @@ void check_str(const char* str, int len, const char* name) {
         fail(name);
     if (str[i] != 0)
         fail(name);
-    isConvertibleToJson(str, len, name);
+    isConvertibleToJson(str, name);
 }
 
 bool checkStudent(StudentCheck& student) {
