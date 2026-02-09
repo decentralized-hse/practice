@@ -1,0 +1,20 @@
+cmake_minimum_required(VERSION 3.14)
+project(GitRepoAnalyzer)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(nlohmann_json REQUIRED)
+
+find_path(LIBGIT2_INCLUDE_DIR git2.h PATHS /opt/homebrew/include /usr/local/include /usr/include)
+find_library(LIBGIT2_LIBRARY NAMES git2 libgit2 PATHS /opt/homebrew/lib /usr/local/lib /usr/lib)
+
+add_executable(dataset_collection dataset_collection.cpp)
+
+target_include_directories(dataset_collection PRIVATE $${LIBGIT2_INCLUDE_DIR})
+
+target_link_libraries(dataset_collection 
+    PRIVATE 
+    nlohmann_json::nlohmann_json 
+    "/opt/homebrew/lib/libgit2.dylib"
+)
