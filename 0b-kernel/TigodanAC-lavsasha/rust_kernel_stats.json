@@ -1,0 +1,32 @@
+{
+  "2022-01-02": {
+    "files": 0,
+    "lines": 0,
+    "version": "5.16-rc8",
+    "folder": "linux-5.16-rc8"
+  },
+  "2023-01-01": {
+    "files": 37,
+    "lines": 11934,
+    "version": "6.2-rc2",
+    "folder": "linux-6.2-rc2"
+  },
+  "2024-01-07": {
+    "files": 61,
+    "lines": 19681,
+    "version": "6.7",
+    "folder": "linux-6.7"
+  },
+  "2025-01-05": {
+    "files": 91,
+    "lines": 22735,
+    "version": "6.13-rc6",
+    "folder": "linux-6.13-rc6"
+  },
+  "2026-01-04": {
+    "files": 338,
+    "lines": 135662,
+    "version": "6.19-rc4",
+    "folder": "linux-6.19-rc4"
+  }
+}
