@@ -1,0 +1,75 @@
+=== Этап 5: Сравнение дополнительных операций ===
+
+5.1. Операция: Отмена изменений
+---
+Git: создание репозитория...
+Git: отмена последнего коммита (soft reset)
+  git reset HEAD~1: 
+real	0m0.009s
+user	0m0.003s
+sys	0m0.004s
+ M file.txt
+  [OK] Коммит отменен, изменения сохранены
+
+Git: восстановление файла из HEAD
+  git checkout -- file.txt: 
+real	0m0.008s
+user	0m0.003s
+sys	0m0.003s
+  [OK] Файл восстановлен
+
+Fossil: создание репозитория...
+Fossil: восстановление файла из checkout
+  fossil revert file.txt: 
+real	0m0.004s
+user	0m0.002s
+sys	0m0.002s
+  [OK] Файл восстановлен
+
+5.2. Операция: Создание обратного коммита
+---
+Git: создание обратного коммита
+  git revert HEAD: 
+real	0m0.010s
+user	0m0.003s
+sys	0m0.005s
+d997bd2 Revert "Add line2"
+76228f4 Add line2
+03316ac Initial
+  [OK] Обратный коммит создан
+
+Fossil: создание обратного коммита
+  fossil merge --backout + commit: 
+real	0m0.004s
+user	0m0.002s
+sys	0m0.002s
+=== 2026-02-13 ===
+12:09:29 [9964b4c1ca] *CURRENT* Revert Add line2 (user: goncharov tags: trunk)
+12:09:29 [57ed5d8234] Add line2 (user: goncharov tags: trunk)
+12:09:29 [15d9e8fb41] Initial (user: goncharov tags: trunk)
+--- entry limit (3) reached ---
+  [OK] Обратный коммит создан
+
+5.3. Операция: Поиск (git grep vs fossil grep)
+---
+Git: поиск в текущих файлах
+  git grep 'pattern': 
+real	0m0.007s
+user	0m0.003s
+sys	0m0.003s
+file.txt:test pattern here
+  [OK] Поиск выполнен
+
+Fossil: поиск в истории файла
+  fossil grep 'pattern' file.txt: 
+real	0m0.004s
+user	0m0.002s
+sys	0m0.001s
+== 2026-02-13 12:09 file.txt c81d2e2b0f checkin 0a26c10a3d
+1:test pattern here
+  [OK] Поиск выполнен
+
+=== Тестирование завершено ===
+
+Примечание: Тестирование работы с удаленными репозиториями (push/pull/sync)
+требует настройки удаленного репозитория и не включено в автоматический тест.

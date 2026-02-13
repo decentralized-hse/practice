@@ -1,0 +1,106 @@
+=== Бенчмарки производительности Git vs Fossil ===
+
+Тестовый репозиторий: Git (196,325 коммитов)
+
+1. Просмотр истории коммитов
+---
+100 коммитов:
+  Git: 
+real	0m0.010s
+user	0m0.005s
+sys	0m0.003s
+  Fossil: 
+real	0m0.024s
+user	0m0.009s
+sys	0m0.003s
+
+1,000 коммитов:
+  Git: 
+real	0m0.015s
+user	0m0.009s
+sys	0m0.004s
+  Fossil: 
+real	0m0.107s
+user	0m0.076s
+sys	0m0.006s
+
+10,000 коммитов:
+  Git: 
+real	0m0.060s
+user	0m0.052s
+sys	0m0.006s
+  Fossil: 
+real	0m0.853s
+user	0m0.799s
+sys	0m0.035s
+
+2. Просмотр веток
+---
+  Git branch -a: 
+real	0m0.008s
+user	0m0.004s
+sys	0m0.003s
+  Fossil branch list: 
+real	0m0.112s
+user	0m0.072s
+sys	0m0.039s
+
+3. Просмотр тегов
+---
+  Git tag: 
+real	0m0.008s
+user	0m0.004s
+sys	0m0.003s
+  Fossil tag list: 
+real	0m0.010s
+user	0m0.006s
+sys	0m0.004s
+
+4. Просмотр информации о коммите
+---
+  Git show: 
+real	0m0.009s
+user	0m0.004s
+sys	0m0.003s
+  Fossil info: 
+real	0m0.004s
+user	0m0.002s
+sys	0m0.001s
+
+5. Поиск в файле
+---
+  Git grep: 
+real	0m0.007s
+user	0m0.003s
+sys	0m0.002s
+  Fossil grep: 
+real	0m0.007s
+user	0m0.004s
+sys	0m0.003s
+
+6. Просмотр diff между коммитами
+---
+  Git diff: 
+real	0m0.008s
+user	0m0.004s
+sys	0m0.003s
+  Fossil diff: 
+real	0m0.020s
+user	0m0.005s
+sys	0m0.014s
+
+7. Статистика репозиториев
+---
+Git:
+count: 0
+size-pack: 551.14 MiB
+fatal: not a git repository: '"git-bare.git"'
+Количество коммитов: 
+
+Fossil:
+Размер репозитория: 
+./6. Производительность/benchmark.sh: command substitution: line 103: syntax error near unexpected token `('
+./6. Производительность/benchmark.sh: command substitution: line 103: `cd \"$FOSSIL_WORKSPACE\" && fossil sql \"SELECT COUNT(*) FROM event WHERE type='ci';\" | tail -1'
+Количество коммитов: 
+
+=== Бенчмарки завершены ===
