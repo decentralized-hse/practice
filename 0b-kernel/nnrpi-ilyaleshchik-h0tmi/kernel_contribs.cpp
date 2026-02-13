@@ -144,6 +144,11 @@ struct OrgStats {
     long long total   = 0;
 };
 
+enum class GroupBy {
+    Author,
+    Org
+};
+
 static long long get_commit_count(const std::string& repo_path,
                                    const std::string& git_dir) {
     std::string cmd;
@@ -162,6 +167,7 @@ static long long get_commit_count(const std::string& repo_path,
 static std::unordered_map<std::string, OrgStats> collect_stats(
     const std::string& repo_path,
     const std::string& git_dir,
+    GroupBy group_by,
     bool fast,
     int progress_every)
 {
@@ -178,10 +184,10 @@ static std::unordered_map<std::string, OrgStats> collect_stats(
     std::string cmd;
     if (!git_dir.empty()) {
         cmd = "git --git-dir " + shell_escape(git_dir)
-            + " log --numstat '--format=@@@%ae'";
+            + " log --numstat '--format=@@@%an%x1f%ae'";
     } else {
         cmd = "cd " + shell_escape(repo_path)
-            + " && git log --numstat '--format=@@@%ae'";
+            + " && git log --numstat '--format=@@@%an%x1f%ae'";
     }
     if (fast) cmd += " --no-renames --no-ext-diff";
     cmd += " 2>/dev/null";
@@ -191,6 +197,7 @@ static std::unordered_map<std::string, OrgStats> collect_stats(
 
     std::unordered_map<std::string, OrgStats> stats;
     std::string current_org;
+    std::string current_key;
     bool has_org = false;
     long long commit_index = 0;
 
@@ -205,10 +212,33 @@ static std::unordered_map<std::string, OrgStats> collect_stats(
         }
 
         if (line_len >= 3 && line_buf[0] == '@' && line_buf[1] == '@' && line_buf[2] == '@') {
-            std::string email(line_buf + 3);
+            std::string payload(line_buf + 3);
+            std::string name;
+            std::string email;
+            char sep = static_cast<char>(0x1f);
+            size_t pos = payload.find(sep);
+            if (pos != std::string::npos) {
+                name = payload.substr(0, pos);
+                email = payload.substr(pos + 1);
+            } else {
+                email = payload;
+            }
             current_org = email_to_org(email);
             has_org = true;
-            stats[current_org].commits++;
+            std::string key;
+            if (group_by == GroupBy::Org) {
+                key = current_org;
+            } else {
+                if (name.empty()) {
+                    key = email.empty() ? "unknown" : email;
+                } else if (!email.empty()) {
+                    key = name + " <" + email + ">";
+                } else {
+                    key = name;
+                }
+            }
+            current_key = key;
+            stats[current_key].commits++;
             commit_index++;
             if (progress_every > 0 && commit_index % progress_every == 0) {
                 if (total_commits > 0) {
@@ -242,7 +272,8 @@ static std::unordered_map<std::string, OrgStats> collect_stats(
         long long deleted_v = strtoll(deleted_s, &end2, 10);
         if (*end1 != '\0' || *end2 != '\0') continue;
 
-        OrgStats& os = stats[current_org];
+        if (current_key.empty()) continue;
+        OrgStats& os = stats[current_key];
         os.added   += added_v;
         os.deleted += deleted_v;
         os.total   += added_v + deleted_v;
@@ -293,6 +324,40 @@ static void format_table(
         sep[i] = std::string(widths[i], '-');
     print_row(sep);
     for (auto& row : rows) print_row(row);
+}
+
+static std::string format_text_table_string(
+    const std::vector<std::vector<std::string>>& rows,
+    const std::vector<std::string>& headers)
+{
+    std::vector<size_t> widths(headers.size());
+    for (size_t i = 0; i < headers.size(); i++)
+        widths[i] = headers[i].size();
+    for (auto& row : rows)
+        for (size_t i = 0; i < row.size() && i < widths.size(); i++)
+            widths[i] = std::max(widths[i], row[i].size());
+
+    auto build_row = [&](const std::vector<std::string>& row) {
+        std::ostringstream out;
+        for (size_t i = 0; i < row.size(); i++) {
+            if (i > 0) out << "  ";
+            out << row[i];
+            if (i + 1 < row.size()) {
+                size_t pad = widths[i] - row[i].size();
+                for (size_t p = 0; p < pad; p++) out << ' ';
+            }
+        }
+        return out.str();
+    };
+
+    std::ostringstream out;
+    out << build_row(headers) << "\n";
+    std::vector<std::string> sep(headers.size());
+    for (size_t i = 0; i < widths.size(); i++)
+        sep[i] = std::string(widths[i], '-');
+    out << build_row(sep) << "\n";
+    for (auto& row : rows) out << build_row(row) << "\n";
+    return out.str();
 }
 
 static std::string format_markdown_table(
@@ -389,9 +454,113 @@ static std::string format_html(
     return out.str();
 }
 
+static std::string format_svg_table(
+    const std::vector<std::vector<std::string>>& rows,
+    const std::vector<std::string>& headers,
+    const std::string& title)
+{
+    const int row_h = 22;
+    const int pad_x = 10;
+    const int pad_y = 6;
+    const int char_w = 7;
+    const int left_margin = 20;
+    const int top_margin = 40;
+
+    std::vector<size_t> widths(headers.size());
+    for (size_t i = 0; i < headers.size(); i++)
+        widths[i] = headers[i].size();
+    for (auto& row : rows)
+        for (size_t i = 0; i < row.size() && i < widths.size(); i++)
+            widths[i] = std::max(widths[i], row[i].size());
+
+    std::vector<int> col_px(widths.size());
+    int total_w = left_margin;
+    for (size_t i = 0; i < widths.size(); i++) {
+        col_px[i] = static_cast<int>(widths[i]) * char_w + pad_x * 2;
+        total_w += col_px[i];
+    }
+    int total_h = top_margin + (static_cast<int>(rows.size()) + 1) * row_h + 20;
+
+    std::ostringstream out;
+    out << "<svg xmlns='http://www.w3.org/2000/svg' width='" << total_w
+        << "' height='" << total_h << "' viewBox='0 0 " << total_w << " " << total_h << "'>";
+    out << "<style>"
+           "text{font-family:monospace;font-size:12px;fill:#111}"
+           ".title{font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold}"
+           ".header{fill:#f4f4f4}"
+           ".grid{stroke:#ccc;stroke-width:1}"
+           "</style>";
+    out << "<text class='title' x='" << left_margin << "' y='24'>"
+        << html_escape(title) << "</text>";
+
+    int x = left_margin;
+    int y = top_margin;
+
+    out << "<rect class='header' x='" << x << "' y='" << y
+        << "' width='" << (total_w - left_margin) << "' height='" << row_h << "'/>";
+
+    int cx = x;
+    for (size_t i = 0; i < headers.size(); i++) {
+        out << "<text x='" << (cx + pad_x) << "' y='" << (y + row_h - pad_y)
+            << "'>" << html_escape(headers[i]) << "</text>";
+        cx += col_px[i];
+    }
+
+    for (size_t r = 0; r < rows.size(); r++) {
+        int ry = y + row_h * (static_cast<int>(r) + 1);
+        int rx = x;
+        for (size_t c = 0; c < rows[r].size(); c++) {
+            out << "<text x='" << (rx + pad_x) << "' y='" << (ry + row_h - pad_y)
+                << "'>" << html_escape(rows[r][c]) << "</text>";
+            rx += col_px[c];
+        }
+    }
+
+    int grid_y = y;
+    for (size_t r = 0; r <= rows.size() + 1; r++) {
+        out << "<line class='grid' x1='" << x << "' y1='" << grid_y
+            << "' x2='" << (total_w - 0) << "' y2='" << grid_y << "'/>";
+        grid_y += row_h;
+    }
+    int grid_x = x;
+    for (size_t c = 0; c <= headers.size(); c++) {
+        out << "<line class='grid' x1='" << grid_x << "' y1='" << y
+            << "' x2='" << grid_x << "' y2='" << (y + row_h * (rows.size() + 1)) << "'/>";
+        if (c < headers.size()) grid_x += col_px[c];
+    }
+
+    out << "</svg>";
+    return out.str();
+}
+
 static std::string to_lower(std::string s) {
     for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     return s;
+}
+
+static std::vector<std::string> split_list(const std::string& input) {
+    std::vector<std::string> out;
+    std::string cur;
+    for (char c : input) {
+        if (c == ',') {
+            if (!cur.empty()) out.push_back(cur);
+            cur.clear();
+        } else {
+            cur.push_back(c);
+        }
+    }
+    if (!cur.empty()) out.push_back(cur);
+    for (auto& s : out) {
+        size_t start = s.find_first_not_of(' ');
+        size_t end = s.find_last_not_of(' ');
+        if (start == std::string::npos) {
+            s.clear();
+        } else {
+            s = s.substr(start, end - start + 1);
+        }
+    }
+    out.erase(std::remove(out.begin(), out.end(), std::string()), out.end());
+    return out;
 }
 
 static bool ends_with(const std::string& s, const std::string& suffix) {
@@ -420,8 +589,9 @@ static void usage(const char* prog) {
         "      --refresh          Fetch updates if repo exists\n"
         "      --top N            Number of orgs to show (default: 100)\n"
         "      --loc-metric M     added|deleted|total (default: total)\n"
-        "      --output PATH      Write table to file\n"
-        "      --output-format F  text|markdown|csv|html (auto by extension)\n"
+        "      --group-by G       author|org (default: author)\n"
+        "      --output PATH      Write table to file (repeat or comma-list)\n"
+        "      --output-format F  text|markdown|csv|html|svg|pdf|png\n"
         "      --fast             Disable rename detection and ext diff (default)\n"
         "      --no-fast          Enable rename detection and ext diff\n"
         "      --progress-every N Log progress every N commits (default: 5000)\n",
@@ -434,8 +604,9 @@ int main(int argc, char* argv[]) {
     bool refresh = false;
     int top_n = 100;
     std::string loc_metric = "total";
-    std::string output_path;
-    std::string output_format;
+    std::string group_by = "author";
+    std::vector<std::string> output_paths;
+    std::vector<std::string> output_formats;
     bool fast = true;
     int progress_every = 5000;
 
@@ -445,6 +616,7 @@ int main(int argc, char* argv[]) {
         OPT_REFRESH,
         OPT_TOP,
         OPT_LOC_METRIC,
+        OPT_GROUP_BY,
         OPT_OUTPUT,
         OPT_OUTPUT_FORMAT,
         OPT_FAST,
@@ -459,6 +631,7 @@ int main(int argc, char* argv[]) {
         {"refresh",        no_argument,       nullptr, OPT_REFRESH},
         {"top",            required_argument, nullptr, OPT_TOP},
         {"loc-metric",     required_argument, nullptr, OPT_LOC_METRIC},
+        {"group-by",       required_argument, nullptr, OPT_GROUP_BY},
         {"output",         required_argument, nullptr, OPT_OUTPUT},
         {"output-format",  required_argument, nullptr, OPT_OUTPUT_FORMAT},
         {"fast",           no_argument,       nullptr, OPT_FAST},
@@ -496,11 +669,24 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
             break;
+        case OPT_GROUP_BY:
+            group_by = to_lower(optarg);
+            if (group_by != "author" && group_by != "org") {
+                fprintf(stderr, "Error: --group-by must be author or org\n");
+                return 1;
+            }
+            break;
         case OPT_OUTPUT:
-            output_path = optarg;
+            {
+                auto items = split_list(optarg);
+                output_paths.insert(output_paths.end(), items.begin(), items.end());
+            }
             break;
         case OPT_OUTPUT_FORMAT:
-            output_format = to_lower(optarg);
+            {
+                auto items = split_list(to_lower(optarg));
+                output_formats.insert(output_formats.end(), items.begin(), items.end());
+            }
             break;
         case OPT_FAST:
             fast = true;
@@ -532,7 +718,8 @@ int main(int argc, char* argv[]) {
             ensure_repo(rp, refresh);
         }
 
-        auto stats = collect_stats(rp, git_dir, fast, progress_every);
+        GroupBy group = (group_by == "org") ? GroupBy::Org : GroupBy::Author;
+        auto stats = collect_stats(rp, git_dir, group, fast, progress_every);
 
         using Entry = std::pair<std::string, OrgStats>;
         std::vector<Entry> entries(stats.begin(), stats.end());
@@ -555,7 +742,7 @@ int main(int argc, char* argv[]) {
         if (static_cast<int>(entries.size()) > top_n)
             entries.resize(top_n);
 
-        std::vector<std::string> headers = {"#", "org", "commits", "added", "deleted", "total"};
+        std::vector<std::string> headers = {"#", group_by, "commits", "added", "deleted", "total"};
         std::vector<std::vector<std::string>> rows;
         for (size_t i = 0; i < entries.size(); i++) {
             auto& [org, s] = entries[i];
@@ -570,45 +757,57 @@ int main(int argc, char* argv[]) {
         }
 
         std::string title = "Top " + std::to_string(entries.size())
-            + " kernel contributors by org (email domain)";
-        if (!output_path.empty() && output_format.empty()) {
-            std::string lower = to_lower(output_path);
-            if (ends_with(lower, ".md") || ends_with(lower, ".markdown")) output_format = "markdown";
-            else if (ends_with(lower, ".csv")) output_format = "csv";
-            else if (ends_with(lower, ".html") || ends_with(lower, ".htm")) output_format = "html";
-            else if (ends_with(lower, ".pdf")) output_format = "pdf";
-            else if (ends_with(lower, ".png")) output_format = "png";
-            else output_format = "text";
-        }
-
-        if (output_path.empty()) {
+            + " kernel contributors by " + group_by;
+        if (output_paths.empty()) {
             format_table(rows, headers);
-        } else if (output_format == "text") {
-            std::ostringstream out;
-            auto old_buf = std::cout.rdbuf(out.rdbuf());
-            format_table(rows, headers);
-            std::cout.rdbuf(old_buf);
-            write_file(output_path, out.str());
-        } else if (output_format == "markdown") {
-            write_file(output_path, format_markdown_table(rows, headers));
-        } else if (output_format == "csv") {
-            write_file(output_path, format_csv(rows, headers));
-        } else if (output_format == "html") {
-            write_file(output_path, format_html(rows, headers, title));
-        } else if (output_format == "pdf" || output_format == "png") {
-            std::string html = format_html(rows, headers, title);
-            std::string tmp = (fs::temp_directory_path()
-                / ("kernel_contribs_" + std::to_string(::getpid()) + ".html")).string();
-            write_file(tmp, html);
-            std::string tool = (output_format == "pdf") ? "wkhtmltopdf" : "wkhtmltoimage";
-            if (!command_exists(tool)) {
-                throw std::runtime_error("Missing " + tool + " in PATH (install it or use --output-format html).");
-            }
-            std::string cmd = tool + " " + shell_escape(tmp) + " " + shell_escape(output_path);
-            run_cmd(cmd);
-            fs::remove(tmp);
         } else {
-            throw std::runtime_error("Unknown output format: " + output_format);
+            if (output_formats.size() > 1 && output_formats.size() != output_paths.size()) {
+                throw std::runtime_error("When multiple --output formats are given, the count must match --output.");
+            }
+            for (size_t i = 0; i < output_paths.size(); i++) {
+                std::string output_path = output_paths[i];
+                std::string output_format;
+                if (!output_formats.empty()) {
+                    output_format = output_formats.size() == 1 ? output_formats[0] : output_formats[i];
+                }
+                if (output_format.empty()) {
+                    std::string lower = to_lower(output_path);
+                    if (ends_with(lower, ".md") || ends_with(lower, ".markdown")) output_format = "markdown";
+                    else if (ends_with(lower, ".csv")) output_format = "csv";
+                    else if (ends_with(lower, ".html") || ends_with(lower, ".htm")) output_format = "html";
+                    else if (ends_with(lower, ".svg")) output_format = "svg";
+                    else if (ends_with(lower, ".pdf")) output_format = "pdf";
+                    else if (ends_with(lower, ".png")) output_format = "png";
+                    else output_format = "text";
+                }
+
+                if (output_format == "text") {
+                    write_file(output_path, format_text_table_string(rows, headers));
+                } else if (output_format == "markdown") {
+                    write_file(output_path, format_markdown_table(rows, headers));
+                } else if (output_format == "csv") {
+                    write_file(output_path, format_csv(rows, headers));
+                } else if (output_format == "html") {
+                    write_file(output_path, format_html(rows, headers, title));
+                } else if (output_format == "svg") {
+                    write_file(output_path, format_svg_table(rows, headers, title));
+                } else if (output_format == "pdf" || output_format == "png") {
+                    std::string svg = format_svg_table(rows, headers, title);
+                    std::string tmp = (fs::temp_directory_path()
+                        / ("kernel_contribs_" + std::to_string(::getpid()) + ".svg")).string();
+                    write_file(tmp, svg);
+                    std::string tool = "rsvg-convert";
+                    if (!command_exists(tool)) {
+                        throw std::runtime_error("Missing rsvg-convert in PATH (install librsvg2-bin).");
+                    }
+                    std::string cmd = tool + " -f " + output_format + " -o "
+                        + shell_escape(output_path) + " " + shell_escape(tmp);
+                    run_cmd(cmd);
+                    fs::remove(tmp);
+                } else {
+                    throw std::runtime_error("Unknown output format: " + output_format);
+                }
+            }
         }
     } catch (const std::exception& e) {
         fprintf(stderr, "Error: %s\n", e.what());
