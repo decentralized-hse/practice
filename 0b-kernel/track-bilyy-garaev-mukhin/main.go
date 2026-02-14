@@ -12,12 +12,17 @@ import (
 )
 
 type FileStats struct {
-	Path        string
-	AccumLOC    int
-	NetLOC      int
-	SizeFirst   int64
-	SizeLast    int64
-	BinaryDelta int64
+	Path               string
+	AccumLOC           int
+	NetLOC             int
+	NetLOCRootMid      int
+	NetLOCMidHead      int
+	SizeFirst          int64
+	SizeMid            int64
+	SizeLast           int64
+	BinaryDelta        int64
+	BinaryDeltaRootMid int64
+	BinaryDeltaMidHead int64
 }
 
 type DirStats struct {
@@ -50,19 +55,35 @@ func main() {
 	}
 	fmt.Fprintln(os.Stderr, "root:", root)
 
+	mid := getMiddleCommit(repo, roots[0])
+	if mid != "" {
+		fmt.Fprintln(os.Stderr, "mid:", mid)
+	}
+
 	fmt.Fprintln(os.Stderr, "accum loc...")
 	accum := collectAccum(repo)
-	fmt.Fprintln(os.Stderr, "net loc...")
-	net := collectNet(repo, roots[0])
+	fmt.Fprintln(os.Stderr, "net loc root -> HEAD...")
+	net := collectNetBetween(repo, roots[0], "HEAD")
+	var netRootMid, netMidHead map[string]int
+	if mid != "" {
+		fmt.Fprintln(os.Stderr, "net loc root -> mid, mid -> HEAD...")
+		netRootMid = collectNetBetween(repo, roots[0], mid)
+		netMidHead = collectNetBetween(repo, mid, "HEAD")
+	}
 	fmt.Fprintln(os.Stderr, "sizes...")
 	headSizes := collectSizes(repo, "HEAD")
 	rootSizes := collectSizes(repo, roots[0])
+	var midSizes map[string]int64
+	if mid != "" {
+		midSizes = collectSizes(repo, mid)
+	}
 
-	stats := merge(accum, net, headSizes, rootSizes)
+	stats := merge(accum, net, netRootMid, netMidHead, headSizes, rootSizes, midSizes)
 	sort.Slice(stats, func(i, j int) bool { return stats[i].AccumLOC > stats[j].AccumLOC })
 
 	printTop(stats, 30)
 	printDirs(stats)
+	printDeltaVsLines(stats, 25)
 	printSummary(stats)
 }
 
@@ -91,8 +112,24 @@ func collectAccum(repo string) map[string]int {
 	return m
 }
 
-func collectNet(repo, root string) map[string]int {
-	cmd := exec.Command("git", "diff", "--numstat", "--no-renames", root, "HEAD")
+func getMiddleCommit(repo, root string) string {
+	out, err := runGit(repo, "rev-list", "--first-parent", root+"..HEAD")
+	if err != nil || out == "" {
+		return ""
+	}
+	commits := strings.Split(strings.TrimSpace(out), "\n")
+	if len(commits) < 2 {
+		return ""
+	}
+	mid := commits[len(commits)/2]
+	if len(mid) > 12 {
+		mid = mid[:12]
+	}
+	return mid
+}
+
+func collectNetBetween(repo, from, to string) map[string]int {
+	cmd := exec.Command("git", "diff", "--numstat", "--no-renames", from, to)
 	cmd.Dir = repo
 	out, _ := cmd.StdoutPipe()
 	cmd.Start()
@@ -137,7 +174,7 @@ func collectSizes(repo, ref string) map[string]int64 {
 	return m
 }
 
-func merge(accum, net map[string]int, headS, rootS map[string]int64) []FileStats {
+func merge(accum, net map[string]int, netRootMid, netMidHead map[string]int, headS, rootS map[string]int64, midS map[string]int64) []FileStats {
 	var list []FileStats
 	for path, lastSize := range headS {
 		firstSize := rootS[path]
@@ -145,16 +182,44 @@ func merge(accum, net map[string]int, headS, rootS map[string]int64) []FileStats
 		if delta < 0 {
 			delta = -delta
 		}
+		midSize := int64(0)
+		deltaRootMid := int64(0)
+		deltaMidHead := int64(0)
+		if midS != nil {
+			midSize = midS[path]
+			d1 := midSize - firstSize
+			if d1 < 0 {
+				d1 = -d1
+			}
+			deltaRootMid = d1
+			d2 := lastSize - midSize
+			if d2 < 0 {
+				d2 = -d2
+			}
+			deltaMidHead = d2
+		}
 		list = append(list, FileStats{
-			Path:        path,
-			AccumLOC:    accum[path],
-			NetLOC:      net[path],
-			SizeFirst:   firstSize,
-			SizeLast:    lastSize,
-			BinaryDelta: delta,
+			Path:               path,
+			AccumLOC:           accum[path],
+			NetLOC:             net[path],
+			NetLOCRootMid:      at(netRootMid, path),
+			NetLOCMidHead:      at(netMidHead, path),
+			SizeFirst:          firstSize,
+			SizeMid:            midSize,
+			SizeLast:           lastSize,
+			BinaryDelta:        delta,
+			BinaryDeltaRootMid: deltaRootMid,
+			BinaryDeltaMidHead: deltaMidHead,
 		})
 	}
 	return list
+}
+
+func at(m map[string]int, key string) int {
+	if m == nil {
+		return 0
+	}
+	return m[key]
 }
 
 func printTop(stats []FileStats, n int) {
@@ -164,16 +229,56 @@ func printTop(stats []FileStats, n int) {
 	fmt.Println()
 	fmt.Println("--- top files by accum loc ---")
 	tw := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "file\taccum\tnet\tratio\tsize_first\tsize_last\tdelta")
+	fmt.Fprintln(tw, "file\taccum\tnet\tratio\tsize_first\tsize_mid\tsize_last\tdelta\tdelta_mid\tbytes/line")
 	for i := 0; i < n; i++ {
 		s := stats[i]
 		path := s.Path
 		if len(path) > 50 {
 			path = "..." + path[len(path)-47:]
 		}
-		fmt.Fprintf(tw, "%s\t%d\t%d\t%s\t%s\t%s\t%s\n",
+		fmt.Fprintf(tw, "%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 			path, s.AccumLOC, s.NetLOC, ratio(s.AccumLOC, s.NetLOC),
-			bytesFmt(s.SizeFirst), bytesFmt(s.SizeLast), bytesFmt(s.BinaryDelta))
+			bytesFmt(s.SizeFirst), bytesFmt(s.SizeMid), bytesFmt(s.SizeLast),
+			bytesFmt(s.BinaryDelta), bytesFmt(s.BinaryDeltaMidHead),
+			bytesPerLine(s.BinaryDelta, s.NetLOC))
+	}
+	tw.Flush()
+}
+
+func bytesPerLine(deltaBytes int64, netLOC int) string {
+	if netLOC <= 0 {
+		return "-"
+	}
+	return fmt.Sprintf("%.1f", float64(deltaBytes)/float64(netLOC))
+}
+
+func printDeltaVsLines(stats []FileStats, n int) {
+	var withLOC []FileStats
+	for _, s := range stats {
+		if s.NetLOC > 0 {
+			withLOC = append(withLOC, s)
+		}
+	}
+	sort.Slice(withLOC, func(i, j int) bool {
+		bi := float64(withLOC[i].BinaryDelta) / float64(withLOC[i].NetLOC)
+		bj := float64(withLOC[j].BinaryDelta) / float64(withLOC[j].NetLOC)
+		return bi > bj
+	})
+	if n > len(withLOC) {
+		n = len(withLOC)
+	}
+	fmt.Println()
+	fmt.Println("--- per-file: byte delta vs net LOC (bytes per line, top by B/L) ---")
+	tw := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+	fmt.Fprintln(tw, "file\tnet_LOC\tdelta_bytes\tbytes/line")
+	for i := 0; i < n; i++ {
+		s := withLOC[i]
+		path := s.Path
+		if len(path) > 50 {
+			path = "..." + path[len(path)-47:]
+		}
+		bpl := float64(s.BinaryDelta) / float64(s.NetLOC)
+		fmt.Fprintf(tw, "%s\t%d\t%s\t%.1f\n", path, s.NetLOC, bytesFmt(s.BinaryDelta), bpl)
 	}
 	tw.Flush()
 }
@@ -210,7 +315,8 @@ func printDirs(stats []FileStats) {
 
 func printSummary(stats []FileStats) {
 	var totalAccum, totalNet int64
-	var totalDelta int64
+	var totalDelta, totalDeltaRootMid, totalDeltaMidHead int64
+	var totalNetRootMid, totalNetMidHead int64
 	maxRatio := 0.0
 	maxFile := ""
 
@@ -218,6 +324,10 @@ func printSummary(stats []FileStats) {
 		totalAccum += int64(s.AccumLOC)
 		totalNet += int64(s.NetLOC)
 		totalDelta += s.BinaryDelta
+		totalDeltaRootMid += s.BinaryDeltaRootMid
+		totalDeltaMidHead += s.BinaryDeltaMidHead
+		totalNetRootMid += int64(s.NetLOCRootMid)
+		totalNetMidHead += int64(s.NetLOCMidHead)
 		if s.NetLOC > 0 {
 			r := float64(s.AccumLOC) / float64(s.NetLOC)
 			if r > maxRatio {
@@ -231,9 +341,23 @@ func printSummary(stats []FileStats) {
 	fmt.Println("--- summary ---")
 	fmt.Printf("files: %d\n", len(stats))
 	fmt.Printf("accum loc: %d\n", totalAccum)
-	fmt.Printf("net loc: %d\n", totalNet)
+	fmt.Printf("net loc (root -> HEAD): %d\n", totalNet)
 	fmt.Printf("ratio: %s\n", ratio(int(totalAccum), int(totalNet)))
-	fmt.Printf("binary delta: %s\n", bytesFmt(totalDelta))
+	fmt.Printf("binary delta (root -> HEAD): %s\n", bytesFmt(totalDelta))
+	if totalNetRootMid > 0 || totalDeltaRootMid > 0 {
+		fmt.Println()
+		fmt.Println("--- middle point (root -> mid, mid -> HEAD) ---")
+		fmt.Printf("net loc root -> mid: %d\n", totalNetRootMid)
+		fmt.Printf("net loc mid -> HEAD: %d\n", totalNetMidHead)
+		fmt.Printf("binary delta root -> mid: %s\n", bytesFmt(totalDeltaRootMid))
+		fmt.Printf("binary delta mid -> HEAD: %s\n", bytesFmt(totalDeltaMidHead))
+		if totalNetRootMid > 0 {
+			fmt.Printf("bytes/line root -> mid: %.1f\n", float64(totalDeltaRootMid)/float64(totalNetRootMid))
+		}
+		if totalNetMidHead > 0 {
+			fmt.Printf("bytes/line mid -> HEAD: %.1f\n", float64(totalDeltaMidHead)/float64(totalNetMidHead))
+		}
+	}
 	if maxFile != "" {
 		fmt.Printf("max ratio file: %s (%.1fx)\n", maxFile, maxRatio)
 	}
