@@ -24,8 +24,8 @@ private:
     int64_t totalRemoved = 0;
     int64_t totalChanges = 0;
     int     totalFiles   = 0;
-    int     depth        = 1;       // directory grouping depth
-    int     topN         = 0;       // 0 = show all
+    int     depth        = 1;
+    int     topN         = 0;
 
     std::string getDirAtDepth(const std::string& filepath) const {
         if (filepath.empty()) return "(root)";
@@ -33,54 +33,47 @@ private:
         for (int d = 0; d < depth; ++d) {
             pos = filepath.find('/', pos);
             if (pos == std::string::npos) {
-                // file lives above requested depth — use its parent or root
                 size_t lastSlash = filepath.rfind('/');
                 return (lastSlash != std::string::npos)
                        ? filepath.substr(0, lastSlash + 1)
                        : "(root)";
             }
-            ++pos; // skip past the '/'
+            ++pos;
         }
         return filepath.substr(0, pos);
     }
 
     void parseLine(const std::string& line) {
         std::istringstream iss(line);
-        std::string addedStr, removedStr, filepath;
+        std::string addedStr, removedStr;
 
         if (!(iss >> addedStr >> removedStr)) return;
-        std::getline(iss, filepath);
-
-        // trim leading whitespace
-        size_t start = filepath.find_first_not_of(" \t");
-        if (start == std::string::npos) return;
-        filepath = filepath.substr(start);
-
-        // handle renames: "old => new" or "{old => new}/rest"
-        // numstat shows the destination path after the tab-separated fields
-        // but sometimes has {old => new} syntax — take as-is for grouping
-
-        // skip binary files (marked with -)
         if (addedStr == "-" || removedStr == "-") return;
-
-        int64_t a = 0, r = 0;
+        int64_t added = 0, removed = 0;
         try {
-            a = std::stoll(addedStr);
-            r = std::stoll(removedStr);
+            added = std::stoll(addedStr);
+            removed = std::stoll(removedStr);
         } catch (...) {
-            return; // malformed line
+            return;
         }
 
+        std::string filepath;
+        std::getline(iss, filepath);
+        size_t start = filepath.find_first_not_of(" \t");
+        if (start == std::string::npos) {
+            return;
+        }
+        filepath = filepath.substr(start);
         std::string dir = getDirAtDepth(filepath);
 
-        dirStats[dir].added   += a;
-        dirStats[dir].removed += r;
-        dirStats[dir].total   += a + r;
+        dirStats[dir].added   += added;
+        dirStats[dir].removed += removed;
+        dirStats[dir].total   += added + removed;
         dirStats[dir].files   += 1;
 
-        totalAdded   += a;
-        totalRemoved += r;
-        totalChanges += a + r;
+        totalAdded   += added;
+        totalRemoved += removed;
+        totalChanges += added + removed;
         totalFiles   += 1;
     }
 
@@ -103,7 +96,6 @@ private:
         return b;
     }
 
-    // Validate ref string: only allow safe characters for git refs
     static bool isSafeRef(const std::string& ref) {
         for (char c : ref) {
             if (!(std::isalnum(c) || c == '.' || c == '-' || c == '_'
@@ -118,23 +110,12 @@ public:
     void setDepth(int d) { depth = std::max(1, d); }
     void setTopN(int n)  { topN  = std::max(0, n); }
 
-    // Read numstat from stdin (pipe-friendly)
-    bool readStdin() {
-        std::string line;
-        while (std::getline(std::cin, line)) {
-            if (!line.empty()) parseLine(line);
-        }
-        return totalFiles > 0;
-    }
-
-    // Run git diff --numstat between two refs
     bool runGitDiff(const std::string& ref1, const std::string& ref2) {
         if (!isSafeRef(ref1) || !isSafeRef(ref2)) {
             std::cerr << "Error: invalid ref name\n";
             return false;
         }
 
-        // Use -- to prevent ref names from being interpreted as paths
         std::string cmd = "git diff --numstat " + ref1 + ".." + ref2 + " --";
 
         std::cerr << "Running: " << cmd << "\n";
@@ -167,7 +148,6 @@ public:
             return;
         }
 
-        // Sort by total changes descending
         std::vector<std::pair<std::string, DirStats>> sorted(
             dirStats.begin(), dirStats.end());
 
@@ -177,7 +157,6 @@ public:
                   });
 
         if (topN > 0 && static_cast<int>(sorted.size()) > topN) {
-            // Collect "other" bucket
             DirStats other;
             for (size_t i = topN; i < sorted.size(); ++i) {
                 other.added   += sorted[i].second.added;
@@ -189,7 +168,6 @@ public:
             sorted.emplace_back("(other)", other);
         }
 
-        // Header
         std::cout << "\n" << std::string(96, '=') << "\n";
         std::cout << "  Git Diff Analysis   |   "
                   << fmtNum(totalChanges) << " lines changed across "
@@ -244,7 +222,6 @@ static void usage(const char* prog) {
 
 int main(int argc, char* argv[]) {
     DiffAnalyzer analyzer;
-    bool fromStdin = false;
 
     static struct option long_opts[] = {
         {"depth", required_argument, nullptr, 'd'},
@@ -265,21 +242,12 @@ int main(int argc, char* argv[]) {
 
     int remaining = argc - optind;
 
-    if (remaining == 1 && std::string(argv[optind]) == "-") {
-        fromStdin = true;
-    } else if (remaining == 2) {
-        // two refs
-    } else {
+    if (remaining != 2) {
         usage(argv[0]);
         return 1;
     }
 
-    bool ok;
-    if (fromStdin) {
-        ok = analyzer.readStdin();
-    } else {
-        ok = analyzer.runGitDiff(argv[optind], argv[optind + 1]);
-    }
+    bool ok = analyzer.runGitDiff(argv[optind], argv[optind + 1]);
 
     if (!ok) {
         std::cerr << "No data. Check that you're inside a git repo "
