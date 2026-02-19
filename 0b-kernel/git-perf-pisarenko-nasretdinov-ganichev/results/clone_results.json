@@ -1,0 +1,74 @@
+[
+  {
+    "repo": "linux",
+    "strategy": "full",
+    "elapsed_s": 325.82,
+    "success": true,
+    "total_size_mb": 7870.22,
+    "git_dir_size_mb": 6374.77
+  },
+  {
+    "repo": "linux",
+    "strategy": "shallow",
+    "elapsed_s": 22.82,
+    "success": true,
+    "total_size_mb": 1781.16,
+    "git_dir_size_mb": 285.7
+  },
+  {
+    "repo": "linux",
+    "strategy": "partial",
+    "elapsed_s": 161.62,
+    "success": true,
+    "total_size_mb": 3743.14,
+    "git_dir_size_mb": 2247.69
+  },
+  {
+    "repo": "homebrew-core",
+    "strategy": "full",
+    "elapsed_s": 195.92,
+    "success": true,
+    "total_size_mb": 1199.22,
+    "git_dir_size_mb": 1171.95
+  },
+  {
+    "repo": "homebrew-core",
+    "strategy": "shallow",
+    "elapsed_s": 3.31,
+    "success": true,
+    "total_size_mb": 38.96,
+    "git_dir_size_mb": 11.69
+  },
+  {
+    "repo": "homebrew-core",
+    "strategy": "partial",
+    "elapsed_s": 118.09,
+    "success": true,
+    "total_size_mb": 932.71,
+    "git_dir_size_mb": 905.45
+  },
+  {
+    "repo": "crates.io-index",
+    "strategy": "full",
+    "elapsed_s": 98.26,
+    "success": true,
+    "total_size_mb": 3770.56,
+    "git_dir_size_mb": 559.0
+  },
+  {
+    "repo": "crates.io-index",
+    "strategy": "shallow",
+    "elapsed_s": 165.73,
+    "success": true,
+    "total_size_mb": 3447.55,
+    "git_dir_size_mb": 235.98
+  },
+  {
+    "repo": "crates.io-index",
+    "strategy": "partial",
+    "elapsed_s": 236.4,
+    "success": true,
+    "total_size_mb": 3508.51,
+    "git_dir_size_mb": 296.92
+  }
+]

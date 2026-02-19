@@ -1,0 +1,107 @@
+[
+  {
+    "repo": "linux",
+    "operation": "tag -l",
+    "elapsed_s": 0.002,
+    "ref_count": 919,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "operation": "branch -a",
+    "elapsed_s": 0.002,
+    "ref_count": 3,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "operation": "for-each-ref",
+    "elapsed_s": 0.015,
+    "ref_count": 922,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "operation": "for-each-ref refs/tags",
+    "elapsed_s": 0.011,
+    "ref_count": 919,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "operation": "ls-remote https://github.com/torvalds/linux.git",
+    "elapsed_s": 0.566,
+    "ref_count": 3770,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "operation": "tag -l",
+    "elapsed_s": 0.002,
+    "ref_count": 11,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "operation": "branch -a",
+    "elapsed_s": 0.002,
+    "ref_count": 58,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "operation": "for-each-ref",
+    "elapsed_s": 0.002,
+    "ref_count": 69,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "operation": "for-each-ref refs/tags",
+    "elapsed_s": 0.002,
+    "ref_count": 11,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "operation": "ls-remote https://github.com/Homebrew/homebrew-core.git",
+    "elapsed_s": 1.239,
+    "ref_count": 287144,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "operation": "tag -l",
+    "elapsed_s": 0.002,
+    "ref_count": 0,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "operation": "branch -a",
+    "elapsed_s": 0.001,
+    "ref_count": 3,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "operation": "for-each-ref",
+    "elapsed_s": 0.001,
+    "ref_count": 3,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "operation": "for-each-ref refs/tags",
+    "elapsed_s": 0.001,
+    "ref_count": 0,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "operation": "ls-remote https://github.com/rust-lang/crates.io-index.git",
+    "elapsed_s": 0.408,
+    "ref_count": 6,
+    "success": true
+  }
+]

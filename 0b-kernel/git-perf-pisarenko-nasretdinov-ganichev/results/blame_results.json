@@ -1,0 +1,130 @@
+[
+  {
+    "repo": "linux",
+    "file": "Makefile",
+    "file_lines": 2249,
+    "blamed_lines": 2249,
+    "elapsed_s": 1.805,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "file": "README",
+    "file_lines": 168,
+    "blamed_lines": 168,
+    "elapsed_s": 0.664,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "file": "CREDITS",
+    "file_lines": 4558,
+    "blamed_lines": 4558,
+    "elapsed_s": 1.414,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "file": "MAINTAINERS",
+    "file_lines": 29210,
+    "blamed_lines": 29210,
+    "elapsed_s": 44.426,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "file": "kernel/fork.c",
+    "file_lines": 3311,
+    "blamed_lines": 3311,
+    "elapsed_s": 2.199,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "file": "kernel/sched/core.c",
+    "file_lines": 10983,
+    "blamed_lines": 10983,
+    "elapsed_s": 4.438,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "file": "mm/memory.c",
+    "file_lines": 7480,
+    "blamed_lines": 7480,
+    "elapsed_s": 2.739,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "file": "fs/read_write.c",
+    "file_lines": 1823,
+    "blamed_lines": 1823,
+    "elapsed_s": 1.482,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "file": "init/main.c",
+    "file_lines": 1723,
+    "blamed_lines": 1723,
+    "elapsed_s": 1.607,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "file": "include/linux/fs.h",
+    "file_lines": 3648,
+    "blamed_lines": 3648,
+    "elapsed_s": 3.531,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "file": "Formula/g/git.rb",
+    "file_lines": 237,
+    "blamed_lines": 237,
+    "elapsed_s": 60.735,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "file": "Formula/w/wget.rb",
+    "file_lines": 58,
+    "blamed_lines": 58,
+    "elapsed_s": 157.838,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "file": "Formula/p/python@3.12.rb",
+    "file_lines": 525,
+    "blamed_lines": 525,
+    "elapsed_s": 2.572,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "file": "se/rd/serde",
+    "file_lines": 315,
+    "blamed_lines": 315,
+    "elapsed_s": 3.01,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "file": "to/ki/tokio",
+    "file_lines": 180,
+    "blamed_lines": 180,
+    "elapsed_s": 3.877,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "file": "ra/nd/rand",
+    "file_lines": 85,
+    "blamed_lines": 85,
+    "elapsed_s": 3.586,
+    "success": true
+  }
+]

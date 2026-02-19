@@ -1,0 +1,86 @@
+[
+  {
+    "repo": "linux",
+    "git_dir_size_mb": 6375.0,
+    "total_size_mb": 7870.45,
+    "working_tree_size_mb": 1495.45,
+    "commit_count": 1426202,
+    "tracked_file_count": 92982,
+    "branch_count": 3,
+    "tag_count": 919,
+    "packfile_count": 1,
+    "packfile_total_mb": 5945.85,
+    "packfiles": [
+      {
+        "name": "pack-3226d368e4c5af4fed8240cd67a6f297d44b788d.pack",
+        "size_mb": 5945.85
+      }
+    ],
+    "count_objects": {
+      "count": 0,
+      "size": 0,
+      "in_pack": 11378599,
+      "packs": 1,
+      "size_pack": 6473679,
+      "prune_packable": 0,
+      "garbage": 0,
+      "size_garbage": 0
+    }
+  },
+  {
+    "repo": "homebrew-core",
+    "git_dir_size_mb": 1170.24,
+    "total_size_mb": 1197.5,
+    "working_tree_size_mb": 27.27,
+    "commit_count": 760547,
+    "tracked_file_count": 8744,
+    "branch_count": 58,
+    "tag_count": 11,
+    "packfile_count": 1,
+    "packfile_total_mb": 1070.32,
+    "packfiles": [
+      {
+        "name": "pack-4b40bb79094345b9111c7fc95eeed107fd874c70.pack",
+        "size_mb": 1070.32
+      }
+    ],
+    "count_objects": {
+      "count": 0,
+      "size": 0,
+      "in_pack": 3248909,
+      "packs": 1,
+      "size_pack": 1184845,
+      "prune_packable": 0,
+      "garbage": 0,
+      "size_garbage": 0
+    }
+  },
+  {
+    "repo": "crates.io-index",
+    "git_dir_size_mb": 559.65,
+    "total_size_mb": 3771.43,
+    "working_tree_size_mb": 3211.78,
+    "commit_count": 69590,
+    "tracked_file_count": 228929,
+    "branch_count": 3,
+    "tag_count": 0,
+    "packfile_count": 1,
+    "packfile_total_mb": 514.48,
+    "packfiles": [
+      {
+        "name": "pack-ffc07014ee07494a34b3cbf7ecd935e763ab40d9.pack",
+        "size_mb": 514.48
+      }
+    ],
+    "count_objects": {
+      "count": 0,
+      "size": 0,
+      "in_pack": 838655,
+      "packs": 1,
+      "size_pack": 549760,
+      "prune_packable": 0,
+      "garbage": 0,
+      "size_garbage": 0
+    }
+  }
+]
