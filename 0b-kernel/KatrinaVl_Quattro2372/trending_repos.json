@@ -1,0 +1,72 @@
+{
+    "python": [
+        "https://github.com/VectifyAI/PageIndex",
+        "https://github.com/NevaMind-AI/memU",
+        "https://github.com/MoonshotAI/kimi-cli",
+        "https://github.com/alirezarezvani/claude-skills",
+        "https://github.com/hesreallyhim/awesome-claude-code"
+    ],
+    "javascript": [
+        "https://github.com/jquery/jquery",
+        "https://github.com/marktext/marktext",
+        "https://github.com/pedroslopez/whatsapp-web.js",
+        "https://github.com/eslint/eslint",
+        "https://github.com/GitSquared/edex-ui"
+    ],
+    "go": [
+        "https://github.com/steveyegge/beads",
+        "https://github.com/charmbracelet/crush",
+        "https://github.com/AlexxIT/go2rtc",
+        "https://github.com/ArvinLovegood/go-stock",
+        "https://github.com/juicedata/juicefs"
+    ],
+    "java": [
+        "https://github.com/TeamNewPipe/NewPipe",
+        "https://github.com/kunal-kushwaha/DSA-Bootcamp-Java",
+        "https://github.com/termux/termux-app",
+        "https://github.com/AsamK/signal-cli",
+        "https://github.com/camunda/camunda"
+    ],
+    "rust": [
+        "https://github.com/openai/codex",
+        "https://github.com/gitbutlerapp/gitbutler",
+        "https://github.com/jdx/mise",
+        "https://github.com/tauri-apps/tauri",
+        "https://github.com/max-sixty/worktrunk"
+    ],
+    "haskell": [
+        "https://github.com/jgm/pandoc",
+        "https://github.com/simonmichael/hledger",
+        "https://github.com/monoscope-tech/monoscope",
+        "https://github.com/PostgREST/postgrest",
+        "https://github.com/hadolint/hadolint"
+    ],
+    "c++": [
+        "https://github.com/k4yt3x/video2x",
+        "https://github.com/ml-explore/mlx",
+        "https://github.com/google-ai-edge/mediapipe",
+        "https://github.com/bambulab/BambuStudio",
+        "https://github.com/geode-sdk/geode"
+    ],
+    "c": [
+        "https://github.com/tmux/tmux",
+        "https://github.com/aircrack-ng/aircrack-ng",
+        "https://github.com/HarbourMasters/Shipwright",
+        "https://github.com/raysan5/raylib",
+        "https://github.com/winsiderss/systeminformer"
+    ],
+    "swift": [
+        "https://github.com/steipete/CodexBar",
+        "https://github.com/permissionlesstech/bitchat",
+        "https://github.com/steipete/Peekaboo",
+        "https://github.com/Beingpax/VoiceInk",
+        "https://github.com/lwouis/alt-tab-macos"
+    ],
+    "kotlin": [
+        "https://github.com/libre-tube/LibreTube",
+        "https://github.com/mobile-dev-inc/Maestro",
+        "https://github.com/brahmkshatriya/echo",
+        "https://github.com/JunkFood02/Seal",
+        "https://github.com/ZalithLauncher/ZalithLauncher2"
+    ]
+}
