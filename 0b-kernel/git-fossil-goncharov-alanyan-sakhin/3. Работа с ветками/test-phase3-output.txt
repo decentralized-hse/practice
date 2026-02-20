@@ -1,0 +1,139 @@
+=== Этап 3: Сравнение операций работы с ветками ===
+
+3.1. Операция: Просмотр веток
+---
+Git branch -a:
+  jch
+  maint
+* master
+  next
+  seen
+  todo
+
+Git branch -v:
+  jch    515fd3a3b8 Merge branch 'bc/ancient-ci' into jch
+  maint  67ad42147a Git 2.53
+* master 864f55e190 The second batch
+  next   19a08e0c02 Revert "Merge branch 'ps/ci-gitlab-msvc-updates' into next"
+  seen   c9d09319b2 ### CI
+  todo   e3de8cba33 What's cooking (2026/02 #04)
+
+Fossil branch list:
+   10/head
+   10/merge
+   100/head
+   100/merge
+   1000/head
+   1000/merge
+   1001/head
+   1002/head
+   1003/head
+   1003/merge
+   1004/head
+   1005/head
+   1006/head
+   1007/head
+   1007/merge
+   1008/head
+   1009/head
+   101/head
+   101/merge
+   1010/head
+
+Производительность просмотра веток:
+  Git branch -a:   
+real	0m0.009s
+user	0m0.004s
+sys	0m0.003s
+  Fossil branch list: 
+real	0m0.111s
+user	0m0.071s
+sys	0m0.039s
+
+3.2. Операция: Создание веток
+---
+Создание тестовых репозиториев для проверки создания веток...
+Git: создание ветки
+  git branch new-feature: 
+real	0m0.008s
+user	0m0.003s
+sys	0m0.003s
+  new-feature
+  [OK] Ветка создана
+
+Fossil: создание ветки
+  fossil branch new new-feature trunk: 
+real	0m0.004s
+user	0m0.002s
+sys	0m0.002s
+   new-feature
+  [OK] Ветка создана
+
+3.3. Операция: Удаление/закрытие веток
+---
+Git: удаление ветки
+  git branch -d test-delete: 
+real	0m0.007s
+user	0m0.003s
+sys	0m0.003s
+  [OK] Ветка удалена
+
+Fossil: закрытие ветки
+  fossil branch close test-close: 
+real	0m0.004s
+user	0m0.002s
+sys	0m0.001s
+
+3.4. Операция: Слияние веток
+---
+Git: слияние ветки
+  git merge feature: 
+real	0m0.012s
+user	0m0.005s
+sys	0m0.005s
+1ee971c Feature
+0e5f616 Base
+  [OK] Слияние выполнено
+
+Fossil: слияние ветки
+  fossil merge feature: 
+real	0m0.005s
+user	0m0.003s
+sys	0m0.002s
+=== 2026-02-13 ===
+12:09:14 [745d0dfaa4] *MERGE* *CURRENT* Merge feature (user: goncharov tags: trunk)
+12:09:14 [add1caa3a5] Feature (user: goncharov tags: feature)
+12:09:14 [a66645d08a] *BRANCH* Base (user: goncharov tags: trunk)
+--- entry limit (3) reached ---
+  [OK] Слияние выполнено
+
+3.5. Операция: Конфликты слияния
+---
+Git: конфликт слияния
+Auto-merging conflict.txt
+CONFLICT (content): Merge conflict in conflict.txt
+Automatic merge failed; fix conflicts and then commit the result.
+  Формат конфликта Git:
+<<<<<<< HEAD
+main line
+=======
+conflict line
+>>>>>>> conflict-branch
+  [OK] Конфликт обнаружен
+
+Fossil: конфликт слияния
+WARNING: 1 merge conflicts
+MERGE conflict.txt
+***** 1 merge conflict in conflict.txt
+  Формат конфликта Fossil:
+<<<<<<< BEGIN MERGE CONFLICT: local copy shown first <<<<<<<<<<<< (line 1)
+main line
+####### SUGGESTED CONFLICT RESOLUTION follows ###################
+conflict line
+||||||| COMMON ANCESTOR content follows ||||||||||||||||||||||||| (line 1)
+base
+======= MERGED IN content follows =============================== (line 1)
+conflict line
+  [OK] Конфликт обнаружен
+
+=== Тестирование завершено ===

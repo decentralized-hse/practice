@@ -1,0 +1,30 @@
+=== Этап 1: Верификация корректности импорта ===
+
+1.1. Проверка количества коммитов:
+  Git:   196325 коммитов
+  Fossil: 196325 коммитов
+
+1.2. Сравнение количества веток:
+  Git:   6 веток
+  Fossil: 2975 веток
+
+1.3. Сравнение количества тегов:
+  Git:   1000 тегов
+  Fossil: 3976 тегов
+
+1.4. Проверка первого коммита:
+  Git первый коммит:   e83c5163316f89bfbde7d9ab23ca2e25604af290
+  Git сообщение:       Initial revision of "git", the information manager from hell
+  Fossil сообщение:    Initial revision of "git", the information manager
+
+1.5. Проверка последнего коммита:
+  Git последний коммит:   cc19eb2c127725ec5697365f5d2180fbee5b7fc7
+  Git сообщение:          Merge 3d41747dde88f5fdb25e79ca18d1dd67841d51f2 into 864f55e1906897b630333675a52874c0fec2a45c
+  Fossil последний:       6029454f2f76ec75f3cbc00279c6340a5d56fb7d
+
+1.6. Валидация содержимого файла abspath.c:
+  Git MD5:   c8fd681a2832f4b3f39a07a388620df6
+  Fossil MD5: c8fd681a2832f4b3f39a07a388620df6
+  [OK] Файлы идентичны
+
+=== Верификация завершена ===

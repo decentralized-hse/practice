@@ -1,0 +1,286 @@
+=== Этап 2: Сравнение операций просмотра и навигации ===
+
+2.1. Операция: git log vs fossil timeline
+----------------------------------------
+Git log --oneline -10:
+864f55e190 The second batch
+6a3c66d72e Merge branch 'ty/perf-3400-optim'
+35e17b2526 Merge branch 'ac/string-list-sort-u-and-tests'
+4f3929275b Merge branch 'sb/doc-worktree-prune-expire-improvement'
+6176ee2349 Merge branch 'kn/ref-batch-output-error-reporting-fix'
+8087aae540 Merge branch 'pw/replay-drop-empty'
+7bf3785d09 Merge branch 'ps/history'
+3e0db84c88 Start 2.54 cycle
+96614e799c Merge branch 'sp/t5500-cleanup'
+7758f84682 Merge branch 'tc/last-modified-options-cleanup'
+
+Fossil timeline --limit 10:
+=== 2026-02-11 ===
+09:19:39 [6029454f2f] *MERGE* *CURRENT* Merge 3d41747dde88f5fdb25e79ca18d1dd67841d51f2 into 864f55e1906897b630333675a52874c0fec2a45c (user: noreply@github.com tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2100/head, 2165/head, 2195/merge)
+09:19:25 [7da6542c62] ci: fix MERGE_TOOL_DIR on Windows with Meson On Windows, we execute tests with "--no-bin-wrappers". a87e427e35 (ci: speed up Windows phase, 2019-01-29) (user: ps@pks.im tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2195/head, 2100/head, 2165/head)
+08:10:18 [193cbfc4fa] gitlab-ci: handle failed tests on MSVC+Meson job The MSVC+Meson job does not currently have any logic to print failing tests, nor does it upload the failed test artifacts. Backfill this logic to make help debugging efforts in case any of its jobs has failed. GitHub already knows to do this, so we don't need an equivalent change over there. Signed-off-by: Patrick Steinhardt <ps@pks.im> (user: ps@pks.im tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2195/head, 2100/head, 2165/head)
+08:10:17 [ba6d5b21fb] gitlab-ci: use "run-test-slice-meson.sh" While our GitHub workflow already uses "ci/run-test-slice-meson.sh", GitLab CI open-codes the parameters. Adapt the latter to also use the same script so that we always use the same Meson options across both CI systems. Signed-off-by: Patrick Steinhardt <ps@pks.im> (user: ps@pks.im tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2195/head, 2100/head, 2165/head)
+08:10:17 [4b0bb07dd8] ci: make test slicing consistent across Meson/Make In the preceding commit we have adjusted test slicing to be one-based when using the "ci/run-test-slice.sh" script. But we also have an equivalent script for Meson that is still zero-based, which is of course inconsistent. Adapt the script to be one-based, as well, and adapt the GitHub workflow accordingly. Note that GitLab doesn't yet use the script, so it does not need to be adapted. This will change in the next commit though. Signed-off-by: Patrick Steinhardt <ps@pks.im> (user: ps@pks.im tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2195/head, 2100/head, 2165/head)
+08:10:16 [f37ea0b023] github: fix Meson tests not executing at all While the win+Meson test jobs run in GitHub workflows, the shell script that is supposed to run the jobs is seemingly not running at all. All that the CI job prints is the following: Run ci/run-test-slice-meson.sh build 1 10 ci/run-test-slice-meson.sh build 1 10 shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'" env: DEVELOPER: 1 The step is currently defined to use PowerShell, and of course it doesn't know how to execute POSIX shell scripts. What's surprising though is that this step doesn't even lead to a CI failure. Fix the issue by using Bash instead of PowerShell, as we do in other steps that execute shell scripts. Signed-off-by: Patrick Steinhardt <ps@pks.im> (user: ps@pks.im tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2195/head, 2100/head, 2165/head)
+08:10:16 [bd74c627ba] ci: don't skip smallest test slice in GitLab The "ci/run-test-slice.sh" script can be used to slice up all of our tests into N pieces and then run each of them on a separate CI job. This is used by both GitLab and GitHub CI to speed up Windows tests, which would otherwise be painfully slow. The infra itself is fueled by `test-tool path-utils slice-tests`. This tool receives as input an "offset" and a "stride" that can be combined to slice up tests. This framing can be misleading though: you are expected to pass a zero-based index as "offset", and the complete number of slices to the "stride". The latter makes sense, but it is somewhat surprising that the offset needs to be zero-based. And this is in fact biting us: while GitHub passes zero-based indices, GitLab passes `$CI_NODE_INDEX`, which is a one-based indice. Ideally, we should have verification that the parameters make sense. And naturally, one would for example expect that it's an error to call the binary with an offset larger than the stride. But with the current framing as "offset" it's not even wrong to do so, as it is of course well-defined to start at a larger offset than the stride. This means that we get this wrong on GitLab's CI, as we pass a one based index there, and this causes us to skip one of the tests. Interestingly, it's not the lexicographically first test that we skip. Instead, as we sort tests by size before slicing them, we skip the _smallest_ test. Reframe the problem to instead talk about "slice number" and "total number of slices". For all of our use cases this is semantically equivalent, but it allows us to perform some verifications: - The total number of slices must be greater than 1. - The selected slice must be between 1 <= nr <= slices_total. As the indices are now one-based it means that GitLab's CI is fixed. The GitHub workflow is updated accordingly. Signed-off-by: Patrick Steinhardt <ps@pks.im> (user: ps@pks.im tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2195/head, 2100/head, 2165/head)
+08:10:16 [df91a739d4] ci: handle failures of test-slice helper The "run-test-slice.sh" script executes the test helper to slice up tests passed to it. As the execution is part of a pipe though, we end up ignoring any potential error code returned by the helper. Make the code more robust by storing the tests in a variable first so that we can split up the pipeline. Signed-off-by: Patrick Steinhardt <ps@pks.im> (user: ps@pks.im tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2195/head, 2100/head, 2165/head)
+08:10:10 [381b1a7ef8] *MERGE* Merge 547b3087ac2e8e05af86b4b9972cef8c20da1cdf into 864f55e1906897b630333675a52874c0fec2a45c (user: noreply@github.com tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2100/head, 2165/head, 684/merge)
+08:06:46 [7adee5278e] *MERGE* Merge 7d0749a32084e85a1c861010e7b39d5abc211f4b into 864f55e1906897b630333675a52874c0fec2a45c (user: noreply@github.com tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2100/head, 2165/head, 767/merge)
+--- entry limit (10) reached ---
+
+Производительность (100 коммитов):
+  Git:   
+real	0m0.013s
+user	0m0.006s
+sys	0m0.005s
+  Fossil: 
+real	0m0.016s
+user	0m0.008s
+sys	0m0.003s
+
+Производительность (1000 коммитов):
+  Git:   
+real	0m0.019s
+user	0m0.011s
+sys	0m0.006s
+  Fossil: 
+real	0m0.114s
+user	0m0.077s
+sys	0m0.008s
+
+Производительность (10000 коммитов):
+  Git:   
+real	0m0.061s
+user	0m0.053s
+sys	0m0.007s
+  Fossil: 
+real	0m1.060s
+user	0m0.755s
+sys	0m0.046s
+
+Производительность (все коммиты):
+  Git:   
+real	0m1.023s
+user	0m0.965s
+sys	0m0.055s
+  Fossil: 
+real	0m12.225s
+user	0m8.076s
+sys	0m0.614s
+
+Git log --format:
+864f55e1906897b630333675a52874c0fec2a45c|Junio C Hamano|gitster@pobox.com|Mon Feb 9 12:08:48 2026 -0800|The second batch
+6a3c66d72e8e74fb649d8b764e8295d94b8570a9|Junio C Hamano|gitster@pobox.com|Mon Feb 9 12:09:10 2026 -0800|Merge branch 'ty/perf-3400-optim'
+35e17b2526135163963465878861502e496becc2|Junio C Hamano|gitster@pobox.com|Mon Feb 9 12:09:10 2026 -0800|Merge branch 'ac/string-list-sort-u-and-tests'
+4f3929275b6ce975f80e00a2decfc4ab734a8ead|Junio C Hamano|gitster@pobox.com|Mon Feb 9 12:09:10 2026 -0800|Merge branch 'sb/doc-worktree-prune-expire-improvement'
+6176ee2349ae9b4c54948e86fb8de4b9fd4f0c94|Junio C Hamano|gitster@pobox.com|Mon Feb 9 12:09:10 2026 -0800|Merge branch 'kn/ref-batch-output-error-reporting-fix'
+
+Git log --author:
+864f55e190 The second batch
+6a3c66d72e Merge branch 'ty/perf-3400-optim'
+35e17b2526 Merge branch 'ac/string-list-sort-u-and-tests'
+4f3929275b Merge branch 'sb/doc-worktree-prune-expire-improvement'
+6176ee2349 Merge branch 'kn/ref-batch-output-error-reporting-fix'
+
+Fossil timeline --user:
+=== 2026-02-11 ===
+09:19:39 [6029454f2f] *MERGE* *CURRENT* Merge 3d41747dde88f5fdb25e79ca18d1dd67841d51f2 into 864f55e1906897b630333675a52874c0fec2a45c (user: noreply@github.com tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2100/head, 2165/head, 2195/merge)
+09:19:25 [7da6542c62] ci: fix MERGE_TOOL_DIR on Windows with Meson On Windows, we execute tests with "--no-bin-wrappers". a87e427e35 (ci: speed up Windows phase, 2019-01-29) (user: ps@pks.im tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2195/head, 2100/head, 2165/head)
+08:10:18 [193cbfc4fa] gitlab-ci: handle failed tests on MSVC+Meson job The MSVC+Meson job does not currently have any logic to print failing tests, nor does it upload the failed test artifacts. Backfill this logic to make help debugging efforts in case any of its jobs has failed. GitHub already knows to do this, so we don't need an equivalent change over there. Signed-off-by: Patrick Steinhardt <ps@pks.im> (user: ps@pks.im tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2195/head, 2100/head, 2165/head)
+08:10:17 [ba6d5b21fb] gitlab-ci: use "run-test-slice-meson.sh" While our GitHub workflow already uses "ci/run-test-slice-meson.sh", GitLab CI open-codes the parameters. Adapt the latter to also use the same script so that we always use the same Meson options across both CI systems. Signed-off-by: Patrick Steinhardt <ps@pks.im> (user: ps@pks.im tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2195/head, 2100/head, 2165/head)
+08:10:17 [4b0bb07dd8] ci: make test slicing consistent across Meson/Make In the preceding commit we have adjusted test slicing to be one-based when using the "ci/run-test-slice.sh" script. But we also have an equivalent script for Meson that is still zero-based, which is of course inconsistent. Adapt the script to be one-based, as well, and adapt the GitHub workflow accordingly. Note that GitLab doesn't yet use the script, so it does not need to be adapted. This will change in the next commit though. Signed-off-by: Patrick Steinhardt <ps@pks.im> (user: ps@pks.im tags: 456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2195/head, 2100/head, 2165/head)
+--- entry limit (5) reached ---
+
+
+2.2. Операция: git show vs fossil diff/cat/info
+----------------------------------------------
+Git show --stat (последний коммит):
+commit 864f55e1906897b630333675a52874c0fec2a45c
+Author: Junio C Hamano <gitster@pobox.com>
+Date:   Mon Feb 9 12:08:48 2026 -0800
+
+    The second batch
+    
+    Signed-off-by: Junio C Hamano <gitster@pobox.com>
+
+ Documentation/RelNotes/2.54.0.adoc | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+Fossil info (последний коммит):
+hash:         6029454f2f76ec75f3cbc00279c6340a5d56fb7d 2026-02-11 09:19:39 UTC
+parent:       b3f6ccf6eb015e930409d895199565f84166a6dc 2026-02-09 20:09:10 UTC
+merged-from:  7da6542c62af9365846515a9b3790267c5c62781 2026-02-11 09:19:25 UTC
+tags:         456/head, trunk, 23/head, 67/head, 6/merge, 123/head, 12/head, 8/head, 6/head, 14/head, 15/merge, 8/merge, 21/merge, 205/head, 18/merge, 399/head, 36/merge, 50/head, 61/head, 836/head, 83/merge, 96/merge, 212/head, 129/head, 2190/head, 354/head, 111/merge, 460/head, 117/head, 139/head, 125/head, 130/head, 339/head, 154/head, 512/merge, 264/head, 378/head, 357/head, 186/head, 326/head, 312/head, 216/head, 225/head, 246/head, 290/head, 100/merge, 325/merge, 316/head, 721/head, 388/head, 398/head, 411/head, 448/head, 454/head, 498/head, 838/head, 1157/head, 581/head, 563/head, 907/head, 1062/head, 1031/head, 1023/head, 991/head, 971/head, 972/head, 957/head, 927/head, 837/head, 853/head, 807/head, 794/head, 682/head, 647/head, 623/head, 616/head, 598/head, 529/head, 629/head, 526/head, 1372/head, 1061/head, 1642/head, 1103/head, 1218/head, 1187/head, 1140/head, 1146/head, 1335/head, 1234/head, 1200/head, 1325/head, 1273/head, 1710/head, 1280/head, 1337/head, 1488/head, 1308/head, 1348/head, 1356/head, 1393/head, 1458/head, 1463/head, 1714/head, 1504/head, 1469/head, 1559/head, 1606/head, 1601/head, 1681/head, 1712/head, 1669/head, 1666/head, 1743/head, 1810/head, 1768/head, 1779/head, 1833/head, 1854/head, 1860/head, 1899/head, 2015/head, 2141/head, 1985/head, 1994/head, 2110/head, 2075/head, 2100/head, 2165/head, 2195/merge
+comment:      Merge 3d41747dde88f5fdb25e79ca18d1dd67841d51f2 into 864f55e1906897b630333675a52874c0fec2a45c (user: noreply@github.com)
+
+Производительность git show:
+
+real	0m0.009s
+user	0m0.004s
+sys	0m0.003s
+
+Git show <commit>:<file>:
+#include "git-compat-util.h"
+#include "abspath.h"
+#include "strbuf.h"
+
+/*
+ * Do not use this for inspecting *tracked* content.  When path is a
+ * symlink to a directory, we do not want to say it is a directory when
+ * dealing with tracked content in the working tree.
+ */
+int is_directory(const char *path)
+
+Fossil cat <file> -r <commit>:
+#include "git-compat-util.h"
+#include "abspath.h"
+#include "strbuf.h"
+
+/*
+ * Do not use this for inspecting *tracked* content.  When path is a
+ * symlink to a directory, we do not want to say it is a directory when
+ * dealing with tracked content in the working tree.
+ */
+int is_directory(const char *path)
+
+
+2.3. Операция: git blame vs fossil annotate
+-------------------------------------------
+Git blame abspath.c (первые 20 строк):
+0b027f6ca79 (Elijah Newren         2023-03-21 06:25:58 +0000   1) #include "git-compat-util.h"
+0b027f6ca79 (Elijah Newren         2023-03-21 06:25:58 +0000   2) #include "abspath.h"
+0b027f6ca79 (Elijah Newren         2023-03-21 06:25:58 +0000   3) #include "strbuf.h"
+5b8e6f85f97 (Dmitry Potapov        2008-06-28 00:46:42 +0400   4) 
+90b4a71c493 (Junio C Hamano        2008-09-09 01:27:07 -0700   5) /*
+90b4a71c493 (Junio C Hamano        2008-09-09 01:27:07 -0700   6)  * Do not use this for inspecting *tracked* content.  When path is a
+90b4a71c493 (Junio C Hamano        2008-09-09 01:27:07 -0700   7)  * symlink to a directory, we do not want to say it is a directory when
+90b4a71c493 (Junio C Hamano        2008-09-09 01:27:07 -0700   8)  * dealing with tracked content in the working tree.
+90b4a71c493 (Junio C Hamano        2008-09-09 01:27:07 -0700   9)  */
+90b4a71c493 (Junio C Hamano        2008-09-09 01:27:07 -0700  10) int is_directory(const char *path)
+90b4a71c493 (Junio C Hamano        2008-09-09 01:27:07 -0700  11) {
+90b4a71c493 (Junio C Hamano        2008-09-09 01:27:07 -0700  12) 	struct stat st;
+90b4a71c493 (Junio C Hamano        2008-09-09 01:27:07 -0700  13) 	return (!stat(path, &st) && S_ISDIR(st.st_mode));
+90b4a71c493 (Junio C Hamano        2008-09-09 01:27:07 -0700  14) }
+90b4a71c493 (Junio C Hamano        2008-09-09 01:27:07 -0700  15) 
+05b458c1047 (Brandon Williams      2016-12-12 10:16:52 -0800  16) /* removes the last path component from 'path' except if 'path' is root */
+05b458c1047 (Brandon Williams      2016-12-12 10:16:52 -0800  17) static void strip_last_component(struct strbuf *path)
+05b458c1047 (Brandon Williams      2016-12-12 10:16:52 -0800  18) {
+05b458c1047 (Brandon Williams      2016-12-12 10:16:52 -0800  19) 	size_t offset = offset_1st_component(path->buf);
+05b458c1047 (Brandon Williams      2016-12-12 10:16:52 -0800  20) 	size_t len = path->len;
+
+Fossil annotate abspath.c (первые 20 строк):
+ba30a9063f 2023-04-06     1: #include "git-compat-util.h"
+ba30a9063f 2023-04-06     2: #include "abspath.h"
+ba30a9063f 2023-04-06     3: #include "strbuf.h"
+2b33f46d3d 2008-09-25     4: 
+2b33f46d3d 2008-09-25     5: /*
+2b33f46d3d 2008-09-25     6:  * Do not use this for inspecting *tracked* content.  When path is a
+2b33f46d3d 2008-09-25     7:  * symlink to a directory, we do not want to say it is a directory when
+2b33f46d3d 2008-09-25     8:  * dealing with tracked content in the working tree.
+2b33f46d3d 2008-09-25     9:  */
+2b33f46d3d 2008-09-25    10: int is_directory(const char *path)
+2b33f46d3d 2008-09-25    11: {
+2b33f46d3d 2008-09-25    12: 	struct stat st;
+2b33f46d3d 2008-09-25    13: 	return (!stat(path, &st) && S_ISDIR(st.st_mode));
+2b33f46d3d 2008-09-25    14: }
+2b33f46d3d 2008-09-25    15: 
+deb386e018 2017-01-18    16: /* removes the last path component from 'path' except if 'path' is root */
+deb386e018 2017-01-18    17: static void strip_last_component(struct strbuf *path)
+deb386e018 2017-01-18    18: {
+deb386e018 2017-01-18    19: 	size_t offset = offset_1st_component(path->buf);
+deb386e018 2017-01-18    20: 	size_t len = path->len;
+
+Производительность:
+  Git blame:   
+real	0m0.161s
+user	0m0.141s
+sys	0m0.016s
+  Fossil annotate: 
+real	0m0.023s
+user	0m0.020s
+sys	0m0.003s
+
+Git blame --show-email:
+0b027f6ca79 (<newren@gmail.com>                  2023-03-21 06:25:58 +0000   1) #include "git-compat-util.h"
+0b027f6ca79 (<newren@gmail.com>                  2023-03-21 06:25:58 +0000   2) #include "abspath.h"
+0b027f6ca79 (<newren@gmail.com>                  2023-03-21 06:25:58 +0000   3) #include "strbuf.h"
+5b8e6f85f97 (<dpotapov@gmail.com>                2008-06-28 00:46:42 +0400   4) 
+90b4a71c493 (<gitster@pobox.com>                 2008-09-09 01:27:07 -0700   5) /*
+90b4a71c493 (<gitster@pobox.com>                 2008-09-09 01:27:07 -0700   6)  * Do not use this for inspecting *tracked* content.  When path is a
+90b4a71c493 (<gitster@pobox.com>                 2008-09-09 01:27:07 -0700   7)  * symlink to a directory, we do not want to say it is a directory when
+90b4a71c493 (<gitster@pobox.com>                 2008-09-09 01:27:07 -0700   8)  * dealing with tracked content in the working tree.
+90b4a71c493 (<gitster@pobox.com>                 2008-09-09 01:27:07 -0700   9)  */
+90b4a71c493 (<gitster@pobox.com>                 2008-09-09 01:27:07 -0700  10) int is_directory(const char *path)
+
+Git blame -L 10,20:
+90b4a71c493 (Junio C Hamano   2008-09-09 01:27:07 -0700 10) int is_directory(const char *path)
+90b4a71c493 (Junio C Hamano   2008-09-09 01:27:07 -0700 11) {
+90b4a71c493 (Junio C Hamano   2008-09-09 01:27:07 -0700 12) 	struct stat st;
+90b4a71c493 (Junio C Hamano   2008-09-09 01:27:07 -0700 13) 	return (!stat(path, &st) && S_ISDIR(st.st_mode));
+90b4a71c493 (Junio C Hamano   2008-09-09 01:27:07 -0700 14) }
+90b4a71c493 (Junio C Hamano   2008-09-09 01:27:07 -0700 15) 
+05b458c1047 (Brandon Williams 2016-12-12 10:16:52 -0800 16) /* removes the last path component from 'path' except if 'path' is root */
+05b458c1047 (Brandon Williams 2016-12-12 10:16:52 -0800 17) static void strip_last_component(struct strbuf *path)
+05b458c1047 (Brandon Williams 2016-12-12 10:16:52 -0800 18) {
+05b458c1047 (Brandon Williams 2016-12-12 10:16:52 -0800 19) 	size_t offset = offset_1st_component(path->buf);
+05b458c1047 (Brandon Williams 2016-12-12 10:16:52 -0800 20) 	size_t len = path->len;
+
+
+2.4. Операция: git diff vs fossil diff
+--------------------------------------
+Git diff между двумя коммитами:
+diff --git a/Documentation/RelNotes/2.54.0.adoc b/Documentation/RelNotes/2.54.0.adoc
+index 20c660d82a..59bb58e449 100644
+--- a/Documentation/RelNotes/2.54.0.adoc
++++ b/Documentation/RelNotes/2.54.0.adoc
+@@ -7,6 +7,17 @@ UI, Workflows & Features
+  * "git add -p" and friends note what the current status of the hunk
+    being shown is.
+ 
++ * "git history" history rewriting (experimental) command has been
++   added.
++
++
++ * "git replay" is taught to drop commits that become empty (not the
++   ones that are empty in the original).
++
++ * The help text and the documentation for the "--expire" option of
++   "git worktree [list|prune]" have been improved.
++
++
+ 
+ Performance, Internal Implementation, Development Support etc.
+ --------------------------------------------------------------
+@@ -15,6 +26,11 @@ Performance, Internal Implementation, Development Support etc.
+    each other by encoding submodule names before using them as path
+    components.
+ 
++ * The string_list API gains a new helper, string_list_sort_u(), and
++   new unit tests to extend coverage.
++
++ * Improve set-up time of a perf test.
+
+Git diff --stat:
+ Documentation/RelNotes/2.54.0.adoc | 21 +++++++++++++++
+ t/perf/p3400-rebase.sh             | 53 +++++++++++++++++++++++++++-----------
+ 2 files changed, 59 insertions(+), 15 deletions(-)
+
+Git diff --name-status:
+M	Documentation/RelNotes/2.54.0.adoc
+M	t/perf/p3400-rebase.sh
+
+Git diff --numstat:
+21	0	Documentation/RelNotes/2.54.0.adoc
+38	15	t/perf/p3400-rebase.sh
+
+Производительность git diff:
+
+real	0m0.008s
+user	0m0.004s
+sys	0m0.003s
+
+Fossil diff (используя коммиты из timeline):
+Попытка сравнить: 7da6542c62 -> 6029454f2f
+not found: '7da6542c62'
+
+=== Тестирование завершено ===

@@ -1,0 +1,135 @@
+=== Этап 4: Сравнение операций создания коммитов ===
+
+4.1. Операция: Подготовка изменений (git add vs fossil add)
+---
+Git: создание репозитория и файлов...
+Изменение файлов...
+Git status (до add):
+ M file1.txt
+?? file2.txt
+
+Git: добавление file2.txt в индекс
+  git add file2.txt: 
+real	0m0.009s
+user	0m0.004s
+sys	0m0.003s
+  [OK] Файл добавлен в индекс
+
+Git status (после add file2.txt):
+ M file1.txt
+A  file2.txt
+  Видно разделение: file2.txt в индексе, file1.txt изменен но не в индексе
+
+Fossil: создание репозитория и файлов...
+Изменение файлов...
+Fossil status (до add):
+EDITED     file1.txt
+
+Fossil: добавление file2.txt
+  fossil add file2.txt: 
+real	0m0.004s
+user	0m0.002s
+sys	0m0.001s
+  [OK] Файл помечен для добавления
+
+Fossil status (после add file2.txt):
+EDITED     file1.txt
+ADDED      file2.txt
+  Все изменения показываются вместе (нет разделения на staged/unstaged)
+
+4.2. Операция: Просмотр статуса (git status vs fossil status)
+---
+Git status:
+On branch main
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	new file:   file2.txt
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   file1.txt
+
+
+Производительность git status:
+  
+real	0m0.007s
+user	0m0.003s
+sys	0m0.003s
+
+Fossil status:
+repository:   /private/var/folders/s7/9zy1nc855v734rjgjhm0f8rw0000gn/T/tmp.DSybhe31mH/fossil-test/test.fossil
+local-root:   /private/var/folders/s7/9zy1nc855v734rjgjhm0f8rw0000gn/T/tmp.DSybhe31mH/fossil-test/
+config-db:    /Users/mgoncharov/.config/fossil.db
+checkout:     d38af1a2532d4baaff577be2fd5ac6d5928d4467 2026-02-13 12:09:27 UTC
+parent:       a731ce3fce90b034f6de242fff7ab612158a6416 2026-02-13 12:09:27 UTC
+tags:         trunk
+comment:      Initial (user: goncharov)
+EDITED     file1.txt
+ADDED      file2.txt
+
+Производительность fossil status:
+  
+real	0m0.004s
+user	0m0.002s
+sys	0m0.002s
+
+4.3. Операция: Создание коммитов (git commit vs fossil commit)
+---
+Git: создание коммита
+  git commit -m 'Update files': 
+real	0m0.012s
+user	0m0.005s
+sys	0m0.006s
+  [OK] Коммит создан
+
+Git: информация о коммите
+a18a5d4 Update files
+commit a18a5d40ff787b9373719e48614990710be0debc
+Author:     Mikhail Goncharov <pokemongonchar@gmail.com>
+AuthorDate: Fri Feb 13 15:09:27 2026 +0300
+Commit:     Mikhail Goncharov <pokemongonchar@gmail.com>
+CommitDate: Fri Feb 13 15:09:27 2026 +0300
+
+    Update files
+
+
+Fossil: создание коммита
+  fossil commit -m 'Update files': 
+real	0m0.006s
+user	0m0.003s
+sys	0m0.003s
+  [OK] Коммит создан
+
+Fossil: информация о коммите
+=== 2026-02-13 ===
+12:09:27 [f237dc7998] *CURRENT* Update files (user: goncharov tags: trunk)
+--- entry limit (1) reached ---
+project-name: <unnamed>
+repository:   /private/var/folders/s7/9zy1nc855v734rjgjhm0f8rw0000gn/T/tmp.DSybhe31mH/fossil-test/test.fossil
+local-root:   /private/var/folders/s7/9zy1nc855v734rjgjhm0f8rw0000gn/T/tmp.DSybhe31mH/fossil-test/
+config-db:    /Users/mgoncharov/.config/fossil.db
+project-code: 64cffb2166d848e091ace910bd48aa8e615286ac
+checkout:     f237dc7998e3ead3abdf11d0825cc2989485992d 2026-02-13 12:09:27 UTC
+parent:       93358bd9565f860a501f2c6663e8d14599c48d84 2026-02-13 12:09:27 UTC
+tags:         trunk
+comment:      Update files (user: goncharov)
+check-ins:    3
+
+4.4. Демонстрация различий: Staging Area
+---
+Git: коммит только file1.txt (file2.txt остается измененным)
+ M file2.txt
+  [OK] file1.txt закоммичен, file2.txt остался измененным
+
+Fossil: коммит всех изменений
+repository:   /private/var/folders/s7/9zy1nc855v734rjgjhm0f8rw0000gn/T/tmp.DSybhe31mH/fossil-test/test.fossil
+local-root:   /private/var/folders/s7/9zy1nc855v734rjgjhm0f8rw0000gn/T/tmp.DSybhe31mH/fossil-test/
+config-db:    /Users/mgoncharov/.config/fossil.db
+checkout:     fdba1a261735d1bf674f37a8eac0a7a8855e35db 2026-02-13 12:09:28 UTC
+parent:       8716a76568f3b8656453dbbb67530d71e2e25882 2026-02-13 12:09:28 UTC
+tags:         trunk
+comment:      Update files (user: goncharov)
+  [OK] Все изменения закоммичены вместе (нет возможности выбрать часть)
+
+=== Тестирование завершено ===
