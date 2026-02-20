@@ -1,0 +1,184 @@
+[
+  {
+    "repo": "linux",
+    "operation": "rev-list --count HEAD",
+    "elapsed_s": 11.856,
+    "output_lines": 1,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "operation": "log --oneline (full)",
+    "elapsed_s": 16.507,
+    "output_lines": 1426202,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "operation": "log -n 100 --oneline",
+    "elapsed_s": 0.012,
+    "output_lines": 100,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "operation": "log -n 1000 --oneline",
+    "elapsed_s": 0.039,
+    "output_lines": 1000,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "operation": "log -n 10000 --oneline",
+    "elapsed_s": 0.171,
+    "output_lines": 10000,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "operation": "shortlog -sn --no-merges",
+    "elapsed_s": 14.382,
+    "output_lines": 31616,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "operation": "log --oneline -- Makefile",
+    "elapsed_s": 1.431,
+    "output_lines": 2646,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "operation": "log --oneline -- kernel/sched/core.c",
+    "elapsed_s": 1.621,
+    "output_lines": 1875,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "operation": "log --oneline -- drivers/gpu/drm/i915/i915_drv.h",
+    "elapsed_s": 2.339,
+    "output_lines": 3778,
+    "success": true
+  },
+  {
+    "repo": "linux",
+    "operation": "log --oneline -- MAINTAINERS",
+    "elapsed_s": 6.722,
+    "output_lines": 20511,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "operation": "rev-list --count HEAD",
+    "elapsed_s": 5.975,
+    "output_lines": 1,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "operation": "log --oneline (full)",
+    "elapsed_s": 8.721,
+    "output_lines": 760547,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "operation": "log -n 100 --oneline",
+    "elapsed_s": 0.009,
+    "output_lines": 100,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "operation": "log -n 1000 --oneline",
+    "elapsed_s": 0.02,
+    "output_lines": 1000,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "operation": "log -n 10000 --oneline",
+    "elapsed_s": 0.122,
+    "output_lines": 10000,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "operation": "shortlog -sn --no-merges",
+    "elapsed_s": 7.051,
+    "output_lines": 13195,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "operation": "log --oneline -- Formula/g/git.rb",
+    "elapsed_s": 59.975,
+    "output_lines": 65,
+    "success": true
+  },
+  {
+    "repo": "homebrew-core",
+    "operation": "log --oneline -- Formula/p/python@3.12.rb",
+    "elapsed_s": 120.64,
+    "output_lines": 78,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "operation": "rev-list --count HEAD",
+    "elapsed_s": 0.308,
+    "output_lines": 1,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "operation": "log --oneline (full)",
+    "elapsed_s": 0.555,
+    "output_lines": 69590,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "operation": "log -n 100 --oneline",
+    "elapsed_s": 0.007,
+    "output_lines": 100,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "operation": "log -n 1000 --oneline",
+    "elapsed_s": 0.013,
+    "output_lines": 1000,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "operation": "log -n 10000 --oneline",
+    "elapsed_s": 0.082,
+    "output_lines": 10000,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "operation": "shortlog -sn --no-merges",
+    "elapsed_s": 0.357,
+    "output_lines": 1,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "operation": "log --oneline -- se/rd/serde",
+    "elapsed_s": 3.601,
+    "output_lines": 2,
+    "success": true
+  },
+  {
+    "repo": "crates.io-index",
+    "operation": "log --oneline -- to/ki/tokio",
+    "elapsed_s": 3.827,
+    "output_lines": 1,
+    "success": true
+  }
+]
