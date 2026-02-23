@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import Counter
+import numpy as np
 
 INPUT_DIR = "trending_repos_commits_metrics"
 OUTPUT_DIR = "visualizations"
@@ -30,29 +31,43 @@ def process_dataframe(df):
     return df
 
 def plot_repo_metrics(df, repo_name, language, output_path):
-    fig = plt.figure(figsize=(20, 15))
-    gs = fig.add_gridspec(3, 2)
+    fig = plt.figure(figsize=(20, 18))
+    gs = fig.add_gridspec(4, 2)
     fig.suptitle(f"Repository: {repo_name} ({language})", fontsize=20, weight='bold')
 
     ax1 = fig.add_subplot(gs[0, 0])
     avg_size = df['commit_size'].mean()
     sns.histplot(df['commit_size'], kde=True, ax=ax1, color='skyblue', bins=30)
     ax1.axvline(avg_size, color='red', linestyle='--', label=f'Mean: {avg_size:.0f}')
-    ax1.set_title("1. Commit Size Distribution")
+    ax1.set_title("1. Commit Size Distribution (Linear)")
     ax1.legend()
 
-    ax2 = fig.add_subplot(gs[0, 1])
+    ax1b = fig.add_subplot(gs[0, 1])
+    commit_sizes = df['commit_size'][df['commit_size'] > 0]
+    if len(commit_sizes) > 0:
+        hist, bin_edges = np.histogram(commit_sizes, bins=50)
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+        mask = hist > 0
+        ax1b.loglog(bin_centers[mask], hist[mask], 'o-', color='skyblue', alpha=0.7)
+        ax1b.axvline(avg_size, color='red', linestyle='--', label=f'Mean: {avg_size:.0f}')
+        ax1b.set_xlabel('Commit Size (log scale)')
+        ax1b.set_ylabel('Frequency (log scale)')
+        ax1b.set_title("1b. Commit Size Distribution (Log-Log)")
+        ax1b.grid(True, alpha=0.3)
+        ax1b.legend()
+
+    ax2 = fig.add_subplot(gs[1, 0])
     heatmap_data = pd.crosstab(df['weekday'], df['hour'])
     heatmap_data = heatmap_data.reindex(index=DAYS_ORDER, columns=range(24), fill_value=0)
     sns.heatmap(heatmap_data, cmap="YlGnBu", ax=ax2)
     ax2.set_title("2. Activity Heatmap")
 
-    ax3 = fig.add_subplot(gs[1, 0])
+    ax3 = fig.add_subplot(gs[1, 1])
     top_authors = df['author'].value_counts().head(10)
     sns.barplot(x=top_authors.values, y=top_authors.index, ax=ax3, palette="viridis", hue=top_authors.index, legend=False)
     ax3.set_title("3. Top Authors")
 
-    ax4 = fig.add_subplot(gs[1, 1])
+    ax4 = fig.add_subplot(gs[2, 0])
     avg_add = df['lines_added'].mean()
     avg_del = df['lines_deleted'].mean()
     avg_ratio = df['churn_ratio'].mean()
@@ -65,7 +80,7 @@ def plot_repo_metrics(df, repo_name, language, output_path):
     sns.barplot(data=stats_df, x='Metric', y='Value', ax=ax4, palette=["green", "red"], hue='Metric', legend=False)
     ax4.set_title(f"4. Churn Stats (Avg Ratio per commit: {avg_ratio:.2f})")
 
-    ax5 = fig.add_subplot(gs[2, 0])
+    ax5 = fig.add_subplot(gs[2, 1])
     avg_files = df['files_count'].mean()
     q95 = df['files_count'].quantile(0.95)
     filtered = df[df['files_count'] <= (q95 + 5)]
@@ -74,22 +89,22 @@ def plot_repo_metrics(df, repo_name, language, output_path):
     ax5.set_title("5. Changed Files per Commit")
     ax5.legend()
 
-    ax6 = fig.add_subplot(gs[2, 1])
+    ax6 = fig.add_subplot(gs[3, :])
     all_files = [f for sublist in df['files'] for f in sublist]
     if all_files:
-        common_files = Counter(all_files).most_common(5)
+        common_files = Counter(all_files).most_common(10)
         x_val = [count for _, count in common_files]
-        y_val = [(name if len(name) < 40 else "..."+name[-37:]) for name, _ in common_files]
+        y_val = [(name if len(name) < 50 else "..."+name[-47:]) for name, _ in common_files]
         sns.barplot(x=x_val, y=y_val, ax=ax6, palette="rocket", hue=y_val, legend=False)
         ax6.set_title("6. Top Modified Files")
     
     plt.tight_layout()
-    plt.savefig(output_path)
+    plt.savefig(output_path, dpi=100)
     plt.close(fig)
 
 def plot_language_summary(df, language, output_path):
-    fig = plt.figure(figsize=(16, 12))
-    gs = fig.add_gridspec(2, 2)
+    fig = plt.figure(figsize=(18, 14))
+    gs = fig.add_gridspec(3, 2)
     fig.suptitle(f"Language: {language.upper()}", fontsize=22, weight='bold')
 
     ax1 = fig.add_subplot(gs[0, 0])
@@ -98,16 +113,30 @@ def plot_language_summary(df, language, output_path):
     data_filtered = df[df['commit_size'] <= q95]
     sns.histplot(data=data_filtered, x='commit_size', kde=True, ax=ax1, color='teal', bins=30)
     ax1.axvline(avg_size, color='red', linestyle='--', label=f'Mean: {avg_size:.0f}')
-    ax1.set_title("1. Commit Size Distribution")
+    ax1.set_title("1. Commit Size Distribution (Linear)")
     ax1.legend()
 
-    ax2 = fig.add_subplot(gs[0, 1])
+    ax1b = fig.add_subplot(gs[0, 1])
+    commit_sizes = df['commit_size'][df['commit_size'] > 0]
+    if len(commit_sizes) > 0:
+        hist, bin_edges = np.histogram(commit_sizes, bins=50)
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+        mask = hist > 0
+        ax1b.loglog(bin_centers[mask], hist[mask], 'o-', color='teal', alpha=0.7, markersize=4)
+        ax1b.axvline(avg_size, color='red', linestyle='--', label=f'Mean: {avg_size:.0f}')
+        ax1b.set_xlabel('Commit Size (log scale)')
+        ax1b.set_ylabel('Frequency (log scale)')
+        ax1b.set_title("1b. Commit Size Distribution (Log-Log)")
+        ax1b.grid(True, alpha=0.3)
+        ax1b.legend()
+
+    ax2 = fig.add_subplot(gs[1, 0])
     heatmap_data = pd.crosstab(df['weekday'], df['hour'])
     heatmap_data = heatmap_data.reindex(index=DAYS_ORDER, columns=range(24), fill_value=0)
     sns.heatmap(heatmap_data, cmap="coolwarm", ax=ax2)
     ax2.set_title("2. Activity Heatmap")
 
-    ax3 = fig.add_subplot(gs[1, 0])
+    ax3 = fig.add_subplot(gs[1, 1])
     avg_add = df['lines_added'].mean()
     avg_del = df['lines_deleted'].mean()
     avg_ratio = df['churn_ratio'].mean()
@@ -119,7 +148,7 @@ def plot_language_summary(df, language, output_path):
     sns.barplot(data=stats_df, x='Metric', y='Value', ax=ax3, palette="pastel", hue='Metric', legend=False)
     ax3.set_title(f"3. Churn Stats (Avg Ratio per commit: {avg_ratio:.2f})")
 
-    ax4 = fig.add_subplot(gs[1, 1])
+    ax4 = fig.add_subplot(gs[2, 0])
     avg_files = df['files_count'].mean()
     q99 = df['files_count'].quantile(0.99)
     files_filtered = df[df['files_count'] <= q99]
@@ -128,8 +157,34 @@ def plot_language_summary(df, language, output_path):
     ax4.set_title("4. Files Changed per Commit")
     ax4.legend()
 
+    ax5 = fig.add_subplot(gs[2, 1])
+    stats_text = f"""
+    Total Commits: {len(df):,}
+    
+    Commit Size:
+      Mean: {df['commit_size'].mean():.1f}
+      Median: {df['commit_size'].median():.1f}
+      Std: {df['commit_size'].std():.1f}
+    
+    Files Changed:
+      Mean: {df['files_count'].mean():.1f}
+      Median: {df['files_count'].median():.1f}
+    
+    Lines Added:
+      Mean: {df['lines_added'].mean():.1f}
+      Median: {df['lines_added'].median():.1f}
+    
+    Lines Deleted:
+      Mean: {df['lines_deleted'].mean():.1f}
+      Median: {df['lines_deleted'].median():.1f}
+    """
+    ax5.text(0.1, 0.5, stats_text, fontsize=12, verticalalignment='center', 
+             family='monospace', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    ax5.axis('off')
+    ax5.set_title("5. Statistical Summary")
+
     plt.tight_layout()
-    plt.savefig(output_path)
+    plt.savefig(output_path, dpi=100)
     plt.close(fig)
 
 def plot_global_comparison(stats_list, output_path):
@@ -157,7 +212,7 @@ def plot_global_comparison(stats_list, output_path):
     axes[1, 1].tick_params(axis='x', rotation=45)
 
     plt.tight_layout()
-    plt.savefig(output_path)
+    plt.savefig(output_path, dpi=100)
     plt.close(fig)
 
 def main():
