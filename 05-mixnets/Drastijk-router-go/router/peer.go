@@ -11,15 +11,24 @@ import (
 )
 
 type Peer struct {
-	address   string
-	node      *Node
-	announces map[SHA256]uint64
-	conn      net.Conn
-	outbox    [][]byte
-	boxmx     sync.Mutex
+	address       string
+	node          *Node
+	announces     map[SHA256]uint64
+	conn          net.Conn
+	outbox        [][]byte
+	boxmx         sync.Mutex
+	LoadIndex     float32
+	SendDurations []time.Duration
 }
 
-const RETRY = time.Minute
+const (
+	RETRY                  = time.Minute
+	MTU                    = 256
+	LoadedNetworkThreshold = 1024
+	FreeNetworkThreshold   = 512
+	LoadIncreaseStep       = 1.2
+	LoadDecreaseStep       = 0.8
+)
 
 func (node *Node) Connect(addr string, conn net.Conn) {
 	con_backoff := time.Millisecond
@@ -116,7 +125,7 @@ func (peer *Peer) Read() (err error) {
 			copy(to[:], body[:32])
 			msg := Message{to: to, body: body[32:]}
 			fmt.Printf("\r\nMessaged by %s: %s\r\n", peer.address, body)
-			err = peer.node.RouteMessageTCP(msg)			
+			err = peer.node.RouteMessageTCP(msg)
 		case 'P':
 			fmt.Printf("Pinged by %s: %s\n\r", peer.address, body)
 			pong, _ := TLVAppend2(nil, 'O', []byte("Re: "), body)
@@ -169,16 +178,57 @@ func (peer *Peer) doWrite() {
 			time.Sleep(time.Millisecond) // TODO backoff
 			continue
 		}
-		n, err := conn.Write(buf)
+
+		err := peer.WriteByChunks(buf)
+		peer.UpdateWorkload()
+
+		if err != nil {
+			fmt.Printf("failed to send bytes by chunks: %v", err)
+			break
+		}
+
 		//fmt.Fprintf(os.Stderr, "sent %d bytes\n", n)
 		if err != nil {
 			peer.conn = nil
 			_, _ = fmt.Fprint(os.Stderr, err.Error())
 			break
 		}
-		buf = buf[n:]
+		buf = make([]byte, 0)
 		conn = peer.conn
 	}
+}
+
+func (peer *Peer) WriteByChunks(buf []byte) error {
+	// split to chunks
+	for i := 0; i < len(buf); i += MTU {
+		start := time.Now()
+		_, err := peer.conn.Write(buf[i : i+MTU])
+		if err != nil {
+			return err
+		}
+
+		// save delivery time for controlling system load
+		peer.SendDurations = append(peer.SendDurations, time.Since(start))
+	}
+	return nil
+}
+
+func (peer *Peer) AverageLoad() time.Duration {
+	total := time.Duration(0)
+	for _, d := range peer.SendDurations {
+		total += d
+	}
+	return total / time.Duration(len(peer.SendDurations))
+}
+
+func (peer *Peer) UpdateWorkload() {
+	currentLoad := peer.AverageLoad()
+	if currentLoad >= LoadedNetworkThreshold {
+		peer.LoadIndex *= LoadIncreaseStep
+	} else if currentLoad < FreeNetworkThreshold {
+		peer.LoadIndex *= LoadDecreaseStep
+	}
+	fmt.Printf("current workload: %v", peer.LoadIndex)
 }
 
 var NoSuchPeer = errors.New("no such peer")
