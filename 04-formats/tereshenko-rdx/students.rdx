@@ -1,5 +1,0 @@
-[
-{name:"Ivan Ivanovich Ivanov" login:"ivanov" group:"CS-101" practice:[1 0 1 1 0 0 1 0] project:("https://github.com/ivanov/os-course" 85) mark:4.5}
-{name:"Maria Petrovna Sidorova" login:"sidorova" group:"CS-102" practice:[1 1 1 1 1 1 1 1] project:("https://github.com/sidorova/os-course" 95) mark:5.0}
-{name:"Aleksei Smirnov" login:"smirnov" group:"CS-101" practice:[1 0 0 1 0 1 0 0] project:("https://github.com/smirnov/project" 60) mark:3.0}
-]
