@@ -1,0 +1,61 @@
+
+============================================================
+  Git Contributor Stats  |  .
+============================================================
+
+Total commits               : 80004
+  Merge commits             : 19747  (24.7%)
+  Code / doc commits        : 60257  (75.3%)
+Total unique contributors   : 2600
+
+-- By commit frequency ----------------------------------------
+  One-time contributors     :   1208  ( 46.5% of contributors)
+  Repeat committers         :   1392  ( 53.5% of contributors)
+
+-- One-time contributor breakdown ----------------------------
+  One-time bugfixers        :    355  ( 13.7% of all contributors)
+  One-time feature devs     :    191  (  7.3% of all contributors)
+
+-- By commit type (all contributors) -------------------------
+  Bugfix-only contributors  :    636  ( 24.5%)
+  Feature-only contributors :    455  ( 17.5%)
+  Mixed bug+feature         :    617  ( 23.7%)
+  Docs contributors         :    902  ( 34.7%)
+  Test contributors         :    771  ( 29.7%)
+  Refactor contributors     :    667  ( 25.7%)
+
+-- Top 30 contributors ----------------------------------------
+  Name                          Email                               Commits  Share   Bug  Feat   Doc   Tst
+  ----------------------------------------------------------------------------------------------------
+  Junio C Hamano                gitster@pobox.com                     23737  29.7%   756   287   383   601
+  Jeff King                     peff@peff.net                          4649   5.8%   675   375   309   839
+  Junio C Hamano                junkio@cox.net                         4167   5.2%   912   257   337   293
+  Patrick Steinhardt            ps@pks.im                              1982   2.5%   443   193    65   254
+  Ævar Arnfjörð Bjarmason    avarab@gmail.com                       1945   2.4%   287   290   221   574
+  Nguyễn Thái Ngọc Duy     pclouds@gmail.com                      1824   2.3%   191   257    42   326
+  Johannes Schindelin           johannes.schindelin@gmx.de             1756   2.2%   275   257    80   284
+  Shawn Pearce                  spearce@spearce.org                    1401   1.8%   140   131    41    65
+  Elijah Newren                 newren@gmail.com                       1212   1.5%   214   255   125   259
+  René Scharfe                 l.s.r@web.de                            971   1.2%   140    94    25   140
+  Michael Haggerty              mhagger@alum.mit.edu                    954   1.2%    96   146    69   105
+  brian m. carlson              sandals@crustytoothpaste.net            882   1.1%    36   117    69   148
+  Taylor Blau                   me@ttaylorr.com                         871   1.1%    52   134    44   101
+  Jonathan Nieder               jrnieder@gmail.com                      824   1.0%    91   109   127   164
+  Jiang Xin                     worldhello.net@gmail.com                748   0.9%    32    40    20    16
+  Johannes Schindelin           Johannes.Schindelin@gmx.de              663   0.8%   163   138    23    64
+  Stefan Beller                 sbeller@google.com                      579   0.7%    62   113    42    70
+  Derrick Stolee                dstolee@microsoft.com                   567   0.7%    52    94    27   128
+  Felipe Contreras              felipe.contreras@gmail.com              529   0.7%   112   112    33   123
+  Jakub Narębski               jnareb@gmail.com                        512   0.6%   100   100    53    47
+  Eric Wong                     normalperson@yhbt.net                   502   0.6%   115    86    20    69
+  Linus Torvalds                torvalds@ppc970.osdl.org                439   0.5%    90   108     9    41
+  Johannes Sixt                 j6t@kdbg.org                            427   0.5%    71    40    11   103
+  SZEDER Gábor                 szeder.dev@gmail.com                    420   0.5%    72    34    30   147
+  Eric Sunshine                 sunshine@sunshineco.com                 410   0.5%   107    63    47   140
+  René Scharfe                 rene.scharfe@lsrfire.ath.cx             398   0.5%    71    71    14    54
+  Brandon Williams              bmwill@google.com                       377   0.5%    28    49     8    89
+  Jonathan Tan                  jonathantanmy@google.com                359   0.4%    16    44    20    47
+  Christian Couder              chriscool@tuxfamily.org                 358   0.4%    71   123    72    65
+  Denton Liu                    liu.denton@gmail.com                    350   0.4%    44    18    27    93
+  … and 2570 more contributors
+

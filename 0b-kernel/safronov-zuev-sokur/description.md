@@ -1,71 +1,57 @@
-# Git Contributors Stats Tool
+# git_stats — Git Contributor Statistics
 
-## Overview
+Analyses any Git repository and prints contributor stats: who commits, how often, and what kind of work they do (bugfixes, features, docs, tests, refactors).
 
-This program analyzes a Git repository and produces statistics about contributors based on their commit history.
+## Build
 
-It must be executed **from within a Git repository**, as it reads commit data directly from the local Git history.
-
----
-
-## How It Works
-The program reads commit history using Git and extracts:
-
-* Author email
-* Commit message
-
-It then:
-
-* Groups commits by contributor
-* Analyzes contribution patterns
-* Classifies contributors based on activity
+```bash
+gcc -O2 -o git_stats header-script.c
 
 ---
 
-## What Statistics It Produces
+## Usage
+Detailed information
+./git_stats --help
+---
 
-### General Metrics
+## Output
 
-* Total number of commits
-* Total number of contributors
+============================================================
+  Git Contributor Stats  |  linux.git @ v7.0-rc2
+============================================================
 
-### Contributor Activity
+Total commits               : 10000
+  Merge commits             : 1243  (12.4%)
+  Code / doc commits        : 8757  (87.6%)
+Total unique contributors   : 1891
 
-* Percentage of **one-time contributors** (authors with exactly one commit)
-* Percentage of **repeat committers** (authors with more than one commit)
+-- By commit frequency ----------------------------------------
+  One-time contributors     :   743  ( 39.3% of contributors)
+  Repeat committers         :  1148  ( 60.7% of contributors)
+...
+The report includes:
 
-### One-Time Contribution Roles
-
-Based on commit message content:
-
-* Percentage of **one-time bugfixers**
-  (contributors with a single commit containing keywords like `fix` or `bug`)
-
-* Percentage of **one-feature contributors**
-  (contributors with a single commit containing keywords like `feat` or `feature`)
-
-### Contribution Share
-
-For each contributor, the program calculates:
-
-* Number of commits
-* Percentage of total commits in the repository
+- Commit frequency — one-time vs repeat contributors
+- Commit type breakdown — bugfix-only, feature-only, mixed, docs, tests, refactor
+- Top 30 contributors table sorted by commit count, with per-type columns
 
 ---
 
-## Output Summary
+## Argument reference
 
-* Total commits
-* Total contributors
-* % of one-time contributors
-* % of repeat committers
-* % of one-time bugfixers
-* % of one-feature contributors
-* Individual contribution percentage per author
+| Argument | Required | Description |
+|----------|----------|-------------|
+| url or path | No | Remote URL or local repo path. Defaults to current directory |
+| ref | No | Branch, tag, or commit to analyse. Defaults to HEAD |
+| depth | No | Shallow clone depth (number of commits). 0 = full history |
 
 ---
 
-## Important Note
+## Notes
 
-The program analyzes the repository from the current working directory.
-It must be run while located inside the target Git repository to produce valid statistics.
+- Commit classification is based on keywords in the commit subject line and is intentionally broad (e.g. any commit containing "fix" counts as a bugfix). It is a heuristic, not a guarantee.
+- Merge commits are counted separately and excluded from type classification.
+- Remote clones are placed in /tmp/git_stats_<pid> and deleted automatically after the run.
+- The script uses --filter=blob:none when cloning, so only commit metadata is downloaded — not file contents.
+
+```
