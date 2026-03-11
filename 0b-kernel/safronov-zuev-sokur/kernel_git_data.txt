@@ -1,0 +1,61 @@
+
+============================================================
+  Git Contributor Stats  |  linux.git @ v7.0-rc2
+============================================================
+
+Total commits               : 1427327
+  Merge commits             : 95940  (6.7%)
+  Code / doc commits        : 1331387  (93.3%)
+Total unique contributors   : 38423
+
+-- By commit frequency ----------------------------------------
+  One-time contributors     :  13813  ( 35.9% of contributors)
+  Repeat committers         :  24610  ( 64.1% of contributors)
+
+-- One-time contributor breakdown ----------------------------
+  One-time bugfixers        :   5024  ( 13.1% of all contributors)
+  One-time feature devs     :   3984  ( 10.4% of all contributors)
+
+-- By commit type (all contributors) -------------------------
+  Bugfix-only contributors  :   9771  ( 25.4%)
+  Feature-only contributors :   8053  ( 21.0%)
+  Mixed bug+feature         :  13481  ( 35.1%)
+  Docs contributors         :   8950  ( 23.3%)
+  Test contributors         :  10672  ( 27.8%)
+  Refactor contributors     :  12999  ( 33.8%)
+
+-- Top 30 contributors ----------------------------------------
+  Name                          Email                               Commits  Share   Bug  Feat   Doc   Tst
+  ----------------------------------------------------------------------------------------------------
+  Linus Torvalds                torvalds@linux-foundation.org         41606   2.9%   750   181    24    97
+  David S. Miller               davem@davemloft.net                   14818   1.0%  1063   398    49   155
+  Arnd Bergmann                 arnd@arndb.de                         12296   0.9%  1809   728    56   302
+  Takashi Iwai                  tiwai@suse.de                          9998   0.7%  2604  1459   284   419
+  Christoph Hellwig             hch@lst.de                             9319   0.7%   893   953   158   391
+  Thomas Gleixner               tglx@linutronix.de                     7247   0.5%   770   726   124   334
+  Al Viro                       viro@zeniv.linux.org.uk                6826   0.5%  1083   260    32   256
+  Chris Wilson                  chris@chris-wilson.co.uk               6441   0.5%   769   381    82   825
+  Jakub Kicinski                kuba@kernel.org                        6055   0.4%   291   504   154   475
+  Andy Shevchenko               andriy.shevchenko@linux.intel.com      6015   0.4%   577   687   220   399
+  Ville Syrjälä               ville.syrjala@linux.intel.com          6008   0.4%   764   753    76   407
+  Johannes Berg                 johannes.berg@intel.com                5469   0.4%  1116   670   229   329
+  Kuninori Morimoto             kuninori.morimoto.gx@renesas.com       5384   0.4%   382  1209    84   158
+  Mark Brown                    broonie@kernel.org                     5348   0.4%   690  1018    86   450
+  Greg Kroah-Hartman            gregkh@linuxfoundation.org             5259   0.4%  1173   283    60   360
+  Uwe Kleine-König             u.kleine-koenig@pengutronix.de         5252   0.4%   409   277   136   108
+  Dave Airlie                   airlied@redhat.com                     5014   0.4%   312   229    15    45
+  Geert Uytterhoeven            geert+renesas@glider.be                4816   0.3%   749  1225   493   190
+  Linus Walleij                 linus.walleij@linaro.org               4639   0.3%   523   810    74    72
+  Rafael J. Wysocki             rafael.j.wysocki@intel.com             4631   0.3%   390   292   125   160
+  Krzysztof Kozlowski           krzysztof.kozlowski@linaro.org         4549   0.3%   521   708   146   102
+  Alex Deucher                  alexander.deucher@amd.com              4425   0.3%   925  1339   160   247
+  Hans de Goede                 hdegoede@redhat.com                    4385   0.3%   702  1538    79   174
+  Eric Dumazet                  edumazet@google.com                    4355   0.3%   809   663    31   184
+  Arnaldo Carvalho de Melo      acme@redhat.com                        4296   0.3%   497   900    31   367
+  H Hartley Sweeten             hsweeten@visionengravers.com           4196   0.3%   387   264   166   202
+  Dan Carpenter                 dan.carpenter@oracle.com               4036   0.3%  1976   101    74   677
+  Mark Brown                    broonie@opensource.wolfsonmicro.co     3948   0.3%   478   778    56   146
+  Jani Nikula                   jani.nikula@intel.com                  3878   0.3%   503   504   190   184
+  Daniel Vetter                 daniel.vetter@ffwll.ch                 3871   0.3%   489   363   332   176
+  … and 38393 more contributors
+

@@ -1,0 +1,19 @@
+Total commits: 94
+Total contributors: 10
+
+One-time contributors: 0 (0.00%)
+Repeat committers: 10 (100.00%)
+One-time bugfixers: 0 (0.00%)
+One-time feature contributors: 0 (0.00%)
+
+Contribution by author:
+  jieb4uk@gmail.com: 22 commits (23.40%)
+  imsokur@edu.hse.ru: 15 commits (15.96%)
+  59577254+LevAlimpiev@users.noreply.github.com: 11 commits (11.70%)
+  47240755+ilyasokur@users.noreply.github.com: 5 commits (5.32%)
+  nastgol@gmail.com: 8 commits (8.51%)
+  102466423+wolfychanOwO@users.noreply.github.com: 6 commits (6.38%)
+  wolfy@Safronovs-MacBook-Air.local: 9 commits (9.57%)
+  gordey.zuev@gmail.com: 9 commits (9.57%)
+  58434126+GordeyZuev@users.noreply.github.com: 4 commits (4.26%)
+  122175283+Nastya-golubkova@users.noreply.github.com: 5 commits (5.32%)
