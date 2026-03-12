@@ -1,5 +1,8 @@
 # Сильно децентрализованный веб-хостинг с помощью Rsync и SSH
 
+Само задание:
+
+      devise a way to host/mirror a number of web sites / personal feeds using nothing but rsync and ssh in a highly decentralized way. Like, I use a text editor and put photos into a dir, then the dir becomes my blog/feed, massively replicated to readers. How many users can you scale it to? Where will it break?
 
 ## 1. Архитектура: Сеть "GossipSync"
 
