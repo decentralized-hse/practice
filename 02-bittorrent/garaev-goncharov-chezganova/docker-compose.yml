@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  author:
+    build: .
+    container_name: gossipsync-author
+    ports:
+      - "2222:22"
+    volumes:
+      # Публичный ключ подписчика (host) -> /mnt/guest_key.pub (container), entrypoint сам скопирует его root'у
+      - "${HOME}/.gossipsync/guest_key.pub:/mnt/guest_key.pub:ro"
+    user: "root"
+
