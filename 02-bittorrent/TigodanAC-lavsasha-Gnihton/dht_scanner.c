@@ -10,7 +10,7 @@
  *   3. Все обнаруженные IP сохраняются (и ноды, и пиры)
  *
  * Сборка (Linux):
- *   gcc -O2 -o dht_scanner dht_scanner.c
+ *   gcc -O2 -Wall -Wextra -std=c11 -o dht_scanner dht_scanner.c
  *
  * Использование:
  *   ./dht_scanner <info_hash_hex | magnet> [время_сек] [файл]

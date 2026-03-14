@@ -1,6 +1,6 @@
 /*
  * filter_ips.c — фильтрация валидных публичных IPv4 адресов
- * Компиляция: gcc -O2 -o filter_ips filter_ips.c
+ * Компиляция: gcc -O2 -Wall -Wextra -std=c11 -o filter_ips filter_ips.c
  * Использование: ./filter_ips peers.bin > clean_ips.txt
  */
 

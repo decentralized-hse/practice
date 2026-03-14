@@ -1,7 +1,7 @@
 /*
  * statistics.c — подсчет статистики по обогащенным данным с визуализацией
- * Компиляция: gcc -O2 -o statistics statistics.c
- * Использование: ./statistics < peers_enriched.jsonl
+ * Компиляция: gcc -O2 -Wall -Wextra -std=c11 -o statistics statistics.c
+ * Использование: ./statistics < enriched.jsonl
  */
 
 #include <stdio.h>

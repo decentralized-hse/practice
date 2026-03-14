@@ -1,7 +1,7 @@
 /*
  * enrich_geo.c — обогащение IP-адресов геоданными и ASN
- * Компиляция: gcc -O2 -o enrich_geo enrich_geo.c -lmaxminddb
- * Использование: ./enrich_geo peers_clean.txt > peers_enriched.jsonl
+ * Компиляция: gcc -O2 -Wall -Wextra -std=c11 -o enrich_geo enrich_geo.c -lmaxminddb
+ * Использование: ./enrich_geo clean_ips.txt > enriched.jsonl
  */
 
 #include <stdio.h>
