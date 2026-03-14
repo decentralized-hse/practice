@@ -185,27 +185,45 @@ void generate_pie_chart(counter_t *counters, int count, const char *title, const
                 obj_id++, angle, angle + sweep, colors[i % 9]);
         
         char name[256];
-        int j = 0;
+        int byte_pos = 0;
+        int char_count = 0;
         int k = 0;
-        while (counters[i].name[k] && j < 240) {
-            char c = counters[i].name[k];
+        
+        while (counters[i].name[k] && byte_pos < 250) {
+            unsigned char c = counters[i].name[k];
+            
             if (c == '"') {
-                name[j++] = '\\';
-                name[j++] = '"';
+                name[byte_pos++] = '\\';
+                name[byte_pos++] = '"';
+                char_count++;
             } else if (c != '\'' && c != '\\' && c != '$' && c != '%') {
+                int bytes_in_char = 1;
+                if ((c & 0x80) == 0) {
+                    bytes_in_char = 1;
+                } else if ((c & 0xE0) == 0xC0) {
+                    bytes_in_char = 2;
+                } else if ((c & 0xF0) == 0xE0) {
+                    bytes_in_char = 3;
+                } else if ((c & 0xF8) == 0xF0) {
+                    bytes_in_char = 4;
+                }
                 
-                name[j++] = c;
+                if (char_count < 10) {
+                    for (int b = 0; b < bytes_in_char && counters[i].name[k]; b++) {
+                        name[byte_pos++] = counters[i].name[k++];
+                    }
+                    char_count++;
+                    continue;
+                } else {
+                    name[byte_pos++] = '.';
+                    name[byte_pos++] = '.';
+                    name[byte_pos++] = '.';
+                    break;
+                }
             }
             k++;
         }
-        name[j] = '\0';
-        if (j > 30) {
-            int trunc_pos = 27;
-            name[trunc_pos] = '.';
-            name[trunc_pos+1] = '.';
-            name[trunc_pos+2] = '.';
-            name[trunc_pos+3] = '\0';
-        }
+        name[byte_pos] = '\0';
         fprintf(gp, "set label %d \"%s\\n%.1f%%\" at 0.65*cos(%.3f*pi/180),0.65*sin(%.3f*pi/180) center font 'Arial,9' textcolor rgb '#000000'\n",
                 label_id++, name, pct * 100.0, mid, mid);
         angle += sweep;
