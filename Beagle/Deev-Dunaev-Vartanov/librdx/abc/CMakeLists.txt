@@ -1,0 +1,143 @@
+cmake_minimum_required(VERSION 3.20)
+project(libabc C)
+
+set(CMAKE_C_STANDARD 23)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS on)
+
+include(CTest)
+
+include_directories(.. . ryu)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
+find_library(sodium
+	NAMES sodium
+	HINTs /usr /usr/local
+	REQUIRED)
+
+find_package(CURL REQUIRED)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LZ4 REQUIRED liblz4)
+find_library(lz4
+    NAMES lz4
+    HINTS /opt/homebrew/opt/lz4/lib /usr/local/lib /opt/homebrew/lib
+    REQUIRED)
+if (WITH_ROCKS)
+pkg_check_modules(ROCKSDB REQUIRED rocksdb)
+find_library(rocksdb
+    NAMES rocksdb
+    HINTS /opt/homebrew/Cellar/rocksdb/10.10.1/lib /opt/homebrew/lib /usr/local/lib
+    REQUIRED)
+endif()
+
+list(APPEND ABC_HEADERS
+S.h
+Sx.h
+01.h
+ABC.h
+ANSI.h
+AREN.h
+B.h
+BIN.h
+Bx.h
+BUF.h
+FILE.h
+HASH.h
+HASHx.h
+HEAPx.h
+HEX.h
+HEXx.h
+INT.h
+INTx.h
+LSM.h
+JSON.h
+JSON.rl.h
+LEX.h
+MMAP.h
+NEST.h
+OK.h
+PAGE.h
+PRO.h
+SHA.h
+SKIP.h
+SKIPx.h
+SLOG.h
+SORT.h
+TEST.h
+TLV.h
+TTY.h
+UTF8.h
+ZINT.h
+URI.h
+NET.h
+UDP.h
+HTTP.h
+CURL.h
+PACK.h
+PATH.h
+BSD.h
+)
+
+list(APPEND ABC_SOURCES
+NEST.c
+FILE.c
+INT.c
+JSON.c
+JSON.rl.c
+LEX.c
+LEX.rl.c
+LSM.c
+MMAP.c
+PAGE.c
+POL.c
+RON.c
+SLOG.c
+SORT.c
+URI.rl.c
+URI.c
+NET.c
+HTTP.rl.c
+HTTP.c
+TCP.c
+TLV.c
+TTY.c
+UDP.c
+UTF8.c
+ZINT.c
+CURL.c
+PACK.c
+PATH.c
+BSD.c
+ryu/d2s.c
+)
+
+if (WITH_ROCKS)
+list(APPEND ABC_HEADERS ROCK.h)
+list(APPEND ABC_SOURCES ROCK.c)
+endif()
+
+add_library(abc STATIC ${ABC_HEADERS} ${ABC_SOURCES})
+target_include_directories(abc PRIVATE ${LZ4_INCLUDE_DIRS})
+target_link_libraries(abc ${sodium} CURL::libcurl ${lz4})
+
+if (WITH_ROCKS)
+target_include_directories(abc PRIVATE ${ROCKSDB_INCLUDE_DIRS})
+target_link_libraries(abc ${rocksdb})
+endif()
+
+add_executable(ok64 OK.cli.c)
+target_link_libraries(ok64 abc)
+
+add_executable(lex LEX.cli.c)
+target_link_libraries(lex abc)
+
+add_subdirectory(test)
+
+if (WITH_BENCH)
+add_subdirectory(bench)
+endif()
+
+if (WITH_FUZZ)
+add_subdirectory(fuzz)
+endif()
