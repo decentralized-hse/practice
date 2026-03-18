@@ -1,0 +1,8 @@
+{
+  "id": "log-demo-cache-warn",
+  "timestamp": "2026-03-19T09:30:00.000Z",
+  "source": "cache-node",
+  "level": "WARN",
+  "message": "Cache miss ratio exceeded expected threshold",
+  "tags": ["cache", "performance", "warn"]
+}

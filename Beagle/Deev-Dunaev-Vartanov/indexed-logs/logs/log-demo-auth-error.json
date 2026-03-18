@@ -1,0 +1,8 @@
+{
+  "id": "log-demo-auth-error",
+  "timestamp": "2026-03-18T10:15:00.000Z",
+  "source": "auth-service",
+  "level": "ERROR",
+  "message": "Token verification failed for expired session",
+  "tags": ["auth", "jwt", "session"]
+}

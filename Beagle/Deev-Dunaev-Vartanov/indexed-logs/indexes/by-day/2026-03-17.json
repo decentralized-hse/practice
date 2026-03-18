@@ -1,0 +1,7 @@
+{
+  "ids": [
+    "log-demo-auth-warn",
+    "log-demo-db-error",
+    "log-demo-scheduler-warn"
+  ]
+}

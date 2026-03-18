@@ -1,0 +1,8 @@
+{
+  "id": "log-demo-search-error",
+  "timestamp": "2026-03-19T12:07:00.000Z",
+  "source": "search-indexer",
+  "level": "ERROR",
+  "message": "Tokenizer crashed on malformed unicode input",
+  "tags": ["search", "tokenizer", "unicode"]
+}

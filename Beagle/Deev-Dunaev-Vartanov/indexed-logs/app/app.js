@@ -1,4 +1,4 @@
-import { deleteLog, getAllLogs, saveLog, searchLogs } from "./api.js";
+import { getAllLogs, saveLog, searchLogs } from "./api.js";
 
 const createForm = document.querySelector("#create-log-form");
 const searchForm = document.querySelector("#search-form");
@@ -66,8 +66,6 @@ function renderLogs(logs) {
     const message = node.querySelector(".log-message");
     const time = node.querySelector(".log-time");
     const tags = node.querySelector(".log-tags");
-    const deleteButton = node.querySelector(".delete-button");
-
     level.textContent = log.level;
     level.dataset.level = log.level;
     source.textContent = log.source;
@@ -82,7 +80,6 @@ function renderLogs(logs) {
       tags.append(pill);
     }
 
-    deleteButton.addEventListener("click", () => handleDeleteClick(log));
     card.dataset.id = log.id;
     fragment.append(node);
   }
@@ -151,24 +148,6 @@ async function handleSearch(event) {
   } catch (error) {
     console.error(error);
     setStatus(`Search failed: ${error.message}`, true);
-  }
-}
-
-async function handleDeleteClick(log) {
-  const confirmed = window.confirm(`Delete log ${log.id}?`);
-  if (!confirmed) {
-    return;
-  }
-
-  setStatus(`Deleting ${log.id}...`);
-
-  try {
-    await deleteLog(log);
-    setStatus(`Deleted ${log.id}.`);
-    await refreshAllLogs();
-  } catch (error) {
-    console.error(error);
-    setStatus(`Delete failed: ${error.message}`, true);
   }
 }
 

@@ -112,13 +112,13 @@ async function getJson(path) {
   return response.json();
 }
 
-async function putJson(path, data) {
+async function postRaw(path, rawText, contentType = "text/plain; charset=utf-8") {
   const response = await fetch(buildUrl(path), {
-    method: "PUT",
+    method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": contentType,
     },
-    body: JSON.stringify(data, null, 2),
+    body: rawText,
   });
 
   ensureOk(response, path);
@@ -126,28 +126,7 @@ async function putJson(path, data) {
 }
 
 async function postJson(path, data) {
-  const response = await fetch(buildUrl(path), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data, null, 2),
-  });
-
-  ensureOk(response, path);
-  return response;
-}
-
-async function deletePath(path) {
-  const response = await fetch(buildUrl(path), {
-    method: "DELETE",
-  });
-
-  if (response.status === 404) {
-    return;
-  }
-
-  ensureOk(response, path);
+  return postRaw(path, JSON.stringify(data, null, 2), "application/json; charset=utf-8");
 }
 
 async function readIndexFile(path) {
@@ -160,7 +139,7 @@ async function readIndexFile(path) {
 }
 
 async function writeIndexFile(path, ids) {
-  await putJson(path, { ids: uniq(ids).sort() });
+  await postJson(path, { ids: uniq(ids).sort() });
 }
 
 async function updateIndexAdd(path, id) {
@@ -174,12 +153,6 @@ async function updateIndexAdd(path, id) {
 async function updateIndexRemove(path, id) {
   const current = await readIndexFile(path);
   const nextIds = current.ids.filter((entry) => entry !== id);
-
-  if (nextIds.length === 0) {
-    await deletePath(path);
-    return;
-  }
-
   await writeIndexFile(path, nextIds);
 }
 
@@ -258,21 +231,9 @@ async function saveLog(log) {
     await removeLogFromIndexes(previous);
   }
 
-  await putJson(logPath(log.id), log);
+  await postJson(logPath(log.id), log);
   await addLogToIndexes(log);
   return log;
-}
-
-async function deleteLog(log) {
-  const current = log?.id ? await readJsonOrNull(logPath(log.id)) : null;
-  const existing = current || log;
-
-  if (!existing?.id) {
-    return;
-  }
-
-  await deletePath(logPath(existing.id));
-  await removeLogFromIndexes(existing);
 }
 
 function intersectIdSets(sets) {
@@ -339,8 +300,6 @@ async function searchLogs({ term = "", level = "", source = "", date = "" }) {
 
 export {
   BASE_URL,
-  deleteLog,
-  deletePath,
   getAllLogIds,
   getAllLogs,
   getJson,
@@ -348,7 +307,6 @@ export {
   getLogsByIds,
   listDir,
   postJson,
-  putJson,
   saveLog,
   searchLogs,
 };

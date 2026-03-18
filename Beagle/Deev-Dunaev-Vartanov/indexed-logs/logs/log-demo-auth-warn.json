@@ -1,0 +1,8 @@
+{
+  "id": "log-demo-auth-warn",
+  "timestamp": "2026-03-17T09:42:00.000Z",
+  "source": "auth-service",
+  "level": "WARN",
+  "message": "Multiple failed login attempts detected for user session",
+  "tags": ["auth", "login", "security"]
+}

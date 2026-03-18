@@ -1,0 +1,8 @@
+{
+  "id": "log-demo-notify-info",
+  "timestamp": "2026-03-18T15:45:00.000Z",
+  "source": "notification-service",
+  "level": "INFO",
+  "message": "Email batch sent to premium users",
+  "tags": ["notification", "email", "batch"]
+}

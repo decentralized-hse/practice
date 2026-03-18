@@ -1,0 +1,8 @@
+{
+  "id": "log-demo-auth-debug",
+  "timestamp": "2026-03-18T08:05:00.000Z",
+  "source": "auth-service",
+  "level": "DEBUG",
+  "message": "Refreshing signing keys from internal auth cache",
+  "tags": ["auth", "keys", "debug"]
+}

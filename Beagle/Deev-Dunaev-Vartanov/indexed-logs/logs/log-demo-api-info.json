@@ -1,0 +1,8 @@
+{
+  "id": "log-demo-api-info",
+  "timestamp": "2026-03-18T11:00:00.000Z",
+  "source": "api-gateway",
+  "level": "INFO",
+  "message": "Request completed successfully",
+  "tags": ["api", "gateway", "request"]
+}
