@@ -1,5 +1,6 @@
 #include "BESRV.h"
 
+#include <ctype.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +18,120 @@
 
 // Forward declarations
 static short BESRVClientCB(int fd, poller *p);
+
+static b8 BESRVAsciiEqCI(u8cs a, u8cs b) {
+    if ($len(a) != $len(b)) return NO;
+    for (size_t i = 0; i < $len(a); i++) {
+        if (tolower(a[0][i]) != tolower(b[0][i])) return NO;
+    }
+    return YES;
+}
+
+static ok64 BESRVHeaderFindCI(u8cs *value, u8cs key, u8css headers) {
+    for (size_t i = 0; i + 1 < $len(headers); i += 2) {
+        if (BESRVAsciiEqCI($at(headers, i), key)) {
+            u8csMv(*value, $at(headers, i + 1));
+            return OK;
+        }
+    }
+    return HTTPnone;
+}
+
+static b8 BESRVContainsTokenCI(u8cs haystack, char const *needle) {
+    size_t nlen = strlen(needle);
+    if ($len(haystack) < nlen) return NO;
+    for (size_t i = 0; i + nlen <= $len(haystack); i++) {
+        size_t j = 0;
+        for (; j < nlen; j++) {
+            if (tolower(haystack[0][i + j]) != tolower((u8)needle[j])) break;
+        }
+        if (j == nlen) return YES;
+    }
+    return NO;
+}
+
+static b8 BESRVTrimmedEqCI(u8cs value, char const *needle) {
+    while (!$empty(value) && (*value[0] == ' ' || *value[0] == '\t')) value[0]++;
+    while (!$empty(value) &&
+           (value[1][-1] == ' ' || value[1][-1] == '\t')) value[1]--;
+    size_t nlen = strlen(needle);
+    if ($len(value) != nlen) return NO;
+    for (size_t i = 0; i < nlen; i++) {
+        if (tolower(value[0][i]) != tolower((u8)needle[i])) return NO;
+    }
+    return YES;
+}
+
+static ok64 BESRVReadChunkedBody(u8bp bodybuf, int cfd, u8cs initial) {
+    sane(bodybuf != NULL);
+    u8p rawbuf[4] = {};
+    call(u8bAllocate, rawbuf, (1 << 16));
+    if (!$empty(initial)) call(u8bFeed, rawbuf, initial);
+
+    for (;;) {
+        u8cs raw = {rawbuf[1], rawbuf[2]};
+        u8cp p = raw[0];
+
+        while (YES) {
+            raw[0] = rawbuf[1];
+            raw[1] = rawbuf[2];
+            p = raw[0];
+
+            u8cp line_end = NULL;
+            for (u8cp q = p; q + 1 < raw[1]; q++) {
+                if (q[0] == '\r' && q[1] == '\n') {
+                    line_end = q;
+                    break;
+                }
+            }
+            if (line_end == NULL) break;
+
+            size_t chunk_len = 0;
+            for (u8cp q = p; q < line_end; q++) {
+                if (*q == ';') break;
+                if (!isxdigit(*q)) {
+                    u8bFree(rawbuf);
+                    fail(HTTPBAD);
+                }
+                chunk_len = (chunk_len << 4) |
+                            (size_t)(isdigit(*q) ? (*q - '0')
+                                                 : (tolower(*q) - 'a' + 10));
+            }
+
+            size_t head_len = (size_t)((line_end + 2) - p);
+            if ((size_t)(raw[1] - p) < head_len + chunk_len + 2) break;
+
+            u8cp chunk_data = p + head_len;
+            if (chunk_len > 0) {
+                u8cs chunk = {chunk_data, chunk_data + chunk_len};
+                call(u8bFeed, bodybuf, chunk);
+            }
+
+            p = chunk_data + chunk_len + 2;
+            if (chunk_len == 0) {
+                u8bFree(rawbuf);
+                done;
+            }
+
+            if (p < raw[1]) {
+                size_t remain = (size_t)(raw[1] - p);
+                memmove(rawbuf[1], p, remain);
+                rawbuf[2] = rawbuf[1] + remain;
+            } else {
+                rawbuf[2] = rawbuf[1];
+            }
+        }
+
+        u8 tmp[4096];
+        ssize_t n = read(cfd, tmp, sizeof(tmp));
+        if (n <= 0) {
+            u8bFree(rawbuf);
+            fail(HTTPBAD);
+        }
+        u8cs chunk = {tmp, tmp + n};
+        call(u8bFeed, rawbuf, chunk);
+    }
+}
 
 // Stop pipe callback: when signaled, call POLStop from the POL thread.
 // Pipe is non-blocking; timeout delivery may fire this without data.
@@ -390,10 +505,12 @@ static short BESRVAcceptDir(BESRVctxp ctx, int cfd, u8cs http_path) {
             memcmp(k[0], prefix[0], pfxlen) != 0)
             break;
 
-        // Parse key, skip fragment/waypoint keys (base keys only)
+        // Parse key, skip fragments. Waypoint-only files must still appear
+        // in directory listings because HTTP POST creates them before they
+        // are checkpointed into a base key.
         uri ku = {};
         o = URIutf8Drain(k, &ku);
-        if (o != OK || !$empty(ku.fragment) || !$empty(ku.query)) {
+        if (o != OK || !$empty(ku.fragment)) {
             ROCKIterNext(&it);
             continue;
         }
@@ -492,18 +609,34 @@ static int BESRVDetectMode(u8cs *path) {
 // POST handler: read body, parse source, post to repo
 static short BESRVAcceptPost(BESRVctxp ctx, int cfd, u8cs http_path,
                               u8cs req_query, u8cs request) {
-    // Find Content-Length header
     u8cs cl_val = {};
+    u8cs te_val = {};
+    u8cs expect_val = {};
     a_cstr(cl_key, "Content-Length");
+    a_cstr(te_key, "Transfer-Encoding");
+    a_cstr(expect_key, "Expect");
     u8cs hdr_data = {request[0], request[1]};
     HTTPstate hparse = {};
-    u8cs hdr_pairs[32] = {};
-    u8csb hdr_store = {hdr_pairs, hdr_pairs, hdr_pairs, hdr_pairs + 32};
+    u8cs hdr_pairs[128] = {};
+    u8csb hdr_store = {hdr_pairs, hdr_pairs, hdr_pairs, hdr_pairs + 128};
     hparse.headers = u8csbIdle(hdr_store);
     HTTPutf8Drain(hdr_data, &hparse);
     u8css hdrs = {hdr_pairs, hdr_store[2]};
-    ok64 o = HTTPfind(&cl_val, cl_key, hdrs);
-    if (o != OK || $empty(cl_val)) {
+    ok64 o = BESRVHeaderFindCI(&cl_val, cl_key, hdrs);
+    BESRVHeaderFindCI(&te_val, te_key, hdrs);
+    BESRVHeaderFindCI(&expect_val, expect_key, hdrs);
+
+    size_t content_len = 0;
+    b8 is_chunked = NO;
+    if (o == OK && !$empty(cl_val)) {
+        for (u8cp p = cl_val[0]; p < cl_val[1]; p++) {
+            if (*p < '0' || *p > '9') break;
+            content_len = content_len * 10 + (*p - '0');
+        }
+    } else if ($ok(te_val) && !$empty(te_val) &&
+               BESRVContainsTokenCI(te_val, "chunked")) {
+        is_chunked = YES;
+    } else {
         a_cstr(err,
                "HTTP/1.1 411 Length Required\r\nConnection: close\r\n\r\n");
         FILEFeedall(cfd, err);
@@ -511,18 +644,18 @@ static short BESRVAcceptPost(BESRVctxp ctx, int cfd, u8cs http_path,
         return POLLIN;
     }
 
-    // Parse content length
-    size_t content_len = 0;
-    for (u8cp p = cl_val[0]; p < cl_val[1]; p++) {
-        if (*p < '0' || *p > '9') break;
-        content_len = content_len * 10 + (*p - '0');
-    }
-    if (content_len == 0 || content_len > (1 << 24)) {
+    if (!is_chunked && (content_len == 0 || content_len > (1 << 24))) {
         a_cstr(err,
                "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
         FILEFeedall(cfd, err);
         close(cfd);
         return POLLIN;
+    }
+
+    if ($ok(expect_val) && !$empty(expect_val) &&
+        BESRVTrimmedEqCI(expect_val, "100-continue")) {
+        a_cstr(cont, "HTTP/1.1 100 Continue\r\n\r\n");
+        FILEFeedall(cfd, cont);
     }
 
     // Find end of headers (\r\n\r\n) in request data
@@ -541,9 +674,8 @@ static short BESRVAcceptPost(BESRVctxp ctx, int cfd, u8cs http_path,
         return POLLIN;
     }
 
-    // Allocate body buffer
     u8p bodybuf[4] = {};
-    o = u8bAllocate(bodybuf, content_len + 1);
+    o = u8bAllocate(bodybuf, is_chunked ? (1 << 16) : (content_len + 1));
     if (o != OK) {
         a_cstr(err,
                "HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\n");
@@ -552,32 +684,43 @@ static short BESRVAcceptPost(BESRVctxp ctx, int cfd, u8cs http_path,
         return POLLIN;
     }
 
-    // Copy bytes already past headers
     size_t have = (size_t)(request[1] - body_start);
-    if (have > content_len) have = content_len;
-    if (have > 0) {
-        u8cs chunk = {body_start, body_start + have};
-        u8bFeed(bodybuf, chunk);
-    }
+    if (is_chunked) {
+        u8cs initial = {body_start, request[1]};
+        o = BESRVReadChunkedBody(bodybuf, cfd, initial);
+        if (o != OK) {
+            u8bFree(bodybuf);
+            a_cstr(err,
+                   "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
+            FILEFeedall(cfd, err);
+            close(cfd);
+            return POLLIN;
+        }
+    } else {
+        if (have > content_len) have = content_len;
+        if (have > 0) {
+            u8cs chunk = {body_start, body_start + have};
+            u8bFeed(bodybuf, chunk);
+        }
 
-    // Read remaining body
-    while (u8bDataLen(bodybuf) < content_len) {
-        size_t need = content_len - u8bDataLen(bodybuf);
-        u8 tmp[4096];
-        size_t rdsz = need < sizeof(tmp) ? need : sizeof(tmp);
-        ssize_t n = read(cfd, tmp, rdsz);
-        if (n <= 0) break;
-        u8cs chunk = {tmp, tmp + n};
-        u8bFeed(bodybuf, chunk);
-    }
+        while (u8bDataLen(bodybuf) < content_len) {
+            size_t need = content_len - u8bDataLen(bodybuf);
+            u8 tmp[4096];
+            size_t rdsz = need < sizeof(tmp) ? need : sizeof(tmp);
+            ssize_t n = read(cfd, tmp, rdsz);
+            if (n <= 0) break;
+            u8cs chunk = {tmp, tmp + n};
+            u8bFeed(bodybuf, chunk);
+        }
 
-    if (u8bDataLen(bodybuf) < content_len) {
-        u8bFree(bodybuf);
-        a_cstr(err,
-               "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
-        FILEFeedall(cfd, err);
-        close(cfd);
-        return POLLIN;
+        if (u8bDataLen(bodybuf) < content_len) {
+            u8bFree(bodybuf);
+            a_cstr(err,
+                   "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
+            FILEFeedall(cfd, err);
+            close(cfd);
+            return POLLIN;
+        }
     }
 
     u8cp bd0 = bodybuf[1], bd1 = bodybuf[2];
@@ -621,7 +764,7 @@ static short BESRVAcceptCB(int fd, poller *p) {
     if (o != OK) return POLLIN;
 
     // Read HTTP request (small, blocking read is OK for headers)
-    u8 reqbuf[4096];
+    u8 reqbuf[16384];
     u8s req = {reqbuf, reqbuf};
     for (int i = 0; i < 10; i++) {
         ssize_t n = read(cfd, req[0], reqbuf + sizeof(reqbuf) - req[0]);
@@ -644,8 +787,8 @@ headers_done:;
     }
 
     // Parse HTTP request
-    u8cs hdr_pairs[32] = {};
-    u8csb hdr_store = {hdr_pairs, hdr_pairs, hdr_pairs, hdr_pairs + 32};
+    u8cs hdr_pairs[128] = {};
+    u8csb hdr_store = {hdr_pairs, hdr_pairs, hdr_pairs, hdr_pairs + 128};
     HTTPstate http = {};
     http.headers = u8csbIdle(hdr_store);
     o = HTTPutf8Drain(request, &http);
@@ -680,6 +823,12 @@ headers_done:;
     u8cs http_path = {req_uri.path[0], req_uri.path[1]};
     if (!$empty(http_path) && *http_path[0] == '/') {
         http_path[0]++;
+    }
+    for (u8cp p = http_path[0]; p < http_path[1]; p++) {
+        if (*p == '?' || *p == '#') {
+            http_path[1] = p;
+            break;
+        }
     }
 
     // POST: accept body, post to repo

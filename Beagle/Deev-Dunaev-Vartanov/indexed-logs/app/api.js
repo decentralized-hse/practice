@@ -9,6 +9,7 @@ import {
 const DEFAULT_BASE_URL = "";
 const LOGS_DIR = "/logs";
 const INDEXES_DIR = "/indexes";
+const MARKER_SUFFIX = ".txt";
 
 function resolveBaseUrl() {
   if (window.__BEAGLE_BASE_URL__) {
@@ -102,6 +103,16 @@ async function getJson(path) {
   return response.json();
 }
 
+async function getTextOrNull(path) {
+  const response = await fetch(buildUrl(path));
+  if (response.status === 404) {
+    return null;
+  }
+
+  ensureOk(response, path);
+  return response.text();
+}
+
 async function postRaw(path, rawText, contentType = "text/plain; charset=utf-8") {
   const response = await fetch(buildUrl(path), {
     method: "POST",
@@ -120,8 +131,19 @@ async function postJson(path, data) {
 }
 
 async function readIndexFile(path) {
-  const data = await readJsonOrNull(path);
-  if (!data || !Array.isArray(data.ids)) {
+  const text = await getTextOrNull(path);
+  if (!text) {
+    return { ids: [] };
+  }
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return { ids: [] };
+  }
+
+  if (!Array.isArray(data.ids)) {
     return { ids: [] };
   }
 
@@ -177,6 +199,54 @@ async function updateIndexRemove(path, id) {
   await writeIndexFile(path, nextIds);
 }
 
+function markerFileName(bucketKey, id) {
+  return `${encodeURIComponent(bucketKey)}__${encodeURIComponent(id)}${MARKER_SUFFIX}`;
+}
+
+function parseMarkerId(fileName) {
+  if (!fileName.endsWith(MARKER_SUFFIX)) {
+    return null;
+  }
+
+  const separatorIndex = fileName.indexOf("__");
+  if (separatorIndex === -1) {
+    return null;
+  }
+
+  const encodedId = fileName.slice(separatorIndex + 2, -MARKER_SUFFIX.length);
+  return decodeURIComponent(encodedId);
+}
+
+async function writeMarkerFile(groupName, bucketKey, id) {
+  const markerPath = `${INDEXES_DIR}/${groupName}/${markerFileName(bucketKey, id)}`;
+  await postRaw(markerPath, `${id}\n`);
+}
+
+async function listMarkerIds(groupName, bucketKey) {
+  const prefix = `${encodeURIComponent(bucketKey)}__`;
+
+  try {
+    const entries = await listDir(`${INDEXES_DIR}/${groupName}`);
+    return uniq(
+      entries
+        .filter((entry) => entry.startsWith(prefix) && entry.endsWith(MARKER_SUFFIX))
+        .map(parseMarkerId)
+        .filter(Boolean),
+    );
+  } catch {
+    return [];
+  }
+}
+
+async function readBucketIds(groupName, bucketKey) {
+  const markerIds = await listMarkerIds(groupName, bucketKey);
+  const legacyIndex = await readIndexFile(
+    `${INDEXES_DIR}/${groupName}/${encodeURIComponent(bucketKey)}.json`,
+  );
+
+  return uniq([...markerIds, ...legacyIndex.ids]);
+}
+
 function levelIndexPath(level) {
   return `${INDEXES_DIR}/by-level/${encodeURIComponent(level)}.json`;
 }
@@ -230,12 +300,31 @@ async function getAllLogs() {
 async function rebuildIndexes() {
   const logs = await getAllLogs();
   const entries = buildIndexEntries(logs);
-
-  await writeIndexGroup("by-day", entries.byDay);
-  await writeIndexGroup("by-level", entries.byLevel);
-  await writeIndexGroup("by-source", entries.bySource);
-  await writeIndexGroup("by-term", entries.byTerm);
   const manifest = await writeManifest(logs, entries);
+
+  for (const [day, ids] of Object.entries(entries.byDay)) {
+    for (const id of ids) {
+      await writeMarkerFile("by-day", day, id);
+    }
+  }
+
+  for (const [level, ids] of Object.entries(entries.byLevel)) {
+    for (const id of ids) {
+      await writeMarkerFile("by-level", level, id);
+    }
+  }
+
+  for (const [source, ids] of Object.entries(entries.bySource)) {
+    for (const id of ids) {
+      await writeMarkerFile("by-source", source, id);
+    }
+  }
+
+  for (const [term, ids] of Object.entries(entries.byTerm)) {
+    for (const id of ids) {
+      await writeMarkerFile("by-term", term, id);
+    }
+  }
 
   return {
     logCount: manifest.logCount,
@@ -245,10 +334,10 @@ async function rebuildIndexes() {
 
 async function addLogToIndexes(log) {
   await Promise.all([
-    updateIndexAdd(levelIndexPath(log.level), log.id),
-    updateIndexAdd(sourceIndexPath(log.source), log.id),
-    updateIndexAdd(dayIndexPath(toDayKey(log.timestamp)), log.id),
-    ...tokenizeLog(log).map((token) => updateIndexAdd(termIndexPath(token), log.id)),
+    writeMarkerFile("by-level", log.level, log.id),
+    writeMarkerFile("by-source", log.source, log.id),
+    writeMarkerFile("by-day", toDayKey(log.timestamp), log.id),
+    ...tokenizeLog(log).map((token) => writeMarkerFile("by-term", token, log.id)),
   ]);
 }
 
@@ -301,39 +390,56 @@ function matchesAllTokens(log, tokens) {
   return tokens.every((token) => haystack.includes(token));
 }
 
+function matchesStructuredFilters(log, { level, source, date }) {
+  if (level && log.level !== level) {
+    return false;
+  }
+
+  if (source && log.source !== source) {
+    return false;
+  }
+
+  if (date && toDayKey(log.timestamp) !== date) {
+    return false;
+  }
+
+  return true;
+}
+
 async function searchLogs({ term = "", level = "", source = "", date = "" }) {
   const filters = [];
 
   if (level) {
-    const levelIndex = await readIndexFile(levelIndexPath(level));
-    filters.push(new Set(levelIndex.ids));
+    filters.push(new Set(await readBucketIds("by-level", level)));
   }
 
   if (source) {
-    const sourceIndex = await readIndexFile(sourceIndexPath(source));
-    filters.push(new Set(sourceIndex.ids));
+    filters.push(new Set(await readBucketIds("by-source", source)));
   }
 
   if (date) {
-    const dayIndex = await readIndexFile(dayIndexPath(date));
-    filters.push(new Set(dayIndex.ids));
+    filters.push(new Set(await readBucketIds("by-day", date)));
   }
 
   const termTokens = tokenizeSearchTerm(term);
 
   for (const token of termTokens) {
-    const index = await readIndexFile(termIndexPath(token));
-    if (index.ids.length === 0) {
+    const ids = await readBucketIds("by-term", token);
+    if (ids.length === 0) {
       return [];
     }
 
-    filters.push(new Set(index.ids));
+    filters.push(new Set(ids));
   }
 
   const candidateIds = intersectIdSets(filters);
   const logs = candidateIds === null ? await getAllLogs() : await getLogsByIds(candidateIds);
 
-  return logs.filter((log) => matchesAllTokens(log, termTokens));
+  return logs.filter(
+    (log) =>
+      matchesStructuredFilters(log, { level, source, date }) &&
+      matchesAllTokens(log, termTokens),
+  );
 }
 
 export {

@@ -37,6 +37,18 @@ async function listJsonFiles(dirPath) {
   }
 }
 
+async function listMarkerFiles(dirPath) {
+  try {
+    return (await fs.readdir(dirPath)).filter((name) => name.includes("__") && name.endsWith(".txt"));
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return [];
+    }
+
+    throw error;
+  }
+}
+
 async function writeIndexGroup(groupName, entries) {
   const dirPath = path.join(indexesDir, groupName);
   await fs.mkdir(dirPath, { recursive: true });
@@ -60,6 +72,25 @@ async function writeIndexGroup(groupName, entries) {
   }
 }
 
+function markerFileName(bucketKey, id) {
+  return `${encodeURIComponent(bucketKey)}__${encodeURIComponent(id)}.txt`;
+}
+
+async function writeMarkerGroup(groupName, entries) {
+  const dirPath = path.join(indexesDir, groupName);
+  await fs.mkdir(dirPath, { recursive: true });
+
+  const existingMarkers = await listMarkerFiles(dirPath);
+  await Promise.all(existingMarkers.map((name) => fs.rm(path.join(dirPath, name), { force: true })));
+
+  for (const [key, ids] of Object.entries(entries)) {
+    for (const id of ids) {
+      const filePath = path.join(dirPath, markerFileName(key, id));
+      await fs.writeFile(filePath, `${id}\n`, "utf8");
+    }
+  }
+}
+
 async function writeManifest(logs, entries) {
   const manifestPath = path.join(indexesDir, "manifest.json");
   const manifest = buildIndexManifest(logs, entries);
@@ -75,6 +106,10 @@ async function main() {
   await writeIndexGroup("by-level", entries.byLevel);
   await writeIndexGroup("by-source", entries.bySource);
   await writeIndexGroup("by-term", entries.byTerm);
+  await writeMarkerGroup("by-day", entries.byDay);
+  await writeMarkerGroup("by-level", entries.byLevel);
+  await writeMarkerGroup("by-source", entries.bySource);
+  await writeMarkerGroup("by-term", entries.byTerm);
   await writeManifest(logs, entries);
 
   console.log(
