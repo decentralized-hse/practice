@@ -1,8 +1,9 @@
-import { getAllLogs, saveLog, searchLogs } from "./api.js";
+import { getAllLogs, rebuildIndexes, saveLog, searchLogs } from "./api.js";
 
 const createForm = document.querySelector("#create-log-form");
 const searchForm = document.querySelector("#search-form");
 const refreshButton = document.querySelector("#refresh-button");
+const rebuildIndexesButton = document.querySelector("#rebuild-indexes-button");
 const resetSearchButton = document.querySelector("#reset-search-button");
 const logsContainer = document.querySelector("#logs-container");
 const statusText = document.querySelector("#status-text");
@@ -33,6 +34,51 @@ function toIsoTimestamp(value) {
 
 function formatTimestamp(timestamp) {
   return new Date(timestamp).toLocaleString();
+}
+
+function getSearchParamsFromForm() {
+  const formData = new FormData(searchForm);
+  return {
+    term: String(formData.get("term") || "").trim(),
+    level: String(formData.get("level") || "").trim(),
+    source: String(formData.get("source") || "").trim(),
+    date: String(formData.get("date") || "").trim(),
+  };
+}
+
+function getSearchParamsFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    term: params.get("term")?.trim() || "",
+    level: params.get("level")?.trim() || "",
+    source: params.get("source")?.trim() || "",
+    date: params.get("date")?.trim() || "",
+  };
+}
+
+function hasActiveSearch(params) {
+  return Object.values(params).some(Boolean);
+}
+
+function applySearchParamsToForm(params) {
+  document.querySelector("#term-filter").value = params.term || "";
+  document.querySelector("#level-filter").value = params.level || "";
+  document.querySelector("#source-filter").value = params.source || "";
+  document.querySelector("#date-filter").value = params.date || "";
+}
+
+function syncSearchUrl(params) {
+  const url = new URL(window.location.href);
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value) {
+      url.searchParams.set(key, value);
+    } else {
+      url.searchParams.delete(key);
+    }
+  }
+
+  window.history.replaceState({}, "", url);
 }
 
 function setStatus(message, isError = false) {
@@ -128,17 +174,7 @@ async function handleCreateLog(event) {
   }
 }
 
-async function handleSearch(event) {
-  event.preventDefault();
-
-  const formData = new FormData(searchForm);
-  const searchParams = {
-    term: String(formData.get("term") || "").trim(),
-    level: String(formData.get("level") || "").trim(),
-    source: String(formData.get("source") || "").trim(),
-    date: String(formData.get("date") || "").trim(),
-  };
-
+async function runSearch(searchParams) {
   setStatus("Searching...");
 
   try {
@@ -151,14 +187,51 @@ async function handleSearch(event) {
   }
 }
 
+async function handleSearch(event) {
+  event.preventDefault();
+
+  const searchParams = getSearchParamsFromForm();
+  syncSearchUrl(searchParams);
+  await runSearch(searchParams);
+}
+
+async function handleRebuildIndexes() {
+  setStatus("Rebuilding indexes from all logs...");
+
+  try {
+    const result = await rebuildIndexes();
+    setStatus(
+      `Rebuilt indexes for ${result.logCount} log(s), ${result.termBucketCount} term bucket(s).`,
+    );
+    await refreshAllLogs();
+  } catch (error) {
+    console.error(error);
+    setStatus(`Index rebuild failed: ${error.message}`, true);
+  }
+}
+
 function resetSearch() {
   searchForm.reset();
+  syncSearchUrl({ term: "", level: "", source: "", date: "" });
   refreshAllLogs();
+}
+
+async function initializePage() {
+  const initialSearch = getSearchParamsFromUrl();
+  applySearchParamsToForm(initialSearch);
+
+  if (hasActiveSearch(initialSearch)) {
+    await runSearch(initialSearch);
+    return;
+  }
+
+  await refreshAllLogs();
 }
 
 createForm.addEventListener("submit", handleCreateLog);
 searchForm.addEventListener("submit", handleSearch);
 refreshButton.addEventListener("click", refreshAllLogs);
+rebuildIndexesButton.addEventListener("click", handleRebuildIndexes);
 resetSearchButton.addEventListener("click", resetSearch);
 
-refreshAllLogs();
+initializePage();

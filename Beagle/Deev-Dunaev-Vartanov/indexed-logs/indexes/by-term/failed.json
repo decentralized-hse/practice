@@ -1,0 +1,7 @@
+{
+  "ids": [
+    "log-demo-auth-error",
+    "log-demo-auth-warn",
+    "log-demo-payment-error"
+  ]
+}

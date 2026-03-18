@@ -1,0 +1,10 @@
+{
+  "generatedAt": "2026-03-18T15:29:15.260Z",
+  "logCount": 15,
+  "buckets": {
+    "byDay": 3,
+    "byLevel": 4,
+    "bySource": 9,
+    "byTerm": 102
+  }
+}

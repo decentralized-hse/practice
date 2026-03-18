@@ -1,3 +1,11 @@
+import {
+  buildIndexEntries,
+  buildIndexManifest,
+  toDayKey,
+  tokenizeLog,
+  tokenizeSearchTerm,
+} from "./indexing.js";
+
 const DEFAULT_BASE_URL = "";
 const LOGS_DIR = "/logs";
 const INDEXES_DIR = "/indexes";
@@ -80,24 +88,6 @@ function uniq(values) {
   return Array.from(new Set(values));
 }
 
-function toDayKey(timestamp) {
-  return new Date(timestamp).toISOString().slice(0, 10);
-}
-
-function normalizeToken(token) {
-  return token.toLowerCase().replace(/[^a-z0-9_-]+/g, "").trim();
-}
-
-function tokenizeLog(log) {
-  const pieces = [log.message, log.source, log.level, ...(log.tags || [])]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase()
-    .split(/[^a-z0-9_-]+/);
-
-  return uniq(pieces.map(normalizeToken).filter(Boolean));
-}
-
 async function listDir(path) {
   const directoryPath = normalizeDirectoryPath(path);
   const response = await fetch(buildUrl(directoryPath));
@@ -140,6 +130,37 @@ async function readIndexFile(path) {
 
 async function writeIndexFile(path, ids) {
   await postJson(path, { ids: uniq(ids).sort() });
+}
+
+async function writeIndexGroup(groupName, entries) {
+  const dirPath = `${INDEXES_DIR}/${groupName}`;
+  let existingFiles = [];
+
+  try {
+    existingFiles = await listDir(dirPath);
+  } catch {
+    existingFiles = [];
+  }
+
+  const nextFiles = new Set(Object.keys(entries).map((key) => `${key}.json`));
+
+  for (const [key, ids] of Object.entries(entries)) {
+    await writeIndexFile(`${dirPath}/${encodeURIComponent(key)}.json`, ids);
+  }
+
+  for (const staleFile of existingFiles) {
+    if (!staleFile.endsWith(".json") || nextFiles.has(staleFile)) {
+      continue;
+    }
+
+    await writeIndexFile(`${dirPath}/${staleFile}`, []);
+  }
+}
+
+async function writeManifest(logs, entries) {
+  const manifest = buildIndexManifest(logs, entries);
+  await postJson(`${INDEXES_DIR}/manifest.json`, manifest);
+  return manifest;
 }
 
 async function updateIndexAdd(path, id) {
@@ -206,6 +227,22 @@ async function getAllLogs() {
   return getLogsByIds(ids);
 }
 
+async function rebuildIndexes() {
+  const logs = await getAllLogs();
+  const entries = buildIndexEntries(logs);
+
+  await writeIndexGroup("by-day", entries.byDay);
+  await writeIndexGroup("by-level", entries.byLevel);
+  await writeIndexGroup("by-source", entries.bySource);
+  await writeIndexGroup("by-term", entries.byTerm);
+  const manifest = await writeManifest(logs, entries);
+
+  return {
+    logCount: manifest.logCount,
+    termBucketCount: manifest.buckets.byTerm,
+  };
+}
+
 async function addLogToIndexes(log) {
   await Promise.all([
     updateIndexAdd(levelIndexPath(log.level), log.id),
@@ -242,17 +279,26 @@ function intersectIdSets(sets) {
     return null;
   }
 
-  const [first, ...rest] = nonEmptySets;
+  const sortedSets = [...nonEmptySets].sort((left, right) => left.size - right.size);
+  if (sortedSets[0].size === 0) {
+    return [];
+  }
+
+  const [first, ...rest] = sortedSets;
   return Array.from(first).filter((id) => rest.every((set) => set.has(id)));
 }
 
-function matchesTerm(log, term) {
+function matchesAllTokens(log, tokens) {
+  if (tokens.length === 0) {
+    return true;
+  }
+
   const haystack = [log.message, log.source, log.level, ...(log.tags || [])]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
 
-  return haystack.includes(term.toLowerCase());
+  return tokens.every((token) => haystack.includes(token));
 }
 
 async function searchLogs({ term = "", level = "", source = "", date = "" }) {
@@ -273,29 +319,21 @@ async function searchLogs({ term = "", level = "", source = "", date = "" }) {
     filters.push(new Set(dayIndex.ids));
   }
 
-  const termTokens = uniq(
-    term
-      .toLowerCase()
-      .split(/[^a-z0-9_-]+/)
-      .map(normalizeToken)
-      .filter(Boolean),
-  );
+  const termTokens = tokenizeSearchTerm(term);
 
   for (const token of termTokens) {
     const index = await readIndexFile(termIndexPath(token));
-    if (index.ids.length > 0) {
-      filters.push(new Set(index.ids));
+    if (index.ids.length === 0) {
+      return [];
     }
+
+    filters.push(new Set(index.ids));
   }
 
   const candidateIds = intersectIdSets(filters);
   const logs = candidateIds === null ? await getAllLogs() : await getLogsByIds(candidateIds);
 
-  if (!term.trim()) {
-    return logs;
-  }
-
-  return logs.filter((log) => matchesTerm(log, term));
+  return logs.filter((log) => matchesAllTokens(log, termTokens));
 }
 
 export {
@@ -307,6 +345,7 @@ export {
   getLogsByIds,
   listDir,
   postJson,
+  rebuildIndexes,
   saveLog,
   searchLogs,
 };

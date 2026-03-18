@@ -17,9 +17,14 @@
             search runs on top of Beagle's HTTP interface.
           </p>
         </div>
-        <button id="refresh-button" class="secondary-button" type="button">
-          Refresh All
-        </button>
+        <div class="form-actions">
+          <button id="rebuild-indexes-button" class="ghost-button" type="button">
+            Rebuild Indexes
+          </button>
+          <button id="refresh-button" class="secondary-button" type="button">
+            Refresh All
+          </button>
+        </div>
       </section>
 
       <section class="panel">
@@ -85,10 +90,10 @@
       <section class="panel">
         <div class="panel-header">
           <h2>Search</h2>
-          <p>Filter with indexes first, then do text matching on candidates.</p>
+          <p>Use level, source, day, and token inverted indexes to narrow candidates quickly.</p>
         </div>
 
-        <form id="search-form" class="filters-grid">
+        <form id="search-form" class="filters-grid" onsubmit="return false;">
           <label>
             Text
             <input
