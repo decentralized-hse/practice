@@ -101,7 +101,7 @@ inline bool sync_feed_from(const Paths& p, const Friend& fr,
         ssh += " -i " + p.key.string();
 
     // rsync конкретную подпапку, не всю feeds/ целиком
-    std::string cmd = "rsync -avz --timeout=30"
+    std::string cmd = "rsync -avz --update --timeout=30"
                       " -e \"" + ssh + "\""
                       " " + fr.address + feed_name + "/"
                       " " + local.string() + "/";
