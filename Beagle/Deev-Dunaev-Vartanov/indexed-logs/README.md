@@ -1,6 +1,6 @@
 # Indexed Logging System on Beagle
 
-Учебный проект по курсу децентрализованных систем: веб-приложение для хранения, индексирования и поиска логов поверх `Beagle` и его HTTP-интерфейса `be-srv`.
+Веб-приложение для хранения, индексирования и поиска логов поверх `Beagle` и его HTTP-интерфейса `be-srv`.
 
 Проект рассматривает Beagle не как классическую SQL/NoSQL базу данных, а как versioned storage layer: логи и индексы живут как набор файлов, а приложение работает с ними через HTTP.
 
@@ -48,28 +48,6 @@
 }
 ```
 
-### Основные каталоги
-
-```text
-indexed-logs/
-  .be
-  .be-home/
-  app/
-    api.js
-    app.js
-    index.html
-    indexing.js
-    styles.css
-  indexes/
-    by-day/
-    by-level/
-    by-source/
-    by-term/
-    manifest.json
-  logs/
-  scripts/
-    rebuild-indexes.mjs
-```
 
 ### Что такое `.be` и `.be-home`
 
@@ -166,12 +144,6 @@ indexes/by-level/WARN__log-demo-scheduler-warn.txt
 
 В репозитории уже есть набор демонстрационных логов.
 
-Сейчас проект содержит:
-
-- `15` готовых demo logs
-- индексы по дням, уровням, источникам и токенам
-- `manifest.json` с краткой статистикой индексации
-
 ## Как запустить проект
 
 ### Предварительные условия
@@ -194,35 +166,6 @@ cmake --build librdx/build --target be-srv
 cd Beagle/Deev-Dunaev-Vartanov/indexed-logs
 HOME=$PWD/.be-home ../librdx/build/be/be-srv 8080
 ```
-
-После этого UI будет доступен по адресу:
-
-```text
-http://localhost:8080/app/index.html
-```
-
-### Как остановить сервер
-
-Если сервер запущен в терминале, остановка делается стандартно:
-
-```text
-Ctrl + C
-```
-
-## Как пользоваться приложением
-
-### Добавление лога
-
-1. Открыть страницу `/app/index.html`
-2. Заполнить поля `Source`, `Level`, `Message`
-3. При необходимости указать `Timestamp` и `Tags`
-4. Нажать `Save Log`
-
-После этого:
-
-- новый лог сохранится в `logs/`
-- для него будут созданы marker-индексы
-- лог станет доступен в поиске
 
 ### Поиск
 
@@ -249,24 +192,6 @@ node scripts/rebuild-indexes.mjs
 
 После скрипта, если нужно обновить данные в самом Beagle-репозитории, их следует снова опубликовать через `be post`.
 
-## Технические детали реализации
-
-### Почему используется только `GET + POST`
-
-Текущая версия `be-srv`, с которой работает проект, поддерживает:
-
-- `GET`
-- `POST`
-
-Поэтому архитектура была адаптирована под эту модель:
-
-- чтение идёт через `GET`
-- создание и публикация новых файлов идёт через `POST`
-- удаление и полноценное редактирование не вынесены в UI
-
-### Почему нет отдельного backend на Node.js
-
-Это осознанное решение под задание. Цель проекта — показать приложение именно поверх Beagle HTTP interface, а не заменить Beagle собственным сервером.
 
 ## Ограничения текущей версии
 
@@ -274,42 +199,5 @@ node scripts/rebuild-indexes.mjs
 
 - Нет UI для удаления логов.
 - Нет полноценного редактирования существующего лога.
-- Нет демонстрации partial sync / selective replication в интерфейсе.
-- Нет ranking, stemming, fuzzy search и phrase search.
-- Нет пагинации и виртуализации списка для очень больших наборов данных.
-- Нет авторизации и разграничения доступа.
-- Incremental marker-индексы ориентированы на добавление новых логов; если понадобится массовая правка старых логов, корректнее выполнить полную пересборку индексов.
 - В проекте пока нет отдельного inverted index на уровне сложного full-text engine; поиск остаётся простым, но уже индексированным.
 
-## Что можно показать на защите
-
-Проект хорошо демонстрирует следующие идеи:
-
-- использование Beagle как versioned storage для приложения
-- хранение данных в виде отдельных JSON-файлов
-- построение вторичных индексов поверх файлового хранилища
-- поиск по сочетанию структурных фильтров и token-based inverted index
-- практическую адаптацию архитектуры под реальный HTTP-интерфейс `be-srv`
-
-Короткая формулировка:
-
-> Мы используем Beagle как версионное файловое хранилище поверх RocksDB,  
-> а поверх него строим JavaScript-приложение для логирования и индексированного поиска.
-
-## Полезные файлы
-
-- [`app/api.js`](/Users/valerii/Desktop/HW/decentralized-hse/practice/Beagle/Deev-Dunaev-Vartanov/indexed-logs/app/api.js) — работа с HTTP и индексами
-- [`app/app.js`](/Users/valerii/Desktop/HW/decentralized-hse/practice/Beagle/Deev-Dunaev-Vartanov/indexed-logs/app/app.js) — UI и взаимодействие с пользователем
-- [`app/indexing.js`](/Users/valerii/Desktop/HW/decentralized-hse/practice/Beagle/Deev-Dunaev-Vartanov/indexed-logs/app/indexing.js) — токенизация и правила построения индексов
-- [`scripts/rebuild-indexes.mjs`](/Users/valerii/Desktop/HW/decentralized-hse/practice/Beagle/Deev-Dunaev-Vartanov/indexed-logs/scripts/rebuild-indexes.mjs) — полная локальная пересборка индексов
-- [`indexes/manifest.json`](/Users/valerii/Desktop/HW/decentralized-hse/practice/Beagle/Deev-Dunaev-Vartanov/indexed-logs/indexes/manifest.json) — краткая статистика по текущим индексам
-
-## Статус проекта
-
-Текущая версия — рабочий MVP для учебной демонстрации:
-
-- UI открывается через Beagle
-- демонстрационные логи загружаются
-- новые логи добавляются
-- индексированный поиск работает
-- архитектура остаётся в рамках требования `Beagle + JS`
