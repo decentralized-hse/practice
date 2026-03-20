@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  alice:
+    build: .
+    container_name: gossipsync-alice
+    hostname: alice
+    ports:
+      - "2221:22"
+    volumes:
+      - "${HOME}/.gossipsync/guest_key:/root/.gossipsync/guest_key:ro"
+      - "${HOME}/.gossipsync/guest_key.pub:/mnt/guest_key.pub:ro"
+    user: "root"
+
+  bob:
+    build: .
+    container_name: gossipsync-bob
+    hostname: bob
+    ports:
+      - "2222:22"
+    volumes:
+      - "${HOME}/.gossipsync/guest_key:/root/.gossipsync/guest_key:ro"
+      - "${HOME}/.gossipsync/guest_key.pub:/mnt/guest_key.pub:ro"
+    user: "root"
+
+  charlie:
+    build: .
+    container_name: gossipsync-charlie
+    hostname: charlie
+    ports:
+      - "2223:22"
+    volumes:
+      - "${HOME}/.gossipsync/guest_key:/root/.gossipsync/guest_key:ro"
+      - "${HOME}/.gossipsync/guest_key.pub:/mnt/guest_key.pub:ro"
+    user: "root"
+    
