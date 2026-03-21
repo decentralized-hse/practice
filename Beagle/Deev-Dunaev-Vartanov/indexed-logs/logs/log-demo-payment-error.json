@@ -1,8 +1,0 @@
-{
-  "id": "log-demo-payment-error",
-  "timestamp": "2026-03-18T11:12:00.000Z",
-  "source": "payment-service",
-  "level": "ERROR",
-  "message": "Payment capture failed because bank gateway timed out",
-  "tags": ["payment", "gateway", "timeout"]
-}

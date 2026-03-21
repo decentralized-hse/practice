@@ -1,8 +1,0 @@
-{
-  "ids": [
-    "log-demo-auth-error",
-    "log-demo-db-error",
-    "log-demo-payment-error",
-    "log-demo-search-error"
-  ]
-}

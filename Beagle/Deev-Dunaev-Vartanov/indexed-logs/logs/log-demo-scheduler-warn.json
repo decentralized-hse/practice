@@ -1,8 +1,0 @@
-{
-  "id": "log-demo-scheduler-warn",
-  "timestamp": "2026-03-17T21:10:00.000Z",
-  "source": "scheduler",
-  "level": "WARN",
-  "message": "Delayed cron execution because worker queue was busy",
-  "tags": ["scheduler", "cron", "queue"]
-}

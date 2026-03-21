@@ -1,8 +1,0 @@
-{
-  "id": "log-demo-db-info",
-  "timestamp": "2026-03-19T07:55:00.000Z",
-  "source": "db-worker",
-  "level": "INFO",
-  "message": "Nightly compaction completed for event storage",
-  "tags": ["database", "storage", "maintenance"]
-}

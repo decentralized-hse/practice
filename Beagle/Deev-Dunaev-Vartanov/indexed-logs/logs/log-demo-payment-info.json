@@ -1,8 +1,0 @@
-{
-  "id": "log-demo-payment-info",
-  "timestamp": "2026-03-18T11:14:00.000Z",
-  "source": "payment-service",
-  "level": "INFO",
-  "message": "Retry succeeded for delayed payment request",
-  "tags": ["payment", "retry", "success"]
-}

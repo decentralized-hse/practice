@@ -1,8 +1,0 @@
-{
-  "id": "log-demo-search-info",
-  "timestamp": "2026-03-19T12:00:00.000Z",
-  "source": "search-indexer",
-  "level": "INFO",
-  "message": "Search index rebuilt for product catalog",
-  "tags": ["search", "index", "catalog"]
-}
