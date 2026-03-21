@@ -1,3 +1,9 @@
+/*
+ * enrich_geo.c — обогащение IP-адресов геоданными и ASN
+ * Компиляция: gcc -O2 -Wall -Wextra -std=c11 -o enrich_geo enrich_geo.c -lmaxminddb
+ * Использование: ./enrich_geo clean_ips.txt > enriched.jsonl
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,14 +42,14 @@ int main(int argc, char *argv[]) {
     MMDB_s city_db, asn_db;
     int status;
     
-    status = MMDB_open("./GeoLite2-City.mmdb", MMDB_MODE_MMAP, &city_db);
+    status = MMDB_open("./geodb/GeoLite2-City.mmdb", MMDB_MODE_MMAP, &city_db);
     if (status != MMDB_SUCCESS) {
         fprintf(stderr, "Ошибка открытия City DB: %s\n", MMDB_strerror(status));
         fprintf(stderr, "Убедитесь, что файл GeoLite2-City.mmdb находится в текущей директории\n");
         return 1;
     }
     
-    status = MMDB_open("./GeoLite2-ASN.mmdb", MMDB_MODE_MMAP, &asn_db);
+    status = MMDB_open("./geodb/GeoLite2-ASN.mmdb", MMDB_MODE_MMAP, &asn_db);
     if (status != MMDB_SUCCESS) {
         fprintf(stderr, "Ошибка открытия ASN DB: %s\n", MMDB_strerror(status));
         fprintf(stderr, "Убедитесь, что файл GeoLite2-ASN.mmdb находится в текущей директории\n");
