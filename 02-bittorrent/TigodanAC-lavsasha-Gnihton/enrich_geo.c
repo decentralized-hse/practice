@@ -1,9 +1,3 @@
-/*
- * enrich_geo.c — обогащение IP-адресов геоданными и ASN
- * Компиляция: gcc -O2 -Wall -Wextra -std=c11 -o enrich_geo enrich_geo.c -lmaxminddb
- * Использование: ./enrich_geo clean_ips.txt > enriched.jsonl
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,12 +39,14 @@ int main(int argc, char *argv[]) {
     status = MMDB_open("./GeoLite2-City.mmdb", MMDB_MODE_MMAP, &city_db);
     if (status != MMDB_SUCCESS) {
         fprintf(stderr, "Ошибка открытия City DB: %s\n", MMDB_strerror(status));
+        fprintf(stderr, "Убедитесь, что файл GeoLite2-City.mmdb находится в текущей директории\n");
         return 1;
     }
     
     status = MMDB_open("./GeoLite2-ASN.mmdb", MMDB_MODE_MMAP, &asn_db);
     if (status != MMDB_SUCCESS) {
         fprintf(stderr, "Ошибка открытия ASN DB: %s\n", MMDB_strerror(status));
+        fprintf(stderr, "Убедитесь, что файл GeoLite2-ASN.mmdb находится в текущей директории\n");
         MMDB_close(&city_db);
         return 1;
     }
@@ -67,6 +63,8 @@ int main(int argc, char *argv[]) {
     int gai_error, mmdb_error;
     MMDB_lookup_result_s city_result, asn_result;
     MMDB_entry_data_s entry_data;
+    int processed = 0;
+    int with_asn = 0;
     
     while (fgets(ip_str, sizeof(ip_str), fp)) {
         ip_str[strcspn(ip_str, "\n")] = '\0';
@@ -79,7 +77,6 @@ int main(int argc, char *argv[]) {
         asn_result = MMDB_lookup_string(&asn_db, ip_str, &gai_error, &mmdb_error);
         printf("{");
         printf("\"ip\":\"%s\"", ip_str);
-        
         const char *country_path[] = { "country", "names", "ru", NULL };
         if (MMDB_aget_value(&city_result.entry, &entry_data, country_path) == MMDB_SUCCESS && 
             entry_data.has_data && entry_data.type == MMDB_DATA_TYPE_UTF8_STRING) {
@@ -135,8 +132,16 @@ int main(int argc, char *argv[]) {
         if (asn_result.found_entry) {
             const char *asn_num_path[] = { "autonomous_system_number", NULL };
             if (MMDB_aget_value(&asn_result.entry, &entry_data, asn_num_path) == MMDB_SUCCESS &&
-                entry_data.has_data && entry_data.type == MMDB_DATA_TYPE_UINT32) {
-                printf(",\"asn\":%u", entry_data.uint32);
+                entry_data.has_data) {
+                if (entry_data.type == MMDB_DATA_TYPE_UINT32) {
+                    printf(",\"asn\":%u", entry_data.uint32);
+                    with_asn++;
+                } else if (entry_data.type == MMDB_DATA_TYPE_INT32) {
+                    printf(",\"asn\":%d", entry_data.int32);
+                    with_asn++;
+                } else {
+                    printf(",\"asn\":null");
+                }
             } else {
                 printf(",\"asn\":null");
             }
@@ -152,8 +157,11 @@ int main(int argc, char *argv[]) {
             printf(",\"asn\":null,\"aso\":null");
         }
         printf("}\n");
+        processed++;
     }
-    
+
+    fprintf(stderr, "Обработано IP: %d\n", processed);
+    fprintf(stderr, "IP с ASN: %d (%.1f%%)\n", with_asn, (float)with_asn/processed*100);
     fclose(fp);
     MMDB_close(&city_db);
     MMDB_close(&asn_db);

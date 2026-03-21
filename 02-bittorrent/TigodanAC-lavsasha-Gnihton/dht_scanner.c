@@ -10,7 +10,7 @@
  *   3. Все обнаруженные IP сохраняются (и ноды, и пиры)
  *
  * Сборка (Linux):
- *   gcc -O2 -Wall -Wextra -std=c11 -o dht_scanner dht_scanner.c
+ *   gcc -O2 -o dht_scanner dht_scanner.c
  *
  * Использование:
  *   ./dht_scanner <info_hash_hex | magnet> [время_сек] [файл]
@@ -19,23 +19,14 @@
  *   ./dht_scanner 08ada5a7a6183aae1e09d831df6748d566095a10 300 peers.txt
  */
 
+#define _POSIX_C_SOURCE 200112L
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
-#ifdef _WIN32
-#include <process.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#pragma comment(lib, "ws2_32.lib")
-typedef int socklen_t;
-typedef SOCKET socket_t;
-#define CLOSE_SOCKET closesocket
-#define SOCKET_VALID(s) ((s) != INVALID_SOCKET)
-#define getpid _getpid
-#else
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -47,7 +38,6 @@ typedef int socket_t;
 #define CLOSE_SOCKET close
 #define SOCKET_VALID(s) ((s) >= 0)
 #define INVALID_SOCKET (-1)
-#endif
 
 #define RECV_BUF_SIZE    65536
 #define MSG_BUF_SIZE     512
@@ -483,14 +473,10 @@ static void print_hash(const uint8_t *hash) {
 }
 
 static void sleep_ms(int ms) {
-#ifdef _WIN32
-    Sleep(ms);
-#else
     struct timespec ts;
     ts.tv_sec = ms / 1000;
     ts.tv_nsec = (ms % 1000) * 1000000L;
     nanosleep(&ts, NULL);
-#endif
 }
 
 int main(int argc, char *argv[]) {
@@ -529,14 +515,7 @@ int main(int argc, char *argv[]) {
     printf("Время сканирования: %d сек\n", duration);
     printf("Выходной файл: %s\n\n", outfile);
 
-#ifdef _WIN32
-    WSADATA wsa;
-    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
-        fprintf(stderr, "Ошибка WSAStartup\n");
-        return 1;
-    }
-#endif
-
+    setvbuf(stdout, NULL, _IONBF, 0);
     srand((unsigned)time(NULL) ^ (unsigned)getpid());
     generate_random_id(our_node_id);
 
@@ -566,15 +545,8 @@ int main(int argc, char *argv[]) {
         CLOSE_SOCKET(sock);
         return 1;
     }
-
-#ifdef _WIN32
-    u_long nonblock = 1;
-    ioctlsocket(sock, FIONBIO, &nonblock);
-#else
     int flags = fcntl(sock, F_GETFL, 0);
     fcntl(sock, F_SETFL, flags | O_NONBLOCK);
-#endif
-
     int rcvbuf = 2 * 1024 * 1024;
     setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (const char *)&rcvbuf, sizeof(rcvbuf));
     int sndbuf = 2 * 1024 * 1024;
@@ -606,7 +578,6 @@ int main(int argc, char *argv[]) {
 
     time_t start_time = time(NULL);
     int query_idx = 0;
-    int last_printed_ips = -1;
     int last_print_time = -1;
 
     printf("\nОбход DHT-сети...\n\n");
@@ -661,14 +632,11 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        if (elapsed != last_print_time || ip_set.count != last_printed_ips) {
-            int remaining = duration - elapsed;
+        if (elapsed != last_print_time) {
             int rate = (elapsed > 0) ? ip_set.count / elapsed : 0;
-            printf("\r  [%3d/%ds] IP: %d | Нод: %d | Ответов: %d | ~%d IP/сек   ",
+            printf("  [%3d/%ds] IP: %d | Нод: %d | Ответов: %d | ~%d IP/сек\n",
                    elapsed, duration, ip_set.count, node_count,
                    total_responses, rate);
-            fflush(stdout);
-            last_printed_ips = ip_set.count;
             last_print_time = elapsed;
         }
 
@@ -708,9 +676,6 @@ int main(int argc, char *argv[]) {
     ip_hashset_free(&ip_set);
     ip_hashset_free(&node_ip_set);
     CLOSE_SOCKET(sock);
-#ifdef _WIN32
-    WSACleanup();
-#endif
 
     return 0;
 }

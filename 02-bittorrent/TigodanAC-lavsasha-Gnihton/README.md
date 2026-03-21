@@ -5,11 +5,46 @@
 
 Проект предназначен для сканирования BitTorrent DHT-сети с целью сбора IP-адресов участников заданной раздачи (по magnet-ссылке или info_hash) и всех промежуточных DHT-узлов. Собранные данные проходят очистку, валидацию, обогащение географическими данными и информацией о провайдерах, после чего визуализируются.
 
-## Использование
+## Требования
+
+- Компилятор C (gcc/clang)
+- Библиотека `libmaxminddb` (для `enrich_geo`)
+- Базы GeoLite2 City и ASN (включены в репозиторий в папке `geodb/`)
+- gnuplot для визуализации
+
+## Установка зависимостей (Debian/Ubuntu)
+
+Для локальной сборки и запуска на Debian/Ubuntu установите необходимые пакеты:
+
+```bash
+sudo apt update
+sudo apt install -y build-essential libmaxminddb-dev gnuplot
+```
+
+## Сборка
+
+### Локальная сборка (Debian/Ubuntu) 
+
+```
+gcc -O2 -Wall -Wextra -std=c11 -D_GNU_SOURCE -o dht_scanner dht_scanner.c
+gcc -O2 -Wall -Wextra -std=c11 -o filter_ips filter_ips.c
+gcc -O2 -Wall -Wextra -std=c11 -o enrich_geo enrich_geo.c -lmaxminddb
+gcc -O2 -Wall -Wextra -std=c11 -o statistics statistics.c -lm
+```
+
+### Сборка через Docker
+
+```
+docker compose build
+```
+
+## Запуск
+
+### Способ 1: Локальный запуск (Debian/Ubuntu)
 
 Весь пайплайн состоит из последовательного запуска четырёх программ:
 
-```bash
+```
 # 1. Сканирование DHT
 ./dht_scanner "<magnet-ссылка_или_info_hash>" 300 peers.bin
 
@@ -23,12 +58,27 @@
 ./statistics < enriched.jsonl
 ```
 
+### Способ 2: Запуск через Docker
+
+```
+# Запуск сканирования (60 секунд)
+docker compose up --build
+```
+
+Результаты будут сохранены в папку `output/`:
+- `output/peers.bin` - сырые IP (бинарный формат)
+- `output/clean_ips.txt` - отфильтрованные уникальные IP
+- `output/enriched.jsonl` - обогащённые геоданными IP
+- `output/plots/` - HTML-отчёт и графики
+
 ## Пример
 
-Для примера использован публичный торрент с Ubuntu:
+Для примера использован публичный торрент с короткометражным мультфильмом «Sintel» (Blender Foundation):
 
 ```bash
+# Локальный запуск
 ./dht_scanner "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10" 300 peers.bin
+
 # Пример вывода во время работы:
 #   [48/300s] IP: 280563 | Нод: 330939 | Ответов: 194894 | ~5845 IP/сек
 
@@ -60,20 +110,6 @@ head -3 enriched.jsonl
 3. **`enrich_geo`** - для каждого IP определяет страну, город, координаты (через GeoLite2 City) и провайдера (через GeoLite2 ASN). Результат сохраняется в формате JSON Lines.
 4. **`statistics`** - подсчитывает статистику и создаёт html-отчёт: топ стран и провайдеров, общее количество IP.
 
-## Требования
-
-- Компилятор C (gcc/clang)
-- Библиотека `libmaxminddb` (для `enrich_geo`)
-- Базы GeoLite2 City и ASN (скачиваются отдельно с сайта MaxMind)
-- gnuplot для визуализации
-
-## Сборка
-
-```bash
-gcc -O2 -Wall -Wextra -std=c11 -o dht_scanner dht_scanner.c
-gcc -O2 -Wall -Wextra -std=c11 -o filter_ips filter_ips.c
-gcc -O2 -Wall -Wextra -std=c11 -o enrich_geo enrich_geo.c -lmaxminddb
-gcc -O2 -Wall -Wextra -std=c11 -o statistics statistics.c
-```
 ## Примечания
-Сканер сохраняет данные в бинарном формате для компактности и скорости. Утилита `filter_ips` выполняет конвертацию в текстовый формат и фильтрацию приватных адресов
+
+- Сканер сохраняет данные в бинарном формате для компактности и скорости. Утилита `filter_ips` выполняет конвертацию в текстовый формат и фильтрацию приватных адресов.
