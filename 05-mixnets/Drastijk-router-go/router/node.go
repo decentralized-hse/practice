@@ -105,6 +105,7 @@ func (node *Node) Register(recvd SHA256, address string) error {
 
 	relay, _ := TLVAppend(nil, 'A', next[:])
 	for _, p := range node.peers {
+		p.LoadIndex = 1
 		if p == nil || p.address == address {
 			continue
 		}
@@ -117,7 +118,7 @@ var exposed_cnt int
 
 func (node *Node) ExposedKey(address string, recvd []byte) error {
 	exposed_cnt += 1
-	err := node.DB.Set('K', "peer" + strconv.Itoa(exposed_cnt), Hex(recvd))
+	err := node.DB.Set('K', "peer"+strconv.Itoa(exposed_cnt), Hex(recvd))
 	if err != nil {
 		return err
 	}
@@ -182,7 +183,7 @@ func (node *Node) Init() (err error) {
 	if err != nil {
 		return
 	}
-	
+
 	// Commented. It doesn't work, but We don't need it yet.
 
 	// {
@@ -275,13 +276,13 @@ func (node *Node) RouteMessageTCP(msg Message) error {
 		if err != nil {
 			return err
 		}
-		
+
 		fmt.Printf("\r\nReceived for: %s", Hex(msg.to[:]))
 		fmt.Printf("\r\nACK index: %d", index)
 		fmt.Printf("\r\nSender pubkey: %s", snd_key_hex)
 		fmt.Printf("\r\nBody: %s\r\n", body)
 
-		node.SendUDP(keypair.PublicKey, "ACK_" + strconv.FormatUint(uint64(index), 10))
+		node.SendUDP(keypair.PublicKey, "ACK_"+strconv.FormatUint(uint64(index), 10))
 		return nil
 	}
 	if peer != nil {
@@ -332,7 +333,7 @@ func (node *Node) SendTCP(key sodium.BoxPublicKey, snd sodium.BoxPublicKey, txt 
 		peer, err := node.findFwdPeer(hash)
 		if err == nil && peer != nil {
 			bs := make([]byte, 4)
-    		binary.LittleEndian.PutUint32(bs, ack_cnt)
+			binary.LittleEndian.PutUint32(bs, ack_cnt)
 			msg, _ := TLVAppend2(nil, 'R', hash[:], bytes.Join([][]byte{bs, snd.Bytes, []byte(txt)}, []byte("")))
 			peer.Queue(msg)
 			fmt.Fprintf(os.Stderr, "'R' message sent to %s\r\n", hexize(key.Bytes))
