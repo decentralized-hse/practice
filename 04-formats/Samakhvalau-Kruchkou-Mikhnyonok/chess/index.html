@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>&#9822; Self-Replicating Chess</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta name="beagle-path" content="/index.html">
+    <meta name="quine-version" content="1.0.0">
+</head>
+<body>
+    <div class="container">
+        <div class="game-controls">
+            <button onclick="chess.newGame()" title="Start a new game with a new ID">New Game</button>
+        </div>
+
+        <div class="board-container">
+            <div id="chessboard"></div>
+        </div>
+
+        <div class="game-info">
+            <div>Game ID: <span id="gameId">loading...</span></div>
+            <div id="mySideWrap">You play: <span id="mySide">—</span></div>
+            <div>Version: <span id="gameVersion">1</span></div>
+            <div>Status: <span id="gameStatus">active</span></div>
+            <div class="move-selector-row">
+                <label for="moveSelector">Go to move:</label>
+                <input type="range" id="moveSelector" min="0" max="0" value="0" step="1" title="Jump to any position">
+                <span id="moveSelectorLabel">0</span>
+            </div>
+            <div id="undoRequestWrap" style="display:none; margin-top:8px; padding:8px; background:#fff3cd; border-radius:4px;"></div>
+            <div id="requestUndoWrap" style="display:none; margin-top:6px;">
+                <button type="button" onclick="chess.requestUndo()">Request undo</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="gameOverOverlay" class="game-over-overlay" style="display:none" role="alertdialog" aria-modal="true">
+        <div class="game-over-box">
+            <p id="gameOverText"></p>
+            <button type="button" class="game-over-ok" onclick="document.getElementById('gameOverOverlay').style.display='none'">OK</button>
+        </div>
+    </div>
+
+    <script src="chess.js"></script>
+</body>
+</html>

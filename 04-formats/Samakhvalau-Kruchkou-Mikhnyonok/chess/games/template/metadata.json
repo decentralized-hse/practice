@@ -1,0 +1,16 @@
+{
+    "id": "template",
+    "name": "Game Template",
+    "created": "2024-03-11T19:30:00Z",
+    "template": true,
+    "quine": {
+        "isSeed": true,
+        "canReplicate": true,
+        "containsSelf": true
+    },
+    "players": {
+        "white": "Player 1",
+        "black": "Player 2"
+    },
+    "rules": "standard"
+}
