@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Крестики-Нолики</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; background: #1a1a2e; color: #eee;
+        }
+        .container { text-align: center; max-width: 400px; width: 100%; padding: 20px; }
+        h1 { margin-bottom: 20px; color: #e94560; }
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        input[type="text"] {
+            padding: 10px 16px; font-size: 16px; border: 2px solid #e94560;
+            border-radius: 8px; background: #16213e; color: #eee; width: 100%;
+            margin-bottom: 12px; outline: none;
+        }
+        button {
+            padding: 10px 24px; font-size: 16px; border: none; border-radius: 8px;
+            background: #e94560; color: #fff; cursor: pointer; margin: 4px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #c73650; }
+        button:disabled { background: #555; cursor: not-allowed; }
+
+        .board {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 6px; margin: 20px auto; max-width: 300px;
+        }
+        .cell {
+            aspect-ratio: 1; font-size: 48px; font-weight: bold;
+            border: 2px solid #e94560; border-radius: 8px;
+            background: #16213e; color: #eee; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+        }
+        .cell:hover:not(.taken) { background: #1a1a3e; }
+        .cell.taken { cursor: not-allowed; }
+        .cell.x { color: #e94560; }
+        .cell.o { color: #0f3460; }
+
+        .status { font-size: 18px; margin: 12px 0; min-height: 28px; }
+        .game-list { list-style: none; margin: 12px 0; }
+        .game-list li {
+            padding: 10px; margin: 6px 0; background: #16213e;
+            border-radius: 8px; cursor: pointer; border: 1px solid #333;
+        }
+        .game-list li:hover { border-color: #e94560; }
+        .game-list .no-games { cursor: default; color: #888; }
+        .game-list .no-games:hover { border-color: #333; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Крестики-Нолики</h1>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+        <input type="text" id="player-name" placeholder="Ваше имя" maxlength="20">
+        <br>
+        <button id="btn-login">Войти</button>
+    </div>
+
+    <!-- Lobby Screen -->
+    <div id="lobby-screen" class="screen">
+        <p>Привет, <span id="display-name"></span>!</p>
+        <button id="btn-create">Создать игру</button>
+        <button id="btn-refresh">Обновить</button>
+        <h3 style="margin-top:16px">Открытые игры:</h3>
+        <ul id="game-list" class="game-list"></ul>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="status" id="status"></div>
+        <div class="board" id="board"></div>
+        <button id="btn-leave">Покинуть</button>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// Storage Interface
+// ============================================================
+// Beagle operates as a file-based store accessible via HTTP.
+// The interface mirrors this: read/write/list files by path.
+// When we plug in the real Beagle backend, we'll implement
+// these methods using fetch() against the Beagle HTTP API.
+// ============================================================
+
+class BeagleStorage {
+    constructor(baseUrl) {
+        this._base = baseUrl.replace(/\/$/, '');
+        this._queue = Promise.resolve();
+    }
+
+    // Serialize all requests — Beagle server is single-threaded
+    // and breaks on concurrent connections
+    _enqueue(fn) {
+        this._queue = this._queue.then(fn, fn);
+        return this._queue;
+    }
+
+    async read(path) {
+        return this._enqueue(async () => {
+            const res = await fetch(`${this._base}/${path}`);
+            if (!res.ok) return null;
+            return await res.text();
+        });
+    }
+
+    async write(path, content) {
+        return this._enqueue(async () => {
+            await fetch(`${this._base}/${path}`, {
+                method: 'POST',
+                body: content,
+            });
+        });
+    }
+}
+
+// ============================================================
+// App
+// ============================================================
+
+const storage = new BeagleStorage(window.location.origin);
+
+let playerName = '';
+let currentGameId = null;
+let myMark = null; // 'X' or 'O'
+let pollTimer = null;
+
+// DOM refs
+const loginScreen = document.getElementById('login-screen');
+const lobbyScreen = document.getElementById('lobby-screen');
+const gameScreen = document.getElementById('game-screen');
+const playerNameInput = document.getElementById('player-name');
+const displayName = document.getElementById('display-name');
+const gameListEl = document.getElementById('game-list');
+const boardEl = document.getElementById('board');
+const statusEl = document.getElementById('status');
+
+function showScreen(screen) {
+    [loginScreen, lobbyScreen, gameScreen].forEach(s => s.classList.remove('active'));
+    screen.classList.add('active');
+}
+
+// -- Login --
+document.getElementById('btn-login').onclick = () => {
+    const name = playerNameInput.value.trim();
+    if (!name) return;
+    playerName = name;
+    displayName.textContent = playerName;
+    showScreen(lobbyScreen);
+    refreshLobby();
+};
+playerNameInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btn-login').click();
+});
+
+// -- Lobby --
+document.getElementById('btn-create').onclick = createGame;
+document.getElementById('btn-refresh').onclick = refreshLobby;
+
+const INDEX_PATH = 'game_index.txt';
+
+async function getGameIndex() {
+    const raw = await storage.read(INDEX_PATH);
+    if (!raw) return [];
+    try { return JSON.parse(raw); } catch { return []; }
+}
+
+async function saveGameIndex(index) {
+    await storage.write(INDEX_PATH, JSON.stringify(index));
+}
+
+async function createGame() {
+    const id = Math.random().toString(36).slice(2, 8);
+    const game = {
+        id,
+        board: Array(9).fill(null),
+        players: { X: playerName, O: null },
+        turn: 'X',
+        status: 'waiting',
+        winner: null,
+    };
+    await storage.write(`game_${id}.txt`, JSON.stringify(game));
+    const index = await getGameIndex();
+    index.push(id);
+    await saveGameIndex(index);
+    joinGame(id, 'X');
+}
+
+async function refreshLobby() {
+    const index = await getGameIndex();
+    gameListEl.innerHTML = '';
+
+    if (index.length === 0) {
+        gameListEl.innerHTML = '<li class="no-games">Нет открытых игр</li>';
+        return;
+    }
+
+    for (const id of index) {
+        const raw = await storage.read(`game_${id}.txt`);
+        if (!raw) continue;
+        const game = JSON.parse(raw);
+        if (game.status === 'finished') continue;
+
+        const li = document.createElement('li');
+        if (game.status === 'waiting') {
+            li.textContent = `${game.players.X} ждёт соперника`;
+            li.onclick = () => joinAsO(game.id);
+        } else {
+            li.textContent = `${game.players.X} vs ${game.players.O} (идёт игра)`;
+            li.onclick = () => spectateOrRejoin(game);
+        }
+        gameListEl.appendChild(li);
+    }
+
+    if (!gameListEl.children.length) {
+        gameListEl.innerHTML = '<li class="no-games">Нет открытых игр</li>';
+    }
+}
+
+async function joinAsO(gameId) {
+    const raw = await storage.read(`game_${gameId}.txt`);
+    if (!raw) return;
+    const game = JSON.parse(raw);
+    if (game.status !== 'waiting') return;
+    game.players.O = playerName;
+    game.status = 'playing';
+    await storage.write(`game_${gameId}.txt`, JSON.stringify(game));
+    joinGame(gameId, 'O');
+}
+
+function spectateOrRejoin(game) {
+    if (game.players.X === playerName) joinGame(game.id, 'X');
+    else if (game.players.O === playerName) joinGame(game.id, 'O');
+    // else spectate — not implemented yet
+}
+
+// -- Game --
+function joinGame(gameId, mark) {
+    currentGameId = gameId;
+    myMark = mark;
+    showScreen(gameScreen);
+    renderBoard();
+    startPolling();
+}
+
+document.getElementById('btn-leave').onclick = () => {
+    stopPolling();
+    currentGameId = null;
+    myMark = null;
+    showScreen(lobbyScreen);
+    refreshLobby();
+};
+
+function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(renderBoard, 1500);
+}
+
+function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+async function renderBoard() {
+    if (!currentGameId) return;
+    const raw = await storage.read(`game_${currentGameId}.txt`);
+    if (!raw) return;
+    const game = JSON.parse(raw);
+
+    // Status text
+    if (game.status === 'waiting') {
+        statusEl.textContent = 'Ожидание соперника...';
+    } else if (game.status === 'finished') {
+        statusEl.textContent = game.winner
+            ? `Победил ${game.players[game.winner]} (${game.winner})!`
+            : 'Ничья!';
+    } else {
+        const isMyTurn = game.turn === myMark;
+        statusEl.textContent = isMyTurn
+            ? `Ваш ход (${myMark})`
+            : `Ход соперника (${game.turn})`;
+    }
+
+    // Board
+    boardEl.innerHTML = '';
+    for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        const val = game.board[i];
+        if (val) {
+            cell.textContent = val;
+            cell.classList.add('taken', val.toLowerCase());
+        }
+        cell.onclick = () => makeMove(i);
+        boardEl.appendChild(cell);
+    }
+}
+
+async function makeMove(index) {
+    if (!currentGameId) return;
+    const raw = await storage.read(`game_${currentGameId}.txt`);
+    if (!raw) return;
+    const game = JSON.parse(raw);
+
+    if (game.status !== 'playing') return;
+    if (game.turn !== myMark) return;
+    if (game.board[index] !== null) return;
+
+    game.board[index] = myMark;
+
+    const winner = checkWinner(game.board);
+    if (winner) {
+        game.status = 'finished';
+        game.winner = winner;
+    } else if (game.board.every(c => c !== null)) {
+        game.status = 'finished';
+        game.winner = null;
+    } else {
+        game.turn = myMark === 'X' ? 'O' : 'X';
+    }
+
+    await storage.write(`game_${currentGameId}.txt`, JSON.stringify(game));
+    renderBoard();
+}
+
+const LINES = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6],
+];
+
+function checkWinner(board) {
+    for (const [a,b,c] of LINES) {
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+            return board[a];
+        }
+    }
+    return null;
+}
+</script>
+</body>
+</html>
