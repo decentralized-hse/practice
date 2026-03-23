@@ -11,3 +11,13 @@
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ```
+
+## Запуск тестов
+
+```bash
+./build/test_basic
+./build/test_corruption
+./build/test_crash
+./build/test_perf
+./build/test_rotate
+```
