@@ -34,7 +34,9 @@ private:
     void flush_pending_to_disk();
     void update_hasher_with_file_bytes_after_header();
 
-    static constexpr std::size_t kFlushThreshold = 4 * 1024 * 1024;
+    /// Максимум пользовательской буферизации перед write() (для append_buffered).
+    /// append() сбрасывает запись сразу; держать сотни КБ+ в RAM для WAL обычно не нужно.
+    static constexpr std::size_t kFlushThreshold = 4096;
     std::filesystem::path dir_;
     std::filesystem::path current_path_;
     std::uint64_t current_segment_start_offset_ = 0;

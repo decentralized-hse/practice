@@ -4,6 +4,7 @@ project(wal_project VERSION 1.0.0 LANGUAGES C CXX)
 include(FetchContent)
 
 option(WAL_DISABLE_FSYNC "Disable fsync calls in WalWriter::sync()" OFF)
+option(WAL_BLAKE3_PORTABLE_ONLY "Force BLAKE3 portable C only (no SIMD; slower recovery)" OFF)
 
 FetchContent_Declare(
   blake3_src
@@ -13,22 +14,28 @@ FetchContent_Declare(
 
 FetchContent_Populate(blake3_src)
 
-add_library(blake3 STATIC
-  ${blake3_src_SOURCE_DIR}/c/blake3.c
-  ${blake3_src_SOURCE_DIR}/c/blake3_dispatch.c
-  ${blake3_src_SOURCE_DIR}/c/blake3_portable.c
-)
-
-target_include_directories(blake3 PUBLIC
-  ${blake3_src_SOURCE_DIR}/c
-)
-
-target_compile_definitions(blake3 PRIVATE
-  BLAKE3_NO_SSE2
-  BLAKE3_NO_SSE41
-  BLAKE3_NO_AVX2
-  BLAKE3_NO_AVX512
-)
+if(WAL_BLAKE3_PORTABLE_ONLY)
+  add_library(blake3 STATIC
+    ${blake3_src_SOURCE_DIR}/c/blake3.c
+    ${blake3_src_SOURCE_DIR}/c/blake3_dispatch.c
+    ${blake3_src_SOURCE_DIR}/c/blake3_portable.c
+  )
+  target_include_directories(blake3 PUBLIC
+    ${blake3_src_SOURCE_DIR}/c
+  )
+  target_compile_definitions(blake3 PRIVATE
+    BLAKE3_NO_SSE2
+    BLAKE3_NO_SSE41
+    BLAKE3_NO_AVX2
+    BLAKE3_NO_AVX512
+  )
+else()
+  # Официальный CMake BLAKE3: amd64 UNIX — ассемблер; x86 — intrinsics; ARM — NEON.
+  add_subdirectory(
+    ${blake3_src_SOURCE_DIR}/c
+    ${CMAKE_CURRENT_BINARY_DIR}/blake3_upstream_build
+  )
+endif()
 
 add_library(wal
   src/bason_record.cpp

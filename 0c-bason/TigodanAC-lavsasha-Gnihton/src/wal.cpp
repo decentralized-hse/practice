@@ -1,13 +1,12 @@
 #include "wal.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
-#include <fstream>
 #include <iomanip>
-#include <iostream>
 #include <limits>
 #include <memory>
 #include <regex>
@@ -45,19 +44,15 @@ struct SegmentInfo {
     throw std::system_error(errno, std::generic_category(), what);
 }
 
-std::vector<std::uint8_t> encode_u16_le(std::uint16_t value) {
-    return {
-        static_cast<std::uint8_t>(value & 0xFFu),
-        static_cast<std::uint8_t>((value >> 8) & 0xFFu)
-    };
+void store_u16_le(std::uint8_t* dst, std::uint16_t value) {
+    dst[0] = static_cast<std::uint8_t>(value & 0xFFu);
+    dst[1] = static_cast<std::uint8_t>((value >> 8) & 0xFFu);
 }
 
-std::vector<std::uint8_t> encode_u64_le(std::uint64_t value) {
-    std::vector<std::uint8_t> out(8);
+void store_u64_le(std::uint8_t* dst, std::uint64_t value) {
     for (int i = 0; i < 8; ++i) {
-        out[i] = static_cast<std::uint8_t>((value >> (8 * i)) & 0xFFu);
+        dst[i] = static_cast<std::uint8_t>((value >> (8 * i)) & 0xFFu);
     }
-    return out;
 }
 
 std::uint16_t decode_u16_le(const std::uint8_t* p) {
@@ -74,20 +69,12 @@ std::uint64_t decode_u64_le(const std::uint8_t* p) {
     return v;
 }
 
-std::vector<std::uint8_t> make_header(std::uint64_t start_offset) {
-    std::vector<std::uint8_t> header;
-    header.reserve(kSegmentHeaderSize);
-    header.insert(header.end(), kMagic.begin(), kMagic.end());
-
-    auto v = encode_u16_le(kVersion);
-    header.insert(header.end(), v.begin(), v.end());
-
-    auto f = encode_u16_le(kFlags);
-    header.insert(header.end(), f.begin(), f.end());
-
-    auto s = encode_u64_le(start_offset);
-    header.insert(header.end(), s.begin(), s.end());
-
+std::array<std::uint8_t, kSegmentHeaderSize> make_header(std::uint64_t start_offset) {
+    std::array<std::uint8_t, kSegmentHeaderSize> header{};
+    std::memcpy(header.data(), kMagic.data(), kMagic.size());
+    store_u16_le(header.data() + 8, kVersion);
+    store_u16_le(header.data() + 10, kFlags);
+    store_u64_le(header.data() + 12, start_offset);
     return header;
 }
 
@@ -153,40 +140,6 @@ std::vector<SegmentInfo> list_segments(const fs::path& dir) {
     return segments;
 }
 
-std::vector<std::uint8_t> read_file_bytes(const fs::path& path) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in) {
-        throw std::system_error(errno, std::generic_category(), "open for read failed: " + path.string());
-    }
-    std::vector<std::uint8_t> bytes;
-    in.seekg(0, std::ios::end);
-    auto size = static_cast<std::size_t>(in.tellg());
-    in.seekg(0, std::ios::beg);
-    bytes.resize(size);
-    if (size > 0) {
-        in.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size));
-        if (!in) {
-            throw std::runtime_error("failed to read file: " + path.string());
-        }
-    }
-    return bytes;
-}
-
-std::vector<uint8_t> read_file_bytes_blocked(const fs::path& path, size_t block_size = 4*1024*1024) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in) throw std::runtime_error("open failed");
-
-    std::vector<uint8_t> buffer;
-    std::vector<uint8_t> tmp(block_size);
-
-    while (in) {
-        in.read(reinterpret_cast<char*>(tmp.data()), tmp.size());
-        size_t n = static_cast<size_t>(in.gcount());
-        buffer.insert(buffer.end(), tmp.begin(), tmp.begin() + n);
-    }
-    return buffer;
-}
-
 struct MappedFile {
     const std::uint8_t* data = nullptr;
     std::size_t size = 0;
@@ -195,6 +148,19 @@ struct MappedFile {
     MappedFile(const MappedFile&) = delete;
     MappedFile& operator=(const MappedFile&) = delete;
     MappedFile(MappedFile&& o) noexcept : data(o.data), size(o.size) { o.data = nullptr; o.size = 0; }
+
+    MappedFile& operator=(MappedFile&& o) noexcept {
+        if (this != &o) {
+            if (data && size) {
+                ::munmap(const_cast<std::uint8_t*>(data), size);
+            }
+            data = o.data;
+            size = o.size;
+            o.data = nullptr;
+            o.size = 0;
+        }
+        return *this;
+    }
 
     ~MappedFile() {
         if (data && size) {
@@ -258,18 +224,21 @@ std::size_t padding_size(std::size_t size) {
     return (8 - (size % 8)) % 8;
 }
 
-std::vector<std::uint8_t> pad_to_8(std::vector<std::uint8_t> bytes) {
-    const std::size_t pad = padding_size(bytes.size());
-    bytes.insert(bytes.end(), pad, 0);
-    return bytes;
+void append_record_to_pending(std::vector<std::uint8_t>& pending, const BasonRecord& record) {
+    const std::size_t before = pending.size();
+    if (record.type == BasonType::String && record.key.empty() && record.children.empty()) {
+        pending.reserve(before + 5 + record.value.size() + 7);
+    }
+    bason_encode_into(record, pending);
+    const std::size_t rec_len = pending.size() - before;
+    const std::size_t pad = padding_size(rec_len);
+    if (pad != 0) {
+        pending.resize(pending.size() + pad, 0);
+    }
 }
 
 std::uint64_t logical_end_offset(const SegmentInfo& s) {
     return s.start_offset + s.logical_size;
-}
-
-std::uint64_t file_offset_from_logical(const SegmentInfo& s, std::uint64_t logical_offset) {
-    return kSegmentHeaderSize + (logical_offset - s.start_offset);
 }
 
 bool env_disable_fsync() {
@@ -316,11 +285,15 @@ RecoveryResult recover_impl(const fs::path& dir, const std::vector<SegmentInfo>&
         blake3_hasher_update(&hasher, file_data, kSegmentHeaderSize);
 
         std::size_t pos = kSegmentHeaderSize;
+        std::size_t hash_run_start = kSegmentHeaderSize;
         std::uint64_t logical_pos = seg.start_offset;
         std::uint64_t last_good_checkpoint = result.recover_offset;
 
         while (pos < file_size) {
             if (file_data[pos] == kCheckpointTag) {
+                if (pos > hash_run_start) {
+                    blake3_hasher_update(&hasher, file_data + hash_run_start, pos - hash_run_start);
+                }
                 if (file_size - pos < kCheckpointSize) {
                     result.recover_offset = last_good_checkpoint;
                     result.truncate_segment_index = i;
@@ -347,6 +320,7 @@ RecoveryResult recover_impl(const fs::path& dir, const std::vector<SegmentInfo>&
                 logical_pos += kCheckpointSize;
                 last_good_checkpoint = logical_pos;
                 result.recover_offset = last_good_checkpoint;
+                hash_run_start = pos;
                 continue;
             }
 
@@ -378,9 +352,12 @@ RecoveryResult recover_impl(const fs::path& dir, const std::vector<SegmentInfo>&
                 }
             }
 
-            blake3_hasher_update(&hasher, &file_data[pos], padded);
             pos += padded;
             logical_pos += padded;
+        }
+
+        if (pos > hash_run_start) {
+            blake3_hasher_update(&hasher, file_data + hash_run_start, pos - hash_run_start);
         }
     }
 
@@ -430,23 +407,6 @@ void ensure_directory_exists(const fs::path& dir) {
     if (ec) {
         throw std::system_error(ec);
     }
-}
-
-SegmentInfo make_segment_info(const fs::path& path) {
-    SegmentInfo info;
-    info.path = path;
-    info.file_size = static_cast<std::uint64_t>(fs::file_size(path));
-    if (info.file_size < kSegmentHeaderSize) {
-        throw std::runtime_error("segment file too small: " + path.string());
-    }
-    auto bytes = read_file_bytes_blocked(path);
-    std::uint64_t start = 0;
-    if (!parse_header(std::span<const std::uint8_t>(bytes.data(), bytes.size()), start)) {
-        throw std::runtime_error("invalid segment header: " + path.string());
-    }
-    info.start_offset = start;
-    info.logical_size = info.file_size - kSegmentHeaderSize;
-    return info;
 }
 
 } 
@@ -505,14 +465,21 @@ void WalWriter::update_hasher_with_file_bytes_after_header() {
     }
     blake3_hasher_init(&hasher_->hasher);
 
-    auto bytes = read_file_bytes_blocked(current_path_);
-    if (bytes.size() < kSegmentHeaderSize) {
+    struct stat st {};
+    if (::fstat(fd_, &st) != 0) {
+        throw_system_error("fstat segment for hasher");
+    }
+    const auto file_size = static_cast<std::size_t>(st.st_size);
+    if (file_size < kSegmentHeaderSize) {
         throw std::runtime_error("segment is too small: " + current_path_.string());
     }
-    blake3_hasher_update(&hasher_->hasher, bytes.data(), kSegmentHeaderSize);
-    if (bytes.size() > kSegmentHeaderSize) {
-        blake3_hasher_update(&hasher_->hasher, bytes.data() + kSegmentHeaderSize, bytes.size() - kSegmentHeaderSize);
+    void* mapped =
+        ::mmap(nullptr, file_size, PROT_READ, MAP_PRIVATE, fd_, 0);
+    if (mapped == MAP_FAILED) {
+        throw_system_error("mmap segment for hasher");
     }
+    blake3_hasher_update(&hasher_->hasher, mapped, file_size);
+    ::munmap(mapped, file_size);
 }
 
 void WalWriter::open_segment(std::uint64_t start_offset, bool create_new) {
@@ -520,7 +487,7 @@ void WalWriter::open_segment(std::uint64_t start_offset, bool create_new) {
     current_segment_logical_size_ = 0;
     committed_stream_offset_ = start_offset;
     pending_.clear();
-    pending_.reserve(kFlushThreshold + 4096);
+    pending_.reserve(std::min<std::size_t>(kFlushThreshold * 2, 16384));
 
     current_path_ = dir_ / segment_filename(start_offset);
     const auto header = make_header(start_offset);
@@ -551,7 +518,7 @@ void WalWriter::open_segment(std::uint64_t start_offset, bool create_new) {
     }
 
     if (st.st_size == 0) {
-        write_all(fd_, header);
+        write_all(fd_, header.data(), header.size());
         if (::fsync(fd_) != 0) {
             int saved = errno;
             ::close(fd_);
@@ -561,9 +528,13 @@ void WalWriter::open_segment(std::uint64_t start_offset, bool create_new) {
         }
         fsync_directory(dir_);
     } else {
-        auto bytes = read_file_bytes_blocked(current_path_);
+        std::array<std::uint8_t, kSegmentHeaderSize> hdr{};
+        const ssize_t n = ::pread(fd_, hdr.data(), hdr.size(), 0);
+        if (n != static_cast<ssize_t>(kSegmentHeaderSize)) {
+            throw std::runtime_error("pread WAL segment header: " + current_path_.string());
+        }
         std::uint64_t parsed_start = 0;
-        if (!parse_header(std::span<const std::uint8_t>(bytes.data(), bytes.size()), parsed_start)) {
+        if (!parse_header(std::span<const std::uint8_t>(hdr.data(), hdr.size()), parsed_start)) {
             throw std::runtime_error("invalid existing WAL segment header: " + current_path_.string());
         }
         if (parsed_start != start_offset) {
@@ -602,24 +573,18 @@ WalWriter WalWriter::open(const std::string& dir) {
 }
 
 std::uint64_t WalWriter::append(const BasonRecord& record) {
-    auto encoded = bason_encode(record);
-    auto padded = pad_to_8(std::move(encoded));
-
     const std::uint64_t offset = committed_stream_offset_ + pending_.size();
-    pending_.insert(pending_.end(), padded.begin(), padded.end());
+    append_record_to_pending(pending_, record);
+    flush_pending_to_disk();
     return offset;
 }
 
 uint64_t WalWriter::append_buffered(const BasonRecord& record) {
     const std::uint64_t offset = committed_stream_offset_ + pending_.size();
-    auto encoded = bason_encode(record);
-    auto padded = pad_to_8(std::move(encoded));
-    pending_.insert(pending_.end(), padded.begin(), padded.end());
-
+    append_record_to_pending(pending_, record);
     if (pending_.size() >= kFlushThreshold) {
         flush_pending_to_disk();
     }
-
     return offset;
 }
 
@@ -792,7 +757,34 @@ void WalIterator::load_current() {
     }
 
     const auto& path = segment_paths_[segment_index_];
-    segment_bytes_ = read_file_bytes_blocked(path);
+    int fd = ::open(path.c_str(), O_RDONLY);
+    if (fd < 0) {
+        throw_system_error("WalIterator open segment");
+    }
+    struct stat st {};
+    if (::fstat(fd, &st) != 0) {
+        int saved = errno;
+        ::close(fd);
+        errno = saved;
+        throw_system_error("WalIterator fstat segment");
+    }
+    const auto sz = static_cast<std::size_t>(st.st_size);
+    segment_bytes_.resize(sz);
+    if (sz > 0) {
+        const ssize_t n = ::pread(fd, segment_bytes_.data(), sz, 0);
+        if (n < 0) {
+            int saved = errno;
+            ::close(fd);
+            errno = saved;
+            throw_system_error("WalIterator pread segment");
+        }
+        if (static_cast<std::size_t>(n) != sz) {
+            ::close(fd);
+            throw std::runtime_error("WalIterator short read: " + path.string());
+        }
+    }
+    ::close(fd);
+
     if (segment_bytes_.size() < kSegmentHeaderSize) {
         valid_ = false;
         return;
