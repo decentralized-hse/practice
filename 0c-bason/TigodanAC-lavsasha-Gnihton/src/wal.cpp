@@ -350,7 +350,7 @@ RecoveryResult recover_impl(const fs::path& dir, const std::vector<SegmentInfo>&
                 continue;
             }
 
-            auto skipped = BasonRecord::skip(std::span<const std::uint8_t>(file_data + pos, file_size - pos));
+            auto skipped = bason_skip_record(std::span<const std::uint8_t>(file_data + pos, file_size - pos));
             if (!skipped.has_value()) {
                 result.recover_offset = last_good_checkpoint;
                 result.truncate_segment_index = i;
@@ -602,7 +602,7 @@ WalWriter WalWriter::open(const std::string& dir) {
 }
 
 std::uint64_t WalWriter::append(const BasonRecord& record) {
-    auto encoded = record.encode();
+    auto encoded = bason_encode(record);
     auto padded = pad_to_8(std::move(encoded));
 
     const std::uint64_t offset = committed_stream_offset_ + pending_.size();
@@ -612,11 +612,9 @@ std::uint64_t WalWriter::append(const BasonRecord& record) {
 
 uint64_t WalWriter::append_buffered(const BasonRecord& record) {
     const std::uint64_t offset = committed_stream_offset_ + pending_.size();
-    record.encode_into(pending_);
-    const std::size_t pad = padding_size(pending_.size());
-    if (pad > 0) {
-        pending_.resize(pending_.size() + pad, 0);
-    }
+    auto encoded = bason_encode(record);
+    auto padded = pad_to_8(std::move(encoded));
+    pending_.insert(pending_.end(), padded.begin(), padded.end());
 
     if (pending_.size() >= kFlushThreshold) {
         flush_pending_to_disk();
@@ -835,12 +833,13 @@ bool WalIterator::advance_to_next_record() {
                 continue;
             }
 
-            auto decoded = BasonRecord::decode(std::span<const std::uint8_t>(segment_bytes_.data() + cursor_, segment_bytes_.size() - cursor_));
+            auto decoded = bason_try_decode(std::span<const std::uint8_t>(segment_bytes_.data() + cursor_,
+                                                                         segment_bytes_.size() - cursor_));
             if (!decoded.has_value()) {
                 return false;
             }
 
-            auto [record, consumed] = decoded.value();
+            auto [record, consumed] = *decoded;
             const std::size_t padded = consumed + padding_size(consumed);
             if (cursor_ + padded > segment_bytes_.size()) {
                 return false;

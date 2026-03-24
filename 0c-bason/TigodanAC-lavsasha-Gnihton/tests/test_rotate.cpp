@@ -8,7 +8,7 @@ int main() {
     auto writer = WalWriter::open("wal");
 
     for (int i = 0; i < 1000; i++) {
-        writer.append(BasonRecord("record_" + std::to_string(i)));
+        writer.append(BasonRecord::leaf_string("record_" + std::to_string(i)));
         writer.rotate(256);
     }
 

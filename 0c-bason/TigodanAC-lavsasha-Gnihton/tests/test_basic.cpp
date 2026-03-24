@@ -7,8 +7,8 @@ int main() {
 
     auto writer = WalWriter::open("wal");
 
-    auto a = writer.append(BasonRecord("first"));
-    auto b = writer.append(BasonRecord("second"));
+    auto a = writer.append(BasonRecord::leaf_string("first"));
+    auto b = writer.append(BasonRecord::leaf_string("second"));
 
     writer.checkpoint();
     writer.sync();

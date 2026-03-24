@@ -4,29 +4,35 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
-class BasonRecord {
-public:
-    BasonRecord() = default;
-    explicit BasonRecord(std::vector<std::uint8_t> payload);
-    explicit BasonRecord(std::string_view text);
+// --- Data model (Assignment 1 public API) ---------------------------------
 
-    const std::vector<std::uint8_t>& payload() const noexcept;
-    std::size_t payload_size() const noexcept;
-    std::vector<std::uint8_t> encode() const;
-    void encode_into(std::vector<std::uint8_t>& out) const;
-    static std::optional<std::pair<BasonRecord, std::size_t>> decode(std::span<const std::uint8_t> bytes);
-    static std::optional<std::size_t> skip(std::span<const std::uint8_t> bytes);
+enum class BasonType { Boolean, Array, String, Object, Number };
+
+struct BasonRecord {
+    BasonType type = BasonType::String;
+    std::string key;
+    std::string value;
+    std::vector<BasonRecord> children;
 
     bool operator==(const BasonRecord& other) const noexcept;
     bool operator!=(const BasonRecord& other) const noexcept;
 
-private:
-    std::vector<std::uint8_t> payload_;
+    /// String leaf with empty key — удобство для тестов WAL до появления путей из RFC.
+    static BasonRecord leaf_string(std::string_view utf8_value);
 };
 
-std::vector<std::uint8_t> encode_u32_le(std::uint32_t value);
-std::uint32_t decode_u32_le(const std::uint8_t* bytes);
+// --- Codec (Assignment 1): сейчас заглушка; заменить реализацию в bason_record.cpp
+
+std::vector<std::uint8_t> bason_encode(const BasonRecord& record);
+void bason_encode_into(const BasonRecord& record, std::vector<std::uint8_t>& out);
+
+std::pair<BasonRecord, std::size_t> bason_decode(const std::uint8_t* data, std::size_t len);
+
+/// Для WAL / skip без исключений.
+std::optional<std::pair<BasonRecord, std::size_t>> bason_try_decode(std::span<const std::uint8_t> bytes);
+std::optional<std::size_t> bason_skip_record(std::span<const std::uint8_t> bytes);

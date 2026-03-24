@@ -12,7 +12,7 @@ int main() {
     auto writer = WalWriter::open("wal");
 
     for (int i = 0; i < N; i++) {
-        writer.append_buffered(BasonRecord(std::string(100, 'x')));
+        writer.append_buffered(BasonRecord::leaf_string(std::string(100, 'x')));
         if (i % 1000 == 0) {
             writer.checkpoint();
             writer.sync_periodic();

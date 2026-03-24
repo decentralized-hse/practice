@@ -10,7 +10,7 @@ int main() {
         auto writer = WalWriter::open("wal");
 
         for (int i = 0; i < 10; i++) {
-            writer.append(BasonRecord("ok_" + std::to_string(i)));
+            writer.append(BasonRecord::leaf_string("ok_" + std::to_string(i)));
         }
 
         writer.checkpoint();
