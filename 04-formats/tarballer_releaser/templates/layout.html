@@ -1,0 +1,27 @@
+{{define "layout"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{block "title" .}}Tarballer / Releaser{{end}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">Beagle Tarballer/Releaser</a>
+        <div class="nav-links">
+            <a href="/browse/">Browse</a>
+            <a href="/releases">Releases</a>
+            <a href="/releases/new">New Release</a>
+        </div>
+    </nav>
+    <main class="container">
+        {{block "content" .}}{{end}}
+    </main>
+    <footer class="footer">
+        <span>Powered by <a href="https://github.com/gritzko/librdx" target="_blank">Beagle SCM</a></span>
+    </footer>
+</body>
+</html>
+{{end}}

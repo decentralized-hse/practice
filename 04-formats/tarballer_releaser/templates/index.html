@@ -1,0 +1,66 @@
+{{template "layout" .}}
+
+{{define "title"}}Home — Tarballer / Releaser{{end}}
+
+{{define "content"}}
+<div class="hero">
+    <h1>Tarballer / Releaser</h1>
+    <p class="subtitle">Release management and tarball packaging for Beagle repositories</p>
+    <div class="hero-actions">
+        <a href="/browse/" class="btn btn-primary">Browse Repository</a>
+        <a href="/releases/new" class="btn btn-secondary">Create Release</a>
+    </div>
+</div>
+
+<section class="section">
+    <div class="section-header">
+        <h2>Recent Releases</h2>
+        <a href="/releases" class="link-muted">View all</a>
+    </div>
+
+    {{if .Releases}}
+    <div class="release-grid">
+        {{range .Releases}}
+        <div class="card">
+            <div class="card-header">
+                <h3><a href="/releases/{{.Name}}">{{.Name}}</a></h3>
+                <span class="badge">{{.CreatedAt.Format "2006-01-02 15:04"}}</span>
+            </div>
+            {{if .Description}}
+            <p class="card-body">{{.Description}}</p>
+            {{end}}
+            <div class="card-footer">
+                <a href="/releases/{{.Name}}/tarball" class="btn btn-sm">Download .tar.gz</a>
+                <a href="/releases/{{.Name}}/browse/" class="btn btn-sm btn-outline">Browse</a>
+            </div>
+        </div>
+        {{end}}
+    </div>
+    {{else}}
+    <div class="empty-state">
+        <p>No releases yet.</p>
+        <a href="/releases/new" class="btn btn-primary">Create your first release</a>
+    </div>
+    {{end}}
+</section>
+
+<section class="section">
+    <h2>Ad-hoc Tarball</h2>
+    <p>Download a tarball of any path and version without creating a release.</p>
+    <form action="/tarball" method="get" class="inline-form">
+        <div class="form-row">
+            <label for="prefix">Path prefix</label>
+            <input type="text" id="prefix" name="prefix" value="/" placeholder="/">
+        </div>
+        <div class="form-row">
+            <label for="formula">Formula</label>
+            <input type="text" id="formula" name="formula" placeholder="main (optional)">
+        </div>
+        <div class="form-row">
+            <label for="name">Archive name</label>
+            <input type="text" id="name" name="name" value="archive" placeholder="archive">
+        </div>
+        <button type="submit" class="btn btn-primary">Download .tar.gz</button>
+    </form>
+</section>
+{{end}}

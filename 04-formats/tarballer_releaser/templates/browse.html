@@ -1,0 +1,57 @@
+{{template "layout" .}}
+
+{{define "title"}}Browse {{.Path}} — Tarballer / Releaser{{end}}
+
+{{define "content"}}
+<div class="browse-header">
+    <div class="breadcrumbs">
+        <a href="/browse/">/</a>
+        {{range .Breadcrumbs}}
+        <span class="sep">/</span>
+        <a href="/browse{{.Path}}{{if $.Formula}}?formula={{$.Formula}}{{end}}">{{.Name}}</a>
+        {{end}}
+    </div>
+    <form class="formula-form" method="get">
+        <input type="text" name="formula" value="{{.Formula}}" placeholder="Version formula (e.g. main)">
+        <button type="submit" class="btn btn-sm">Apply</button>
+    </form>
+</div>
+
+<div class="file-list">
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{if .Breadcrumbs}}
+            <tr>
+                <td>
+                    {{$parent := ""}}
+                    {{$crumbs := .Breadcrumbs}}
+                    {{if gt (len $crumbs) 1}}
+                        {{$parent = (index $crumbs (add (len $crumbs) -2)).Path}}
+                    {{end}}
+                    <a href="/browse{{$parent}}/{{if $.Formula}}?formula={{$.Formula}}{{end}}" class="entry-link">..</a>
+                </td>
+                <td class="type-col">dir</td>
+            </tr>
+            {{end}}
+            {{range .Entries}}
+            <tr>
+                <td>
+                    {{if .IsDir}}
+                    <a href="/browse{{$.Path}}{{.Name}}{{if $.Formula}}?formula={{$.Formula}}{{end}}" class="entry-link entry-dir">{{.Name}}</a>
+                    {{else}}
+                    <a href="/browse{{$.Path}}{{.Name}}{{if $.Formula}}?formula={{$.Formula}}{{end}}" class="entry-link entry-file">{{.Name}}</a>
+                    {{end}}
+                </td>
+                <td class="type-col">{{if .IsDir}}dir{{else}}file{{end}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

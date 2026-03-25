@@ -1,0 +1,11 @@
+{{template "layout" .}}
+
+{{define "title"}}Error {{.Code}} — Tarballer / Releaser{{end}}
+
+{{define "content"}}
+<div class="error-page">
+    <h1>{{.Code}} — {{.Title}}</h1>
+    <p>{{.Detail}}</p>
+    <a href="/" class="btn btn-primary">Back to Home</a>
+</div>
+{{end}}

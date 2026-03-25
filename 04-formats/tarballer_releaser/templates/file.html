@@ -1,0 +1,38 @@
+{{template "layout" .}}
+
+{{define "title"}}{{.FileName}} — Tarballer / Releaser{{end}}
+
+{{define "content"}}
+<div class="browse-header">
+    <div class="breadcrumbs">
+        <a href="/browse/">/</a>
+        {{range .Breadcrumbs}}
+        <span class="sep">/</span>
+        <a href="/browse{{.Path}}{{if $.Formula}}?formula={{$.Formula}}{{end}}">{{.Name}}</a>
+        {{end}}
+    </div>
+    <form class="formula-form" method="get">
+        <input type="text" name="formula" value="{{.Formula}}" placeholder="Version formula (e.g. main)">
+        <button type="submit" class="btn btn-sm">Apply</button>
+    </form>
+</div>
+
+<div class="file-view">
+    <div class="file-view-header">
+        <span class="file-name">{{.FileName}}</span>
+        <span class="file-meta">{{len .Lines}} lines</span>
+    </div>
+    <div class="code-block">
+        <table class="code-table">
+            <tbody>
+                {{range $i, $line := .Lines}}
+                <tr>
+                    <td class="line-num">{{add $i 1}}</td>
+                    <td class="line-content"><pre>{{$line}}</pre></td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}
