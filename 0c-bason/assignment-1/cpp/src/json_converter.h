@@ -1,0 +1,22 @@
+#pragma once
+
+#include "bason_codec.h"
+
+#include <string>
+#include <vector>
+
+////////////////////////////////////////////////////////////////////////////////
+
+namespace NBason {
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Convert JSON text to a BASON byte stream (nested mode)
+std::vector<uint8_t> JsonToBason(const std::string& json);
+
+// Convert a BASON byte stream to JSON text
+std::string BasonToJson(const uint8_t* data, size_t len);
+
+////////////////////////////////////////////////////////////////////////////////
+
+} // namespace NBason
