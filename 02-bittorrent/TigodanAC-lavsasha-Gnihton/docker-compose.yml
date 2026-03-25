@@ -1,0 +1,8 @@
+services:
+  dht-scanner:
+    build: .
+    network_mode: host
+    volumes:
+      - ./output:/output
+      - ./geodb:/app/geodb:ro
+    command: ["08ada5a7a6183aae1e09d831df6748d566095a10", "60"]
