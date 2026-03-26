@@ -13,5 +13,5 @@ secure_sync.exe
 .vscode/
 .idea/
 
-.sync_manifest
-.sync_manifest.sig
+SHA256SUMS
+SHA256SUMS.sign

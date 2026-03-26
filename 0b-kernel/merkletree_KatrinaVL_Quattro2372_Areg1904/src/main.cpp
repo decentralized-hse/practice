@@ -16,8 +16,8 @@
 
 namespace fs = std::filesystem;
 
-const std::string MANIFEST_FILENAME = ".sync_manifest";
-const std::string SIG_FILENAME      = ".sync_manifest.sig";
+const std::string MANIFEST_FILENAME = "SHA256SUMS";
+const std::string SIG_FILENAME      = "SHA256SUMS.sign";
 
 class Crypto {
 public:
