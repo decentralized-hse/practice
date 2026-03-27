@@ -1,0 +1,9 @@
+services:
+  ssh-server:
+    build: ./remote-host
+    container_name: ssh-server
+    ports:
+      - "2222:22"
+    volumes:
+      - ./remote-host/brix:/home/testuser/
+    restart: unless-stopped
