@@ -1,0 +1,39 @@
+{{template "layout" .}}
+
+{{define "title"}}Releases — Tarballer / Releaser{{end}}
+
+{{define "content"}}
+<div class="page-header">
+    <h1>Releases</h1>
+    <a href="/releases/new" class="btn btn-primary">New Release</a>
+</div>
+
+{{if .Releases}}
+<div class="release-list">
+    {{range .Releases}}
+    <div class="card">
+        <div class="card-header">
+            <h3><a href="/releases/{{.Name}}">{{.Name}}</a></h3>
+            <span class="badge">{{.CreatedAt.Format "2006-01-02 15:04"}}</span>
+        </div>
+        {{if .Description}}
+        <p class="card-body">{{.Description}}</p>
+        {{end}}
+        <div class="card-meta">
+            {{if .Formula}}<span>Formula: <code>{{.Formula}}</code></span>{{end}}
+            {{if .Prefix}}<span>Prefix: <code>{{.Prefix}}</code></span>{{end}}
+        </div>
+        <div class="card-footer">
+            <a href="/releases/{{.Name}}/tarball" class="btn btn-sm">Download .tar.gz</a>
+            <a href="/releases/{{.Name}}/browse/" class="btn btn-sm btn-outline">Browse</a>
+        </div>
+    </div>
+    {{end}}
+</div>
+{{else}}
+<div class="empty-state">
+    <p>No releases yet. Create one to get started.</p>
+    <a href="/releases/new" class="btn btn-primary">Create Release</a>
+</div>
+{{end}}
+{{end}}

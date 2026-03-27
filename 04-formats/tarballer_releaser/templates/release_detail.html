@@ -1,0 +1,68 @@
+{{template "layout" .}}
+
+{{define "title"}}{{.Release.Name}} — Tarballer / Releaser{{end}}
+
+{{define "content"}}
+<div class="page-header">
+    <h1>{{.Release.Name}}</h1>
+    <div class="header-actions">
+        <a href="/releases/{{.Release.Name}}/tarball" class="btn btn-primary">Download .tar.gz</a>
+        <a href="/releases/{{.Release.Name}}/browse/" class="btn btn-secondary">Browse Files</a>
+    </div>
+</div>
+
+<div class="detail-card">
+    <table class="detail-table">
+        <tr>
+            <th>Name</th>
+            <td>{{.Release.Name}}</td>
+        </tr>
+        <tr>
+            <th>Created</th>
+            <td>{{.Release.CreatedAt.Format "2006-01-02 15:04:05 UTC"}}</td>
+        </tr>
+        <tr>
+            <th>Formula</th>
+            <td>{{if .Release.Formula}}<code>{{.Release.Formula}}</code>{{else}}<em>all branches</em>{{end}}</td>
+        </tr>
+        <tr>
+            <th>Prefix</th>
+            <td><code>{{.Release.Prefix}}</code></td>
+        </tr>
+        {{if .Release.Description}}
+        <tr>
+            <th>Description</th>
+            <td class="description">{{.Release.Description}}</td>
+        </tr>
+        {{end}}
+    </table>
+</div>
+
+<div class="section">
+    <h2>Quick Links</h2>
+    <ul class="link-list">
+        <li>
+            <strong>Tarball URL:</strong>
+            <code>/releases/{{.Release.Name}}/tarball</code>
+        </li>
+        <li>
+            <strong>Browse URL:</strong>
+            <code>/releases/{{.Release.Name}}/browse/</code>
+        </li>
+        {{if .Release.Formula}}
+        <li>
+            <strong>Ad-hoc equivalent:</strong>
+            <code>/tarball?prefix={{.Release.Prefix}}&amp;formula={{.Release.Formula}}&amp;name={{.Release.Name}}</code>
+        </li>
+        {{end}}
+    </ul>
+</div>
+
+<div class="danger-zone">
+    <h3>Danger Zone</h3>
+    <form action="/releases/{{.Release.Name}}/delete" method="post"
+          onsubmit="return confirm('Delete release {{.Release.Name}}?')">
+        <button type="submit" class="btn btn-danger">Delete Release</button>
+    </form>
+</div>
+{{end}}
