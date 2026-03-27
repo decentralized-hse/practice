@@ -14,109 +14,90 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.get('/games/:gameId/moves/', (req, res) => {
-  const dir = path.join(ROOT, req.params.gameId, 'moves');
-  if (!fs.existsSync(dir)) {
-    return res.type('text/plain').send('');
-  }
-  const files = fs.readdirSync(dir).filter(f => /^\d{4}\.json$/.test(f)).sort();
-  res.type('text/plain').send(files.join('\n'));
-});
-
-app.get('/games/:gameId/moves/:filename', (req, res) => {
-  if (!/^\d{4}\.json$/.test(req.params.filename)) {
-    return res.status(400).end();
-  }
-  const file = path.join(ROOT, req.params.gameId, 'moves', req.params.filename);
-  if (!fs.existsSync(file)) {
-    return res.status(404).end();
-  }
-  res.sendFile(path.resolve(file));
-});
-
-app.put('/games/:gameId/moves/:filename', (req, res) => {
-  if (!/^\d{4}\.json$/.test(req.params.filename)) {
-    return res.status(400).end();
-  }
-  const dir = path.join(ROOT, req.params.gameId, 'moves');
-  fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(dir, req.params.filename);
-  let body = req.body;
-  if (typeof body === 'object' && body !== null) {
-    body = JSON.stringify(body);
-  } else if (typeof body !== 'string') {
-    body = '';
-  }
-  fs.writeFileSync(file, body, 'utf8');
-  res.status(200).end();
-});
-
-app.get('/games/:gameId/slots.json', (req, res) => {
-  const file = path.join(ROOT, req.params.gameId, 'slots.json');
-  if (!fs.existsSync(file)) {
-    return res.status(404).json({ white: null, black: null });
-  }
-  try {
-    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-    res.json(data);
-  } catch (e) {
-    res.status(404).json({ white: null, black: null });
-  }
-});
-
-app.put('/games/:gameId/slots.json', (req, res) => {
-  const dir = path.join(ROOT, req.params.gameId);
-  fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(dir, 'slots.json');
-  const body = typeof req.body === 'object' && req.body !== null ? req.body : { white: null, black: null };
-  fs.writeFileSync(file, JSON.stringify({ white: body.white || null, black: body.black || null }), 'utf8');
-  res.status(200).end();
-});
-
-app.get('/games/:gameId/state.json', (req, res) => {
-  const file = path.join(ROOT, req.params.gameId, 'state.json');
+app.get('/beagle/:id', (req, res) => {
+  const file = path.join(ROOT, req.params.id + '.json');
   if (!fs.existsSync(file)) return res.status(404).json({});
   try {
     res.json(JSON.parse(fs.readFileSync(file, 'utf8')));
   } catch (e) {
-    res.status(404).json({});
+    res.status(500).json({});
   }
 });
 
-app.put('/games/:gameId/state.json', (req, res) => {
-  const dir = path.join(ROOT, req.params.gameId);
-  fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(dir, 'state.json');
-  const body = typeof req.body === 'object' && req.body !== null ? req.body : {};
-  fs.writeFileSync(file, JSON.stringify({ version: Math.max(0, parseInt(body.version, 10) || 0) }), 'utf8');
-  res.status(200).end();
+function deepMerge(target, source) {
+  for (const key of Object.keys(source)) {
+    if (source[key] instanceof Object && !Array.isArray(source[key])) {
+      if (!target[key]) target[key] = {};
+      deepMerge(target[key], source[key]);
+    } else {
+      target[key] = source[key];
+    }
+  }
+}
+
+app.post('/beagle/:id', (req, res) => {
+  const dir = ROOT;
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, req.params.id + '.json');
+  
+  let data = {};
+  if (fs.existsSync(file)) {
+    try {
+      data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch (e) {}
+  }
+  
+  if (req.body && typeof req.body === 'object') {
+    deepMerge(data, req.body);
+  }
+  
+  fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
+  res.json(data);
 });
 
-app.get('/games/:gameId/undo_request.json', (req, res) => {
-  const file = path.join(ROOT, req.params.gameId, 'undo_request.json');
-  if (!fs.existsSync(file)) return res.json({});
+app.post('/beagle/:id/sync', async (req, res) => {
+  const targetUrl = req.body.url;
+  if (!targetUrl) return res.status(400).json({ error: 'No URL provided' });
+  
+  const file = path.join(ROOT, req.params.id + '.json');
+  let localData = {};
+  if (fs.existsSync(file)) {
+    try {
+      localData = JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch (e) {}
+  }
+
   try {
-    res.json(JSON.parse(fs.readFileSync(file, 'utf8')));
+    const fetch = (await import('node-fetch')).default || globalThis.fetch;
+    const remoteRes = await fetch(targetUrl);
+    if (remoteRes.ok) {
+      const remoteData = await remoteRes.json();
+      deepMerge(localData, remoteData);
+      if (!fs.existsSync(ROOT)) fs.mkdirSync(ROOT, { recursive: true });
+      fs.writeFileSync(file, JSON.stringify(localData, null, 2), 'utf8');
+      
+      await fetch(targetUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(localData)
+      });
+    }
+    res.json({ success: true });
   } catch (e) {
-    res.json({});
+    res.status(500).json({ error: e.message });
   }
-});
-
-app.put('/games/:gameId/undo_request.json', (req, res) => {
-  const dir = path.join(ROOT, req.params.gameId);
-  fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(dir, 'undo_request.json');
-  const body = typeof req.body === 'object' && req.body !== null ? req.body : {};
-  fs.writeFileSync(file, JSON.stringify({ from: body.from || null, atVersion: body.atVersion != null ? body.atVersion : null }), 'utf8');
-  res.status(200).end();
 });
 
 function getLocalIP() {
-  const nets = os.networkInterfaces();
-  for (const name of Object.keys(nets)) {
-    for (const net of nets[name]) {
-      if (net.family === 'IPv4' && !net.internal) return net.address;
+  try {
+    const nets = os.networkInterfaces();
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name]) {
+        if (net.family === 'IPv4' && !net.internal) return net.address;
+      }
     }
+  } catch (e) {
+    return '127.0.0.1';
   }
   return '?';
 }

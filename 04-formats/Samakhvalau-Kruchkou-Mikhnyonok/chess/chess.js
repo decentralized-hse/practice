@@ -1,6 +1,3 @@
-
-
-
 class SelfReplicatingChess {
     constructor() {
         this.board = null;
@@ -53,25 +50,47 @@ class SelfReplicatingChess {
         return id || 's_' + Date.now();
     }
 
+    async fetchGameState() {
+        try {
+            const r = await fetch(`/beagle/${this.currentGame}`);
+            if (r.ok) return await r.json();
+        } catch (e) {}
+        return { slots: {}, moves: {}, state: { version: 0 }, undo_request: {} };
+    }
+
+    async patchGameState(patch) {
+        try {
+            await fetch(`/beagle/${this.currentGame}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(patch)
+            });
+        } catch (e) {
+            console.error('Failed to patch game state', e);
+        }
+    }
+
     async assignSide() {
         const sessionId = this.getSessionId();
         const sideKey = 'chess_side_' + this.currentGame;
         try {
             const cached = localStorage.getItem(sideKey);
+            const gameState = await this.fetchGameState();
+            let slots = gameState.slots || {};
+
             if (cached === 'white' || cached === 'black') {
-                const slots = await fetch(`/games/${this.currentGame}/slots.json`).then(r => r.ok ? r.json() : { white: null, black: null }).catch(() => ({ white: null, black: null }));
                 if ((slots.white === sessionId && cached === 'white') || (slots.black === sessionId && cached === 'black')) {
                     this.mySide = cached;
                     return;
                 }
             }
-            let slots = await fetch(`/games/${this.currentGame}/slots.json`).then(r => r.ok ? r.json() : { white: null, black: null }).catch(() => ({ white: null, black: null }));
+            
             if (!slots.white && !slots.black) {
                 this.mySide = 'white';
-                await fetch(`/games/${this.currentGame}/slots.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ white: sessionId, black: null }) });
-            } else if (slots.white && !slots.black) {
+                await this.patchGameState({ slots: { white: sessionId } });
+            } else if (slots.white && !slots.black && slots.white !== sessionId) {
                 this.mySide = 'black';
-                await fetch(`/games/${this.currentGame}/slots.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ white: slots.white, black: sessionId }) });
+                await this.patchGameState({ slots: { black: sessionId } });
             } else {
                 if (slots.white === sessionId) this.mySide = 'white';
                 else if (slots.black === sessionId) this.mySide = 'black';
@@ -102,14 +121,9 @@ class SelfReplicatingChess {
     }
 
     async discoverMoves() {
-        const list = [];
-        for (let n = 1; n <= 9999; n++) {
-            const name = String(n).padStart(4, '0') + '.json';
-            const r = await fetch(`/games/${this.currentGame}/moves/${name}`);
-            if (!r.ok) break;
-            list.push(name);
-        }
-        return list;
+        const state = await this.fetchGameState();
+        const moves = state.moves || {};
+        return Object.keys(moves).sort();
     }
 
     storageKey() {
@@ -159,16 +173,22 @@ class SelfReplicatingChess {
             let effectiveVersion = serverVersion;
             if (fromServerOnly) {
                 try {
-                    const state = await fetch(`/games/${this.currentGame}/state.json`).then(r => r.ok ? r.json() : {});
+                    const gameState = await this.fetchGameState();
+                    const state = gameState.state || {};
                     if (state.version != null) effectiveVersion = Math.min(serverVersion, Math.max(0, state.version));
                 } catch (e) {}
             }
             this.version = effectiveVersion;
             if (this.version > 0) {
                 const moveFile = this.moveFilename(this.version);
-                const lastMove = await fetch(`/games/${this.currentGame}/moves/${moveFile}`).then(r => r.json());
-                this.applyMoveData(lastMove);
-                this.moveCache[this.version] = lastMove;
+                const gameState = await this.fetchGameState();
+                const lastMove = gameState.moves && gameState.moves[moveFile];
+                if (lastMove) {
+                    this.applyMoveData(lastMove);
+                    this.moveCache[this.version] = lastMove;
+                } else {
+                    this.board = this.getInitialBoard();
+                }
             } else {
                 this.board = this.getInitialBoard();
             }
@@ -192,11 +212,9 @@ class SelfReplicatingChess {
 
     async fetchServerMoveCount() {
         try {
-            const r = await fetch(`/games/${this.currentGame}/moves/`);
-            if (!r.ok) return this.version;
-            const text = await r.text();
-            const list = (text.match(/\d{4}\.json/g) || []).sort();
-            return list.length;
+            const state = await this.fetchGameState();
+            const moves = state.moves || {};
+            return Object.keys(moves).length;
         } catch (e) {
             return this.version;
         }
@@ -209,8 +227,8 @@ class SelfReplicatingChess {
             const serverCount = await this.fetchServerMoveCount();
             let stateVersion = null;
             try {
-                const state = await fetch(`/games/${this.currentGame}/state.json`).then(r => r.ok ? r.json() : {});
-                stateVersion = state.version;
+                const state = await this.fetchGameState();
+                stateVersion = state.state && state.state.version;
             } catch (e) {}
             const effectiveServer = stateVersion != null ? Math.min(serverCount, stateVersion) : serverCount;
             if (effectiveServer !== this.version || serverCount !== this.moves.length) {
@@ -223,12 +241,8 @@ class SelfReplicatingChess {
     }
 
     async fetchUndoRequest() {
-        try {
-            const r = await fetch(`/games/${this.currentGame}/undo_request.json`);
-            return r.ok ? await r.json() : {};
-        } catch (e) {
-            return {};
-        }
+        const state = await this.fetchGameState();
+        return state.undo_request || {};
     }
 
     updateUndoUI() {
@@ -247,10 +261,8 @@ class SelfReplicatingChess {
     async requestUndo() {
         if (!this.mySide || this.version <= 0) return;
         try {
-            await fetch(`/games/${this.currentGame}/undo_request.json`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ from: this.getSessionId(), atVersion: this.version })
+            await this.patchGameState({
+                undo_request: { from: this.getSessionId(), atVersion: this.version }
             });
             this.showMessage('Undo requested');
         } catch (e) {
@@ -263,16 +275,12 @@ class SelfReplicatingChess {
             const req = await this.fetchUndoRequest();
             if (!req.from || req.atVersion == null) return;
             const newVersion = Math.max(0, req.atVersion - 1);
-            await fetch(`/games/${this.currentGame}/state.json`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ version: newVersion })
+            
+            await this.patchGameState({
+                state: { version: newVersion },
+                undo_request: { from: null, atVersion: null }
             });
-            await fetch(`/games/${this.currentGame}/undo_request.json`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
-            });
+            
             await this.loadGame(true);
             this.render();
             this.updateMoveSelector();
@@ -285,10 +293,8 @@ class SelfReplicatingChess {
 
     async declineUndo() {
         try {
-            await fetch(`/games/${this.currentGame}/undo_request.json`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
+            await this.patchGameState({
+                undo_request: { from: null, atVersion: null }
             });
             document.getElementById('undoRequestWrap').style.display = 'none';
             this.showMessage('Undo declined');
@@ -333,10 +339,9 @@ class SelfReplicatingChess {
         }
         const moveFile = this.moveFilename(atVersion);
         try {
-            const data = await fetch(`/games/${this.currentGame}/moves/${moveFile}`).then(r => {
-                if (!r.ok) throw new Error('Move not found');
-                return r.json();
-            });
+            const state = await this.fetchGameState();
+            const data = state.moves && state.moves[moveFile];
+            if (!data) throw new Error('Move not found');
             this.moveCache[atVersion] = data;
             this.applyMoveData(data);
             this.version = atVersion;
@@ -988,10 +993,10 @@ class SelfReplicatingChess {
         this.moveCache[this.version] = moveData;
         try {
             const moveNumber = String(this.version).padStart(4, '0');
-            await fetch(`/games/${this.currentGame}/moves/${moveNumber}.json`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(moveData)
+            await this.patchGameState({
+                moves: {
+                    [moveNumber + '.json']: moveData
+                }
             });
             if (!this.moves.includes(moveNumber + '.json')) {
                 this.moves.push(moveNumber + '.json');
@@ -1002,10 +1007,8 @@ class SelfReplicatingChess {
         }
         if (this.mySide) {
             try {
-                await fetch(`/games/${this.currentGame}/state.json`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ version: this.version })
+                await this.patchGameState({
+                    state: { version: this.version }
                 });
             } catch (e) {}
             await this.loadGame(true);
@@ -1036,24 +1039,30 @@ class SelfReplicatingChess {
         const newGameId = 'game_' + Date.now();
 
         try {
+            const gameState = await this.fetchGameState();
+            const moves = gameState.moves || {};
             const moveData = [];
             for (let i = 1; i <= this.version; i++) {
-                const moveNum = String(i).padStart(4, '0');
-                try {
-                    const move = await fetch(`/games/${this.currentGame}/moves/${moveNum}.json`)
-                        .then(r => r.json());
-                    moveData.push(move);
-                } catch (e) {}
+                const moveNum = String(i).padStart(4, '0') + '.json';
+                if (moves[moveNum]) {
+                    moveData.push(moves[moveNum]);
+                }
             }
 
+            const newGameMoves = {};
             for (let i = 0; i < moveData.length; i++) {
-                const moveNum = String(i + 1).padStart(4, '0');
-                await fetch(`/games/${newGameId}/moves/${moveNum}.json`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(moveData[i])
-                });
+                const moveNum = String(i + 1).padStart(4, '0') + '.json';
+                newGameMoves[moveNum] = moveData[i];
             }
+
+            await fetch(`/beagle/${newGameId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    moves: newGameMoves,
+                    state: { version: this.version }
+                })
+            });
 
             window.location.href = `/?game=${newGameId}`;
         } catch (e) {
@@ -1132,12 +1141,25 @@ class SelfReplicatingChess {
     }
 
     async syncWithPeer() {
+        const targetUrl = prompt('Enter peer URL to sync with (e.g. http://192.168.1.100:3000/beagle/' + this.currentGame + '):');
+        if (!targetUrl) return;
+        
         try {
-            await this.loadGame();
-            this.render();
-            this.showMessage('Refreshed from server. (Push requires Beagle backend.)');
+            const res = await fetch(`/beagle/${this.currentGame}/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: targetUrl })
+            });
+            
+            if (res.ok) {
+                await this.loadGame();
+                this.render();
+                this.showMessage('Synced successfully with peer!');
+            } else {
+                throw new Error('Sync failed');
+            }
         } catch (e) {
-            this.showMessage('Refresh failed: ' + (e.message || 'network error'));
+            this.showMessage('Sync failed: ' + (e.message || 'network error'));
         }
     }
 }
