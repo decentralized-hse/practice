@@ -113,7 +113,11 @@ async function getTextOrNull(path) {
   return response.text();
 }
 
-async function postRaw(path, rawText, contentType = "text/plain; charset=utf-8") {
+async function postRaw(
+  path,
+  rawText,
+  contentType = "text/plain; charset=utf-8",
+) {
   const response = await fetch(buildUrl(path), {
     method: "POST",
     headers: {
@@ -127,7 +131,11 @@ async function postRaw(path, rawText, contentType = "text/plain; charset=utf-8")
 }
 
 async function postJson(path, data) {
-  return postRaw(path, JSON.stringify(data, null, 2), "application/json; charset=utf-8");
+  return postRaw(
+    path,
+    JSON.stringify(data, null, 2),
+    "application/json; charset=utf-8",
+  );
 }
 
 async function readIndexFile(path) {
@@ -229,7 +237,9 @@ async function listMarkerIds(groupName, bucketKey) {
     const entries = await listDir(`${INDEXES_DIR}/${groupName}`);
     return uniq(
       entries
-        .filter((entry) => entry.startsWith(prefix) && entry.endsWith(MARKER_SUFFIX))
+        .filter(
+          (entry) => entry.startsWith(prefix) && entry.endsWith(MARKER_SUFFIX),
+        )
         .map(parseMarkerId)
         .filter(Boolean),
     );
@@ -267,6 +277,21 @@ function logPath(id) {
   return `${LOGS_DIR}/${id}.json`;
 }
 
+async function getLogDateFromByIdIndex(id) {
+  const data = await readJsonOrNull(
+    `${INDEXES_DIR}/by-id/${encodeURIComponent(id)}.json`,
+  );
+  return data?.date ?? null;
+}
+
+function hierarchicalLogPath(id, date) {
+  if (!date)
+    throw new Error(
+      `Cannot build hierarchical path for log ${id} without date`,
+    );
+  return `${LOGS_DIR}/${date}/${id}.json`;
+}
+
 async function getAllLogIds() {
   const entries = await listDir(LOGS_DIR);
   return entries
@@ -275,7 +300,9 @@ async function getAllLogIds() {
 }
 
 async function getLogById(id) {
-  return getJson(logPath(id));
+  const date = await getLogDateFromByIdIndex(id);
+  if (!date) throw new Error(`Log ${id} not found (missing by-id index)`);
+  return getJson(hierarchicalLogPath(id, date));
 }
 
 async function getLogsByIds(ids) {
@@ -289,7 +316,9 @@ async function getLogsByIds(ids) {
     }),
   );
 
-  return logs.filter(Boolean).sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  return logs
+    .filter(Boolean)
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 }
 
 async function getAllLogs() {
@@ -301,6 +330,12 @@ async function rebuildIndexes() {
   const logs = await getAllLogs();
   const entries = buildIndexEntries(logs);
   const manifest = await writeManifest(logs, entries);
+
+  for (const log of logs) {
+    await postJson(`${INDEXES_DIR}/by-id/${encodeURIComponent(log.id)}.json`, {
+      date: toDayKey(log.timestamp),
+    });
+  }
 
   for (const [day, ids] of Object.entries(entries.byDay)) {
     for (const id of ids) {
@@ -337,7 +372,13 @@ async function addLogToIndexes(log) {
     writeMarkerFile("by-level", log.level, log.id),
     writeMarkerFile("by-source", log.source, log.id),
     writeMarkerFile("by-day", toDayKey(log.timestamp), log.id),
-    ...tokenizeLog(log).map((token) => writeMarkerFile("by-term", token, log.id)),
+    ...tokenizeLog(log).map((token) =>
+      writeMarkerFile("by-term", token, log.id),
+    ),
+    // Записываем в by-id (для древовидных путей)
+    postJson(`${INDEXES_DIR}/by-id/${encodeURIComponent(log.id)}.json`, {
+      date: toDayKey(log.timestamp),
+    }),
   ]);
 }
 
@@ -346,7 +387,9 @@ async function removeLogFromIndexes(log) {
     updateIndexRemove(levelIndexPath(log.level), log.id),
     updateIndexRemove(sourceIndexPath(log.source), log.id),
     updateIndexRemove(dayIndexPath(toDayKey(log.timestamp)), log.id),
-    ...tokenizeLog(log).map((token) => updateIndexRemove(termIndexPath(token), log.id)),
+    ...tokenizeLog(log).map((token) =>
+      updateIndexRemove(termIndexPath(token), log.id),
+    ),
   ]);
 }
 
@@ -357,7 +400,10 @@ async function saveLog(log) {
     await removeLogFromIndexes(previous);
   }
 
-  await postJson(logPath(log.id), log);
+  const date = toDayKey(log.timestamp);
+  // Лог теперь лежит в псевдопапке по дате
+  await postJson(hierarchicalLogPath(log.id, date), log);
+
   await addLogToIndexes(log);
   return log;
 }
@@ -368,7 +414,9 @@ function intersectIdSets(sets) {
     return null;
   }
 
-  const sortedSets = [...nonEmptySets].sort((left, right) => left.size - right.size);
+  const sortedSets = [...nonEmptySets].sort(
+    (left, right) => left.size - right.size,
+  );
   if (sortedSets[0].size === 0) {
     return [];
   }
@@ -433,7 +481,10 @@ async function searchLogs({ term = "", level = "", source = "", date = "" }) {
   }
 
   const candidateIds = intersectIdSets(filters);
-  const logs = candidateIds === null ? await getAllLogs() : await getLogsByIds(candidateIds);
+  const logs =
+    candidateIds === null
+      ? await getAllLogs()
+      : await getLogsByIds(candidateIds);
 
   return logs.filter(
     (log) =>
