@@ -1,0 +1,3 @@
+# Ignore BAZEL files
+MODULE.bazel.lock
+/bazel-*

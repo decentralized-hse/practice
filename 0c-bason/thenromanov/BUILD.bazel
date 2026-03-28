@@ -1,0 +1,16 @@
+package(default_visibility = ["//visibility:public"])
+
+sh_binary(
+    name = "clang_tidy_bin",
+    srcs = ["tools/clang_tidy_wrapper.sh"],
+)
+
+filegroup(
+    name = "clang_tidy_config",
+    srcs = [".clang-tidy"],
+)
+
+filegroup(
+    name = "clang_format_config",
+    srcs = [".clang-format"],
+)

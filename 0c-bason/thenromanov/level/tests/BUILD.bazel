@@ -1,0 +1,78 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_test(
+    name = "manifest_test",
+    size = "small",
+    srcs = ["manifest_test.cpp"],
+    deps = [
+        "//level:manifest",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "snapshot_test",
+    size = "small",
+    srcs = ["snapshot_test.cpp"],
+    deps = [
+        "//level:snapshot",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "version_edit_test",
+    size = "small",
+    srcs = ["version_edit_test.cpp"],
+    deps = [
+        "//level:version_edit",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "version_test",
+    size = "small",
+    srcs = ["version_test.cpp"],
+    deps = [
+        "//level:version",
+        "//sst:writer",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "level_test",
+    size = "medium",
+    srcs = ["level_test.cpp"],
+    deps = [
+        "//level:level",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
+    name = "small_tests",
+    tags = ["small"],
+    tests = [
+        ":manifest_test",
+        ":snapshot_test",
+        ":version_edit_test",
+        ":version_test",
+    ],
+)
+
+test_suite(
+    name = "medium_tests",
+    tags = ["medium"],
+    tests = [
+        ":level_test",
+    ],
+)

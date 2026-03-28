@@ -1,0 +1,83 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "constants",
+    hdrs = ["constants.hpp"],
+)
+
+cc_library(
+    name = "record",
+    hdrs = ["record.hpp"],
+    srcs = ["record.cpp"],
+    deps = [
+        "//codec:record",
+        "//util:util",
+    ],
+)
+
+cc_library(
+    name = "iterator",
+    hdrs = ["iterator.hpp"],
+    srcs = ["iterator.cpp"],
+    deps = [
+        ":record",
+        "//codec:record",
+        "//memtable:sorted_iterator",
+    ],
+)
+
+cc_library(
+    name = "metadata",
+    hdrs = ["metadata.hpp"],
+)
+
+cc_library(
+    name = "util",
+    hdrs = ["util.hpp"],
+    srcs = ["util.cpp"],
+    deps = [":constants"],
+)
+
+cc_library(
+    name = "reader",
+    hdrs = ["reader.hpp"],
+    srcs = ["reader.cpp"],
+    deps = [
+        ":constants",
+        ":iterator",
+        ":metadata",
+        ":record",
+        ":util",
+        "//codec:record"
+    ],
+)
+
+cc_library(
+    name = "writer",
+    hdrs = ["writer.hpp"],
+    srcs = ["writer.cpp"],
+    deps = [
+        ":constants",
+        ":iterator",
+        ":metadata",
+        ":record",
+        ":util",
+        "//codec:record",
+    ],
+)
+
+
+cc_library(
+    name = "sst",
+    deps = [
+        ":constants",
+        ":iterator",
+        ":metadata",
+        ":record",
+        ":reader",
+        ":util",
+        ":writer",
+    ]
+)
