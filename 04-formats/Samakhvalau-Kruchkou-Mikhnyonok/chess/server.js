@@ -5,7 +5,11 @@ const os = require('os');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const ROOT = path.join(__dirname, 'games');
+const ROOT = process.env.CHESS_DATA_DIR
+  ? (path.isAbsolute(process.env.CHESS_DATA_DIR)
+    ? process.env.CHESS_DATA_DIR
+    : path.join(__dirname, process.env.CHESS_DATA_DIR))
+  : path.join(__dirname, 'games');
 
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -16,7 +20,7 @@ app.get('/', (req, res) => {
 
 app.get('/beagle/:id', (req, res) => {
   const file = path.join(ROOT, req.params.id + '.json');
-  if (!fs.existsSync(file)) return res.status(404).json({});
+  if (!fs.existsSync(file)) return res.json({});
   try {
     res.json(JSON.parse(fs.readFileSync(file, 'utf8')));
   } catch (e) {
@@ -68,7 +72,6 @@ app.post('/beagle/:id/sync', async (req, res) => {
   }
 
   try {
-    const fetch = (await import('node-fetch')).default || globalThis.fetch;
     const remoteRes = await fetch(targetUrl);
     if (remoteRes.ok) {
       const remoteData = await remoteRes.json();

@@ -102,6 +102,23 @@ class SelfReplicatingChess {
         }
     }
 
+    async pullFromPeerIfConfigured() {
+        const params = new URLSearchParams(window.location.search);
+        const peer = params.get('peer');
+        if (!peer) return;
+        const base = peer.replace(/\/$/, '');
+        const remoteUrl = `${base}/beagle/${encodeURIComponent(this.currentGame)}`;
+        try {
+            await fetch(`/beagle/${this.currentGame}/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: remoteUrl })
+            });
+        } catch (e) {
+            console.warn('peer sync failed', e);
+        }
+    }
+
     async init() {
         const params = new URLSearchParams(window.location.search);
         let gid = params.get('game');
@@ -111,6 +128,7 @@ class SelfReplicatingChess {
         }
         this.currentGame = gid;
 
+        await this.pullFromPeerIfConfigured();
         await this.assignSide();
         await this.loadGame(!!this.mySide);
         this.startPolling();
