@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Indexed Logs</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Beagle + JavaScript</p>
+          <h1>Indexed Logging System</h1>
+          <p class="hero-copy">
+            Logs are stored as JSON files, indexes are stored separately, and
+            search runs on top of Beagle's HTTP interface.
+          </p>
+        </div>
+        <div class="form-actions">
+          <button id="rebuild-indexes-button" class="ghost-button" type="button">
+            Rebuild Indexes
+          </button>
+          <button id="refresh-button" class="secondary-button" type="button">
+            Refresh All
+          </button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Create log</h2>
+          <p>Add a new JSON log entry and update indexes.</p>
+        </div>
+
+        <form id="create-log-form" class="grid-form">
+          <label>
+            Source
+            <input
+              id="source-input"
+              name="source"
+              type="text"
+              placeholder="auth-service"
+              required
+            />
+          </label>
+
+          <label>
+            Level
+            <select id="level-input" name="level" required>
+              <option value="INFO">INFO</option>
+              <option value="WARN">WARN</option>
+              <option value="ERROR">ERROR</option>
+              <option value="DEBUG">DEBUG</option>
+            </select>
+          </label>
+
+          <label class="span-2">
+            Message
+            <textarea
+              id="message-input"
+              name="message"
+              rows="3"
+              placeholder="Token verification failed"
+              required
+            ></textarea>
+          </label>
+
+          <label>
+            Timestamp
+            <input id="timestamp-input" name="timestamp" type="datetime-local" />
+          </label>
+
+          <label>
+            Tags
+            <input
+              id="tags-input"
+              name="tags"
+              type="text"
+              placeholder="auth, jwt"
+            />
+          </label>
+
+          <div class="form-actions span-2">
+            <button class="primary-button" type="submit">Save Log</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Search</h2>
+          <p>Use level, source, day, and token inverted indexes to narrow candidates quickly.</p>
+        </div>
+
+        <form id="search-form" class="filters-grid" onsubmit="return false;">
+          <label>
+            Text
+            <input
+              id="term-filter"
+              name="term"
+              type="text"
+              placeholder="jwt error auth"
+            />
+          </label>
+
+          <label>
+            Level
+            <select id="level-filter" name="level">
+              <option value="">Any</option>
+              <option value="INFO">INFO</option>
+              <option value="WARN">WARN</option>
+              <option value="ERROR">ERROR</option>
+              <option value="DEBUG">DEBUG</option>
+            </select>
+          </label>
+
+          <label>
+            Source
+            <input
+              id="source-filter"
+              name="source"
+              type="text"
+              placeholder="auth-service"
+            />
+          </label>
+
+          <label>
+            Date
+            <input id="date-filter" name="date" type="date" />
+          </label>
+
+          <div class="form-actions">
+            <button class="primary-button" type="submit">Search</button>
+            <button id="reset-search-button" class="ghost-button" type="button">
+              Reset
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Logs</h2>
+          <p id="status-text">Open this UI via /app/index.html.</p>
+        </div>
+        <div id="logs-container" class="logs-list"></div>
+      </section>
+    </main>
+
+    <template id="log-card-template">
+      <article class="log-card">
+        <div class="log-card-top">
+          <div class="log-meta">
+            <span class="log-level"></span>
+            <span class="log-source"></span>
+          </div>
+        </div>
+        <p class="log-message"></p>
+        <div class="log-footer">
+          <time class="log-time"></time>
+          <div class="log-tags"></div>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
