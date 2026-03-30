@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LGTM Code Review System — Beagle Native</title>
+    <style>
+      :root {
+        font-family: Inter, Arial, sans-serif;
+        color: #0f172a;
+        background: #f6f8fb;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; background: #f6f8fb; color: #0f172a; }
+      body { padding: 24px; }
+      button, input, textarea, select { font: inherit; }
+      .container { max-width: 1400px; margin: 0 auto; }
+      .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+      .header h1 { margin: 0; font-size: 32px; }
+      .header p { margin: 8px 0 0; color: #475569; }
+      .header-badge { background: #111827; color: white; border-radius: 999px; padding: 10px 16px; font-size: 14px; white-space: nowrap; }
+      .status-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+      .status-box { padding: 14px 16px; background: white; border: 1px solid #e2e8f0; border-radius: 16px; }
+      .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
+      .stat-card { background: white; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04); padding: 20px; }
+      .stat-label { color: #64748b; font-size: 14px; }
+      .stat-number { margin-top: 8px; font-size: 34px; font-weight: 700; }
+      .layout-grid { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 24px; }
+      .sidebar-column, .form-grid, .request-list, .detail-column { display: grid; gap: 16px; }
+      .two-column-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; }
+      .card { background: white; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04); overflow: hidden; }
+      .card-header { padding: 18px 20px 0; font-weight: 600; }
+      .card-content { padding: 20px; }
+      .input { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 12px; outline: none; font-size: 14px; background: white; color: #0f172a; }
+      .input::placeholder, .textarea::placeholder { color: #94a3b8; }
+      .input:focus { border-color: #111827; box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08); }
+      .textarea { min-height: 100px; resize: vertical; }
+      .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; border-radius: 12px; padding: 12px 14px; font-weight: 600; cursor: pointer; transition: 0.15s ease; }
+      .btn:hover { transform: translateY(-1px); }
+      .btn-primary { background: #111827; color: white; }
+      .btn-secondary { background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; }
+      .small-btn { padding: 10px; font-size: 12px; }
+      .request-item { width: 100%; text-align: left; border: 1px solid #e2e8f0; background: white; border-radius: 16px; padding: 14px; cursor: pointer; }
+      .request-item-active { border-color: #111827; background: #f8fafc; }
+      .request-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+      .request-title { font-weight: 600; }
+      .request-meta { font-size: 12px; color: #64748b; margin-top: 6px; }
+      .badge { display: inline-flex; align-items: center; justify-content: center; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+      .badge-green { background: #dcfce7; color: #166534; }
+      .badge-red { background: #fee2e2; color: #991b1b; }
+      .badge-blue { background: #dbeafe; color: #1d4ed8; }
+      .badge-gray { background: #e2e8f0; color: #334155; }
+      .review-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+      .review-title { margin: 0; font-size: 28px; }
+      .review-description { margin: 10px 0 0; color: #475569; }
+      .info-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+      .info-box { background: #f1f5f9; border-radius: 14px; padding: 14px; }
+      .muted { color: #64748b; font-size: 14px; }
+      .tabs-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .tab-btn { border: 1px solid #cbd5e1; background: white; padding: 12px; border-radius: 14px; cursor: pointer; font-weight: 600; }
+      .tab-btn-active { background: #111827; color: white; border-color: #111827; }
+      .empty-box, .empty-card { border: 1px dashed #cbd5e1; border-radius: 14px; padding: 20px; color: #64748b; background: white; }
+      .file-box, .comment-box { border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background: white; }
+      .file-header { background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 14px; font-weight: 600; }
+      .file-diff { margin: 0; padding: 14px; font-size: 13px; white-space: pre-wrap; overflow-x: auto; }
+      .comment-box { padding: 14px; }
+      .comment-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+      .comment-name { font-weight: 600; }
+      .comment-date, .comment-meta { color: #64748b; font-size: 12px; margin-top: 6px; }
+      .comment-text { margin-top: 12px; color: #334155; line-height: 1.45; }
+      .decision-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .status-ok { border-left: 5px solid #22c55e; }
+      .status-warn { border-left: 5px solid #f59e0b; }
+      .status-error { border-left: 5px solid #ef4444; }
+      @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .layout-grid, .two-column-grid { grid-template-columns: 1fr; } }
+      @media (max-width: 800px) { body { padding: 14px; } .header, .status-row, .tabs-row { grid-template-columns: 1fr; display: grid; } .stats-grid { grid-template-columns: 1fr; } .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      @media (max-width: 560px) { .info-grid, .decision-buttons { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <div>
+          <h1>LGTM Code Review System</h1>
+        </div>
+        <div class="header-badge">Beagle-native</div>
+      </header>
+
+      <section class="status-row">
+        <div class="status-box status-ok" id="serverStatus">Страница загружена из Beagle через HTTP API.</div>
+        <div class="status-box" id="saveStatus"></div>
+      </section>
+
+      <section class="stats-grid" id="statsGrid"></section>
+
+      <main class="layout-grid">
+        <aside class="sidebar-column">
+          <section class="card">
+            <div class="card-header">Новый review request</div>
+            <div class="card-content form-grid">
+              <input id="newTitle" class="input" placeholder="Название" />
+              <input id="newAuthor" class="input" placeholder="Автор" />
+              <input id="newSourceBranch" class="input" placeholder="Source branch" />
+              <input id="newTargetBranch" class="input" placeholder="Target branch" value="main" />
+              <input id="newRequiredLgtm" class="input" placeholder="Required LGTM" type="number" min="1" value="1" />
+              <textarea id="newDescription" class="input textarea" placeholder="Описание"></textarea>
+              <input id="newFilePath" class="input" placeholder="Файл, например src/app.js" />
+              <textarea id="newFileDiff" class="input textarea" placeholder="Diff"></textarea>
+              <button id="createReviewBtn" class="btn btn-primary">Создать</button>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header">Review requests</div>
+            <div class="card-content request-list" id="reviewList"></div>
+          </section>
+        </aside>
+
+        <section id="detailRoot"></section>
+      </main>
+    </div>
+
+    <script>
+      const DATA_PATH = "/data/reviews.json";
+      const state = { items: [], selectedId: null, activeTab: "files" };
+
+      const reviewList = document.getElementById("reviewList");
+      const detailRoot = document.getElementById("detailRoot");
+      const statsGrid = document.getElementById("statsGrid");
+      const serverStatus = document.getElementById("serverStatus");
+      const saveStatus = document.getElementById("saveStatus");
+      const newTitle = document.getElementById("newTitle");
+      const newAuthor = document.getElementById("newAuthor");
+      const newSourceBranch = document.getElementById("newSourceBranch");
+      const newTargetBranch = document.getElementById("newTargetBranch");
+      const newRequiredLgtm = document.getElementById("newRequiredLgtm");
+      const newDescription = document.getElementById("newDescription");
+      const newFilePath = document.getElementById("newFilePath");
+      const newFileDiff = document.getElementById("newFileDiff");
+      const createReviewBtn = document.getElementById("createReviewBtn");
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function nowString() {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        const h = String(d.getHours()).padStart(2, "0");
+        const min = String(d.getMinutes()).padStart(2, "0");
+        return `${y}-${m}-${day} ${h}:${min}`;
+      }
+
+      function calculateStatus(item) {
+        const hasChangesRequested = item.reviews.some((review) => review.decision === "REQUEST_CHANGES");
+        const lgtmCount = item.reviews.filter((review) => review.decision === "LGTM").length;
+        if (hasChangesRequested) return "CHANGES_REQUESTED";
+        if (lgtmCount >= Number(item.requiredLgtm || 1)) return "LGTM";
+        return "IN_REVIEW";
+      }
+
+      function enrich(item) {
+        return { ...item, status: calculateStatus(item) };
+      }
+
+      function badgeClass(status) {
+        if (status === "LGTM") return "badge badge-green";
+        if (status === "CHANGES_REQUESTED") return "badge badge-red";
+        if (status === "COMMENT") return "badge badge-gray";
+        return "badge badge-blue";
+      }
+
+      function getSelectedItem() {
+        return state.items.find((item) => item.id === state.selectedId) || null;
+      }
+
+      function setSaveStatus(type, text) {
+        saveStatus.className = "status-box";
+        if (type === "ok") saveStatus.classList.add("status-ok");
+        if (type === "warn") saveStatus.classList.add("status-warn");
+        if (type === "error") saveStatus.classList.add("status-error");
+        saveStatus.textContent = text;
+      }
+
+      async function loadReviews() {
+        try {
+          const response = await fetch(DATA_PATH, {
+            cache: "no-store",
+            headers: {
+              "Cache-Control": "no-store, no-cache, must-revalidate",
+              "Pragma": "no-cache"
+            }
+          });
+
+          if (response.status === 404) {
+            state.items = [];
+            state.selectedId = null;
+            serverStatus.className = "status-box status-warn";
+            serverStatus.textContent = "Файл data/reviews.json пока не найден в Beagle. Можно создать первый review и сохранить его через POST.";
+            render();
+            return;
+          }
+
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+          const items = await response.json();
+          state.items = Array.isArray(items) ? items.map(enrich) : [];
+
+          if (!state.selectedId && state.items.length > 0) state.selectedId = state.items[0].id;
+          if (state.selectedId && !state.items.some((item) => item.id === state.selectedId)) {
+            state.selectedId = state.items[0]?.id ?? null;
+          }
+
+          serverStatus.className = "status-box status-ok";
+          serverStatus.textContent = "HTML и данные читаются из Beagle. Сохранение идет HTTP POST обратно в Beagle.";
+          render();
+        } catch (error) {
+          state.items = [];
+          state.selectedId = null;
+          serverStatus.className = "status-box status-error";
+          serverStatus.textContent = `Не удалось прочитать данные из Beagle: ${error.message}`;
+          render();
+        }
+      }
+
+      async function saveAll() {
+        try {
+          const response = await fetch(DATA_PATH, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(state.items.map(({ status, ...rest }) => rest), null, 2),
+          });
+
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`HTTP ${response.status}${text ? `: ${text.trim()}` : ""}`);
+          }
+
+          state.items = state.items.map(enrich);
+          render();
+          setSaveStatus("ok", "Изменения записаны прямо в Beagle через HTTP POST.");
+          return true;
+        } catch (error) {
+          setSaveStatus("error", `Ошибка записи в Beagle: ${error.message}`);
+          return false;
+        }
+      }
+
+      function renderStats() {
+        const total = state.items.length;
+        const inReview = state.items.filter((item) => item.status === "IN_REVIEW").length;
+        const approved = state.items.filter((item) => item.status === "LGTM").length;
+        const changes = state.items.filter((item) => item.status === "CHANGES_REQUESTED").length;
+
+        statsGrid.innerHTML = `
+          <div class="stat-card"><div class="stat-label">Всего review</div><div class="stat-number">${total}</div></div>
+          <div class="stat-card"><div class="stat-label">В работе</div><div class="stat-number">${inReview}</div></div>
+          <div class="stat-card"><div class="stat-label">Одобрено</div><div class="stat-number">${approved}</div></div>
+          <div class="stat-card"><div class="stat-label">Нужны правки</div><div class="stat-number">${changes}</div></div>
+        `;
+      }
+
+      function renderReviewList() {
+        reviewList.innerHTML = state.items.length
+          ? state.items.map((item) => {
+              const activeClass = item.id === state.selectedId ? "request-item-active" : "";
+              return `
+                <button class="request-item ${activeClass}" data-review-id="${item.id}">
+                  <div class="request-top">
+                    <div>
+                      <div class="request-title">${escapeHtml(item.title)}</div>
+                      <div class="request-meta">${escapeHtml(item.author)} · ${escapeHtml(item.sourceBranch)} → ${escapeHtml(item.targetBranch)}</div>
+                    </div>
+                    <span class="${badgeClass(item.status)}">${escapeHtml(item.status)}</span>
+                  </div>
+                </button>
+              `;
+            }).join("")
+          : `<div class="empty-box">Пока нет review requests.</div>`;
+
+        reviewList.querySelectorAll("[data-review-id]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.selectedId = Number(button.dataset.reviewId);
+            render();
+          });
+        });
+      }
+
+      function renderFilesTab(item) {
+        if (!item.files.length) return `<div class="empty-box">Файлы еще не добавлены.</div>`;
+        return item.files.map((file) => `
+          <div class="file-box">
+            <div class="file-header">${escapeHtml(file.path)}</div>
+            <pre class="file-diff">${escapeHtml(file.diff)}</pre>
+          </div>
+        `).join("");
+      }
+
+      function renderCommentsTab(item) {
+        const commentsHtml = item.comments.length
+          ? item.comments.map((comment) => `
+              <div class="comment-box">
+                <div class="comment-top">
+                  <div class="comment-name">${escapeHtml(comment.reviewer)}</div>
+                  <div class="comment-date">${escapeHtml(comment.createdAt)}</div>
+                </div>
+                <div class="comment-meta">${escapeHtml(comment.filePath)}${comment.lineNumber ? ` · line ${escapeHtml(comment.lineNumber)}` : ""}</div>
+                <div class="comment-text">${escapeHtml(comment.text)}</div>
+              </div>
+            `).join("")
+          : `<div class="empty-box">Пока нет комментариев.</div>`;
+
+        return `
+          <div class="two-column-grid">
+            <div class="card">
+              <div class="card-header">Комментарии</div>
+              <div class="card-content form-grid">${commentsHtml}</div>
+            </div>
+            <div class="card">
+              <div class="card-header">Добавить комментарий</div>
+              <div class="card-content form-grid">
+                <input id="commentReviewer" class="input" placeholder="Reviewer" />
+                <input id="commentFilePath" class="input" placeholder="File path" />
+                <input id="commentLineNumber" class="input" placeholder="Line number" />
+                <textarea id="commentText" class="input textarea" placeholder="Текст комментария"></textarea>
+                <button id="saveCommentBtn" class="btn btn-primary">Добавить</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderReviewsTab(item) {
+        const reviewsHtml = item.reviews.length
+          ? item.reviews.map((review) => `
+              <div class="comment-box">
+                <div class="comment-top">
+                  <div class="comment-name">${escapeHtml(review.reviewer)}</div>
+                  <span class="${badgeClass(review.decision)}">${escapeHtml(review.decision)}</span>
+                </div>
+                <div class="comment-date">${escapeHtml(review.createdAt)}</div>
+                <div class="comment-text">${escapeHtml(review.comment || "Без комментария")}</div>
+              </div>
+            `).join("")
+          : `<div class="empty-box">Пока никто не отправлял решение.</div>`;
+
+        return `
+          <div class="two-column-grid">
+            <div class="card">
+              <div class="card-header">Решения ревьюеров</div>
+              <div class="card-content form-grid">${reviewsHtml}</div>
+            </div>
+            <div class="card">
+              <div class="card-header">Отправить review</div>
+              <div class="card-content form-grid">
+                <input id="decisionReviewer" class="input" placeholder="Reviewer" />
+                <select id="decisionType" class="input">
+                  <option value="COMMENT">COMMENT</option>
+                  <option value="REQUEST_CHANGES">REQUEST_CHANGES</option>
+                  <option value="LGTM">LGTM</option>
+                </select>
+                <textarea id="decisionComment" class="input textarea" placeholder="Комментарий к решению"></textarea>
+                <div class="decision-buttons">
+                  <button class="btn btn-secondary small-btn" data-decision-value="COMMENT">COMMENT</button>
+                  <button class="btn btn-secondary small-btn" data-decision-value="REQUEST_CHANGES">CHANGES</button>
+                  <button class="btn btn-secondary small-btn" data-decision-value="LGTM">LGTM</button>
+                </div>
+                <button id="saveDecisionBtn" class="btn btn-primary">Отправить решение</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function bindCommentsHandlers(item) {
+        const saveCommentBtn = document.getElementById("saveCommentBtn");
+        if (!saveCommentBtn) return;
+        saveCommentBtn.addEventListener("click", async () => {
+          const reviewer = document.getElementById("commentReviewer").value.trim();
+          const filePath = document.getElementById("commentFilePath").value.trim() || "general";
+          const lineNumberRaw = document.getElementById("commentLineNumber").value.trim();
+          const text = document.getElementById("commentText").value.trim();
+          if (!reviewer || !text) {
+            setSaveStatus("warn", "Для комментария нужны reviewer и текст.");
+            return;
+          }
+          const target = state.items.find((entry) => entry.id === item.id);
+          target.comments.push({
+            id: Date.now(), reviewer, filePath,
+            lineNumber: lineNumberRaw ? Number(lineNumberRaw) : null,
+            text, createdAt: nowString(),
+          });
+          target.status = calculateStatus(target);
+          await saveAll();
+        });
+      }
+
+      function bindReviewsHandlers(item) {
+        const saveDecisionBtn = document.getElementById("saveDecisionBtn");
+        const decisionType = document.getElementById("decisionType");
+        document.querySelectorAll("[data-decision-value]").forEach((button) => {
+          button.addEventListener("click", () => { decisionType.value = button.dataset.decisionValue; });
+        });
+        if (!saveDecisionBtn) return;
+        saveDecisionBtn.addEventListener("click", async () => {
+          const reviewer = document.getElementById("decisionReviewer").value.trim();
+          const decision = decisionType.value;
+          const comment = document.getElementById("decisionComment").value.trim();
+          if (!reviewer) {
+            setSaveStatus("warn", "Для review нужен reviewer.");
+            return;
+          }
+          const target = state.items.find((entry) => entry.id === item.id);
+          target.reviews = target.reviews.filter((entry) => entry.reviewer.toLowerCase() !== reviewer.toLowerCase());
+          target.reviews.push({ id: Date.now(), reviewer, decision, comment, createdAt: nowString() });
+          target.status = calculateStatus(target);
+          await saveAll();
+        });
+      }
+
+      function renderDetail() {
+        const item = getSelectedItem();
+        if (!item) {
+          detailRoot.innerHTML = `<div class="empty-card">Выбери review request слева.</div>`;
+          return;
+        }
+
+        let tabContent = "";
+        if (state.activeTab === "files") tabContent = renderFilesTab(item);
+        if (state.activeTab === "comments") tabContent = renderCommentsTab(item);
+        if (state.activeTab === "reviews") tabContent = renderReviewsTab(item);
+
+        detailRoot.innerHTML = `
+          <div class="detail-column">
+            <div class="card">
+              <div class="card-header review-header">
+                <div>
+                  <h2 class="review-title">${escapeHtml(item.title)}</h2>
+                  <p class="review-description">${escapeHtml(item.description || "Без описания")}</p>
+                </div>
+                <span class="${badgeClass(item.status)}">${escapeHtml(item.status)}</span>
+              </div>
+              <div class="card-content info-grid">
+                <div class="info-box"><div class="muted">Автор</div><div>${escapeHtml(item.author)}</div></div>
+                <div class="info-box"><div class="muted">Source</div><div>${escapeHtml(item.sourceBranch)}</div></div>
+                <div class="info-box"><div class="muted">Target</div><div>${escapeHtml(item.targetBranch)}</div></div>
+                <div class="info-box"><div class="muted">Required LGTM</div><div>${escapeHtml(item.requiredLgtm)}</div></div>
+              </div>
+            </div>
+            <div class="tabs-row">
+              <button class="tab-btn ${state.activeTab === "files" ? "tab-btn-active" : ""}" data-tab="files">Файлы</button>
+              <button class="tab-btn ${state.activeTab === "comments" ? "tab-btn-active" : ""}" data-tab="comments">Комментарии</button>
+              <button class="tab-btn ${state.activeTab === "reviews" ? "tab-btn-active" : ""}" data-tab="reviews">Решения</button>
+            </div>
+            ${tabContent.startsWith("<div class=\"two-column-grid\"") ? tabContent : `<div class="card"><div class="card-header">Содержимое</div><div class="card-content form-grid">${tabContent}</div></div>`}
+          </div>
+        `;
+
+        detailRoot.querySelectorAll("[data-tab]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.activeTab = button.dataset.tab;
+            render();
+          });
+        });
+
+        if (state.activeTab === "comments") bindCommentsHandlers(item);
+        if (state.activeTab === "reviews") bindReviewsHandlers(item);
+      }
+
+      function render() {
+        renderStats();
+        renderReviewList();
+        renderDetail();
+      }
+
+      createReviewBtn.addEventListener("click", async () => {
+        const title = newTitle.value.trim();
+        const author = newAuthor.value.trim();
+        if (!title || !author) {
+          setSaveStatus("warn", "Для нового review нужны title и author.");
+          return;
+        }
+        const newId = state.items.length ? Math.max(...state.items.map((item) => item.id)) + 1 : 1;
+        const files = [];
+        if (newFilePath.value.trim()) {
+          files.push({ path: newFilePath.value.trim(), diff: (newFileDiff.value.trim() || "// diff is empty") });
+        }
+        const item = enrich({
+          id: newId,
+          title,
+          description: newDescription.value.trim(),
+          author,
+          sourceBranch: newSourceBranch.value.trim() || "feature/new-change",
+          targetBranch: newTargetBranch.value.trim() || "main",
+          requiredLgtm: Math.max(1, Number(newRequiredLgtm.value) || 1),
+          files,
+          comments: [],
+          reviews: [],
+        });
+        state.items.unshift(item);
+        state.selectedId = newId;
+        state.activeTab = "files";
+        const ok = await saveAll();
+        if (ok) {
+          newTitle.value = "";
+          newAuthor.value = "";
+          newSourceBranch.value = "";
+          newTargetBranch.value = "main";
+          newRequiredLgtm.value = "1";
+          newDescription.value = "";
+          newFilePath.value = "";
+          newFileDiff.value = "";
+        }
+      });
+
+      loadReviews();
+    </script>
+  </body>
+</html>
