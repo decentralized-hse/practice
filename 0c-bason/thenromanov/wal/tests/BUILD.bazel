@@ -1,0 +1,61 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_test(
+    name = "iterator_test",
+    size = "small",
+    srcs = ["iterator_test.cpp"],
+    deps = [
+        "//wal:iterator",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "reader_test",
+    size = "small",
+    srcs = ["reader_test.cpp"],
+    deps = [
+        "//wal:reader",
+        "//util:util",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "writer_test",
+    size = "small",
+    srcs = ["writer_test.cpp"],
+    deps = [
+        "//wal:writer",
+        "//util:util",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "wal_test",
+    size = "small",
+    srcs = ["wal_test.cpp"],
+    deps = [
+        "//wal:wal",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
+    name = "small_tests",
+    tags = ["small"],
+    tests = [
+        ":iterator_test",
+        ":reader_test",
+        ":writer_test",
+        ":wal_test",
+    ],
+)

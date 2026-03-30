@@ -1,0 +1,54 @@
+UseColor: true
+
+Checks: >
+  -*,
+
+  bugprone-*,
+  -bugprone-exception-escape,
+  -bugprone-easily-swappable-parameters,
+
+  clang-analyzer-apiModeling.google.*,
+  clang-analyzer-apiModeling.llvm.*,
+  clang-analyzer-core.*,
+  -clang-analyzer-core.uninitialized.UndefReturn,
+  clang-analyzer-cplusplus.*,
+  -clang-analyzer-cplusplus.NewDeleteLeaks,
+
+  -cppcoreguidelines-*,
+
+  google-*,
+  -google-objc-*,
+  -google-readability-function-size,
+
+  performance-*,
+
+  misc-*,
+  -misc-const-correctness,
+  -misc-non-private-member-variables-in-classes,
+  -misc-use-anonymous-namespace,
+  -misc-include-cleaner,
+
+  modernize-*,
+  -modernize-type-traits,
+  -modernize-use-constraints,
+  -modernize-use-designated-initializers,
+  -modernize-use-ranges,
+  -modernize-use-trailing-return-type,
+  -modernize-avoid-c-arrays,
+
+  readability-*,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-qualified-auto,
+  -readability-redundant-access-specifiers,
+
+CheckOptions:
+  - key: cppcoreguidelines-avoid-do-while.IgnoreMacros
+    value: true
+  - key: readability-simplify-boolean-expr.IgnoreMacros
+    value: true
+  - key: readability-simplify-boolean-expr.SimplifyDeMorgan
+    value: false
+
+WarningsAsErrors: "*"

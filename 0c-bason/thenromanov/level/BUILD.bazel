@@ -1,0 +1,94 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "constants",
+    hdrs = ["constants.hpp"],
+)
+
+cc_library(
+    name = "level_metrics",
+    hdrs = ["level_metrics.hpp"],
+    deps = [
+        ":constants",
+    ],
+)
+
+cc_library(
+    name = "version_edit",
+    hdrs = ["version_edit.hpp"],
+    srcs = ["version_edit.cpp"],
+    deps = [
+        "//codec:record",
+        "//util:util",
+    ],
+)
+
+cc_library(
+    name = "version",
+    hdrs = ["version.hpp"],
+    srcs = ["version.cpp"],
+    deps = [
+        ":constants",
+        "//sst:metadata",
+        "//sst:reader",
+    ],
+)
+
+cc_library(
+    name = "manifest",
+    hdrs = ["manifest.hpp"],
+    srcs = ["manifest.cpp"],
+    deps = [
+        ":version",
+        ":version_edit",
+        "//sst:metadata",
+        "//wal:reader",
+        "//wal:writer",
+    ],
+)
+
+cc_library(
+    name = "compaction",
+    hdrs = ["compaction.hpp"],
+    srcs = ["compaction.cpp"],
+    deps = [
+        ":level_metrics",
+        ":manifest",
+        ":version",
+        "//memtable:merge_iterator",
+        "//sst:iterator",
+        "//sst:reader",
+        "//sst:util",
+        "//sst:writer",
+    ]
+)
+
+cc_library(
+    name = "snapshot",
+    hdrs = ["snapshot.hpp"],
+    srcs = ["snapshot.cpp"],
+)
+
+cc_library(
+    name = "level",
+    hdrs = ["level.hpp"],
+    srcs = ["level.cpp"],
+    deps = [
+        ":compaction",
+        ":level_metrics",
+        ":manifest",
+        ":snapshot",
+        ":version",
+        "//codec:record",
+        "//memtable:memtable",
+        "//memtable:merge_iterator",
+        "//sst:reader",
+        "//sst:util",
+        "//sst:writer",
+        "//wal:reader",
+        "//wal:record",
+        "//wal:writer",
+    ],
+)

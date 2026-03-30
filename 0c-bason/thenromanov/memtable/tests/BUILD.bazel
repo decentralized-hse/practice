@@ -1,0 +1,36 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_test(
+    name = "memtable_test",
+    size = "small",
+    srcs = ["memtable_test.cpp"],
+    deps = [
+        "//memtable:memtable",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "merge_iterator_test",
+    size = "small",
+    srcs = ["merge_iterator_test.cpp"],
+    deps = [
+        "//memtable:memtable",
+        "//memtable:merge_iterator",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
+    name = "small_tests",
+    tags = ["small"],
+    tests = [
+        ":memtable_test",
+        ":merge_iterator_test",
+    ],
+)

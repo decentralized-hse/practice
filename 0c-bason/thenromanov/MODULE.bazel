@@ -1,0 +1,31 @@
+module(
+    name="bason_level",
+)
+
+bazel_dep(
+    name="rules_cc",
+    version="0.2.17",
+)
+
+bazel_dep(
+    name="googletest",
+    version="1.17.0",
+    dev_dependency=True,
+)
+
+bazel_dep(
+    name="bazel_clang_tidy",
+    version="0.0.0",
+    dev_dependency=True,
+)
+git_override(
+    module_name="bazel_clang_tidy",
+    remote="https://github.com/erenon/bazel_clang_tidy.git",
+    commit="bff5c59c843221b05ef0e37cef089ecc9d24e7da",
+)
+
+bazel_dep(
+    name="bazel_clang_format",
+    version="0.0.0",
+    dev_dependency=True,
+)
