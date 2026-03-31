@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beagle CI</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #0d1117; color: #c9d1d9; padding: 24px; }
+h1 { font-size: 24px; margin-bottom: 8px; }
+.subtitle { color: #8b949e; margin-bottom: 24px; font-size: 14px; }
+.status-bar { display: flex; gap: 16px; margin-bottom: 24px; padding: 16px; background: #161b22; border-radius: 8px; border: 1px solid #30363d; }
+.status-bar .stat { text-align: center; }
+.stat .num { font-size: 28px; font-weight: bold; }
+.stat .label { font-size: 12px; color: #8b949e; }
+.pass { color: #3fb950; }
+.fail { color: #f85149; }
+.builds { display: flex; flex-direction: column; gap: 8px; }
+.build { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; cursor: pointer; transition: border-color 0.2s; }
+.build:hover { border-color: #58a6ff; }
+.build-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.build-id { font-weight: bold; font-size: 16px; }
+.badge { padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+.badge.pass { background: #238636; color: #fff; }
+.badge.fail { background: #da3633; color: #fff; }
+.build-meta { font-size: 13px; color: #8b949e; }
+.build-files { font-size: 12px; color: #58a6ff; margin-top: 4px; }
+.detail { display: none; margin-top: 12px; border-top: 1px solid #30363d; padding-top: 12px; }
+.detail.open { display: block; }
+.log-section { margin-bottom: 12px; }
+.log-title { font-size: 13px; font-weight: bold; margin-bottom: 4px; }
+.log { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 12px; white-space: pre-wrap; overflow-x: auto; max-height: 400px; overflow-y: auto; color: #e6edf3; }
+.empty { text-align: center; padding: 48px; color: #8b949e; }
+.poll-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3fb950; margin-right: 8px; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+</style>
+</head>
+<body>
+
+<h1>Beagle CI</h1>
+<p class="subtitle"><span class="poll-dot"></span>Polling for updates...</p>
+
+<div class="status-bar">
+    <div class="stat"><div class="num" id="total">0</div><div class="label">Builds</div></div>
+    <div class="stat"><div class="num pass" id="passed">0</div><div class="label">Passed</div></div>
+    <div class="stat"><div class="num fail" id="failed">0</div><div class="label">Failed</div></div>
+    <div class="stat"><div class="num" id="last-time">-</div><div class="label">Last build</div></div>
+</div>
+
+<div class="builds" id="builds">
+    <div class="empty">No builds yet. Waiting for changes...</div>
+</div>
+
+<script>
+const BUILDS_URL = "/builds.json";
+const POLL_MS = 5000;
+
+let prevData = "";
+
+function timeAgo(iso) {
+    const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return s + "s ago";
+    if (s < 3600) return Math.floor(s / 60) + "m ago";
+    if (s < 86400) return Math.floor(s / 3600) + "h ago";
+    return Math.floor(s / 86400) + "d ago";
+}
+
+function escHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function render(builds) {
+    const total = builds.length;
+    const passed = builds.filter(b => b.status === "pass").length;
+    const failed = total - passed;
+
+    document.getElementById("total").textContent = total;
+    document.getElementById("passed").textContent = passed;
+    document.getElementById("failed").textContent = failed;
+
+    if (total > 0) {
+        document.getElementById("last-time").textContent = timeAgo(builds[total - 1].ts);
+    }
+
+    const container = document.getElementById("builds");
+
+    if (total === 0) {
+        container.innerHTML = '<div class="empty">No builds yet. Waiting for changes...</div>';
+        return;
+    }
+
+    container.innerHTML = builds.slice().reverse().map(b => `
+        <div class="build" onclick="this.querySelector('.detail').classList.toggle('open')">
+            <div class="build-header">
+                <span class="build-id">#${b.id} ${b.project || ""}</span>
+                <span class="badge ${b.status}">${b.status}</span>
+            </div>
+            <div class="build-meta">
+                ${new Date(b.ts).toLocaleString()} &middot;
+                build ${b.build.ms}ms &middot; test ${b.test.ms}ms
+            </div>
+            <div class="build-files">changed: ${b.files.join(", ")}</div>
+            <div class="detail">
+                <div class="log-section">
+                    <div class="log-title">Build: ${b.build.cmd} ${b.build.ok ? "&#10003;" : "&#10007;"}</div>
+                    <div class="log">${escHtml(b.build.log || "(empty)")}</div>
+                </div>
+                <div class="log-section">
+                    <div class="log-title">Test: ${b.test.cmd} ${b.test.ok ? "&#10003;" : "&#10007;"}</div>
+                    <div class="log">${escHtml(b.test.log || "(empty)")}</div>
+                </div>
+            </div>
+        </div>
+    `).join("");
+}
+
+async function poll() {
+    try {
+        const res = await fetch(BUILDS_URL);
+        if (!res.ok) return;
+        const text = await res.text();
+        if (text !== prevData) {
+            prevData = text;
+            render(JSON.parse(text));
+        }
+    } catch {}
+    setTimeout(poll, POLL_MS);
+}
+
+poll();
+</script>
+</body>
+</html>
