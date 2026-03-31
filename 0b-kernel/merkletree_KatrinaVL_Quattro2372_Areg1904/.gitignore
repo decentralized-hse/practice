@@ -1,0 +1,17 @@
+cmake-build-debug/
+bin/
+lib/
+*.o
+
+secure_sync
+secure_sync.exe
+
+*.pem
+*.key
+
+.DS_Store
+.vscode/
+.idea/
+
+SHA256SUMS
+SHA256SUMS.sign
