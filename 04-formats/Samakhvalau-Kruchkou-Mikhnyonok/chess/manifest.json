@@ -1,0 +1,16 @@
+{
+  "name": "Self-Replicating Chess",
+  "version": "1.0.0",
+  "type": "quine-application",
+  "description": "Chess game that stores itself and its games in Beagle, with self-replication capability",
+  "beagle": {
+    "replicable": true,
+    "syncable": ["games/*", "manifest.json", "chess.js"],
+    "entry": "index.html"
+  },
+  "quine": {
+    "self-reference": "manifest.json contains itself",
+    "reproduction": "replicator.js can clone entire application",
+    "snapshots": "games/*/snapshot.html are self-contained quines"
+  }
+}

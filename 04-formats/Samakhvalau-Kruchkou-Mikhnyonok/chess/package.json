@@ -1,0 +1,12 @@
+{
+  "name": "self-replicating-chess",
+  "version": "1.0.0",
+  "description": "Chess app with persistence and network play",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
